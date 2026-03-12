@@ -1,4 +1,11 @@
 # Miscellaneous
+.env
+*.g.dart
+*.gr.dart
+/build
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
 *.class
 *.log
 *.pyc

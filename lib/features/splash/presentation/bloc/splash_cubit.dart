@@ -5,12 +5,12 @@ class SplashCubit extends Cubit<SplashState> {
   SplashCubit() : super(SplashInitial());
 
   Future<void> init() async {
-    emit(SplashAnimating(showText: false));
+    emit(SplashLogoVisible());
+    await Future.delayed(const Duration(milliseconds: 2000));
+    emit(SplashShowBackground());
+  }
 
-    await Future.delayed(const Duration(milliseconds: 2000)); // 2 sec delay
-    emit(SplashAnimating(showText: true));
-
-    await Future.delayed(const Duration(milliseconds: 5000)); // 5 sec delay
+  void navigateToSignin() {
     emit(SplashNavigateToSignin());
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_cubit.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_state.dart';
 import 'package:atlas/features/splash/presentation/widgets/splash_slider.dart';
@@ -18,9 +19,12 @@ class SplashView extends StatelessWidget {
         state is SplashNavigateToHome;
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       body: Stack(
         children: [
           AnimatedOpacity(
@@ -65,7 +69,7 @@ class SplashView extends StatelessWidget {
                       child: const Text(
                         'Some places\nchange you\nforever.',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.appPrimaryWhite,
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
                           height: 1,
@@ -85,7 +89,7 @@ class SplashView extends StatelessWidget {
                     child: AnimatedSlide(
                       offset: showBackground
                           ? Offset.zero
-                          : const Offset(-0.1, 0), // ← from left
+                          : const Offset(-0.1, 0),
                       duration: const Duration(milliseconds: 1200),
                       curve: Curves.easeOut,
                       child: const Text(
@@ -132,10 +136,12 @@ class SplashView extends StatelessWidget {
             child: Center(
               child: SvgPicture.asset(
                 'assets/svgs/logo.svg',
-                width: 90,
-                height: 90,
-                colorFilter: const ColorFilter.mode(
-                  Colors.white,
+                width: 87,
+                height: 87,
+                colorFilter: ColorFilter.mode(
+                  isDark
+                      ? AppColors.appPrimaryWhite
+                      : AppColors.appPrimaryBlack,
                   BlendMode.srcIn,
                 ),
               ),

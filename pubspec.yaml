@@ -27,6 +27,7 @@ dependencies:
   fl_chart: any
   flutter_native_splash: any
   flutter_animate: ^4.5.2
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:

@@ -6,6 +6,8 @@ class SplashLogoVisible extends SplashState {}
 
 class SplashShowBackground extends SplashState {}
 
+class SplashBiometricsFailed extends SplashState {}
+
 class SplashNavigateToHome extends SplashState {}
 
 class SplashNavigateToSignin extends SplashState {}

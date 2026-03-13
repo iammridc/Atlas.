@@ -5,6 +5,7 @@ import 'package:atlas/features/auth/domain/usecases/signout_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:atlas/core/theme/cubit/theme_cubit.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -40,7 +41,9 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     final result = await _signInUseCase(email: email, password: password);
     result.fold((error) => emit(AuthError(error)), (user) async {
-      // load user theme after login
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_logged_in_uid', user.id);
+      await prefs.setBool('biometrics_enabled_${user.id}', true);
       await getIt<ThemeCubit>().loadUserTheme(user.id);
       emit(AuthAuthenticated(user));
     });
@@ -57,17 +60,20 @@ class AuthCubit extends Cubit<AuthState> {
       password: password,
       username: username,
     );
-    result.fold(
-      (error) => emit(AuthError(error)),
-      (user) => emit(AuthAuthenticated(user)),
-    );
+    result.fold((error) => emit(AuthError(error)), (user) async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_logged_in_uid', user.id);
+      await prefs.setBool('biometrics_enabled_${user.id}', true);
+      emit(AuthAuthenticated(user));
+    });
   }
 
   Future<void> signOut() async {
     emit(AuthLoading());
     final result = await _signOutUseCase();
-    result.fold((error) => emit(AuthError(error)), (_) {
-      // reset theme on logout
+    result.fold((error) => emit(AuthError(error)), (_) async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('last_logged_in_uid');
       getIt<ThemeCubit>().resetTheme();
       emit(AuthUnauthenticated());
     });

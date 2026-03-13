@@ -9,34 +9,38 @@ import 'package:atlas/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:atlas/features/auth/presentation/widgets/auth_button.dart';
 
 @RoutePage()
-class SigninPage extends StatelessWidget {
-  const SigninPage({super.key});
+class SignupPage extends StatelessWidget {
+  const SignupPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<AuthCubit>(),
-      child: const _SigninView(),
+      child: const _SignupView(),
     );
   }
 }
 
-class _SigninView extends StatefulWidget {
-  const _SigninView();
+class _SignupView extends StatefulWidget {
+  const _SignupView();
 
   @override
-  State<_SigninView> createState() => _SigninViewState();
+  State<_SignupView> createState() => _SignupViewState();
 }
 
-class _SigninViewState extends State<_SigninView> {
+class _SignupViewState extends State<_SignupView> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -69,9 +73,20 @@ class _SigninViewState extends State<_SigninView> {
                 children: [
                   const SizedBox(height: 60),
 
+                  // Back button
+                  GestureDetector(
+                    onTap: () => context.router.back(),
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
                   // Title
                   Text(
-                    'Welcome\nback.',
+                    'Create\naccount.',
                     style: TextStyle(
                       fontSize: 42,
                       fontWeight: FontWeight.bold,
@@ -83,7 +98,7 @@ class _SigninViewState extends State<_SigninView> {
                   const SizedBox(height: 8),
 
                   Text(
-                    'Sign in to continue your journey.',
+                    'Start your journey with Atlas.',
                     style: TextStyle(
                       fontSize: 16,
                       color: isDark ? Colors.white54 : Colors.black54,
@@ -92,6 +107,23 @@ class _SigninViewState extends State<_SigninView> {
                   ),
 
                   const SizedBox(height: 48),
+
+                  // Username
+                  AuthTextField(
+                    hint: 'Username',
+                    controller: _usernameController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a username';
+                      }
+                      if (value.length < 3) {
+                        return 'Username must be at least 3 characters';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
 
                   // Email
                   AuthTextField(
@@ -118,7 +150,7 @@ class _SigninViewState extends State<_SigninView> {
                     isPassword: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
+                        return 'Please enter a password';
                       }
                       if (value.length < 6) {
                         return 'Password must be at least 6 characters';
@@ -127,33 +159,40 @@ class _SigninViewState extends State<_SigninView> {
                     },
                   ),
 
+                  const SizedBox(height: 16),
+
+                  // Confirm password
+                  AuthTextField(
+                    hint: 'Confirm Password',
+                    controller: _confirmPasswordController,
+                    isPassword: true,
+                    validator: (value) {
+                      if (value != _passwordController.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
+                  ),
+
                   const SizedBox(height: 32),
 
-                  // Sign in button
+                  // Sign up button
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
                       return AuthButton(
-                        label: 'Sign In',
+                        label: 'Create Account',
                         isLoading: state is AuthLoading,
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            context.read<AuthCubit>().signIn(
+                            context.read<AuthCubit>().signUp(
                               email: _emailController.text.trim(),
                               password: _passwordController.text.trim(),
+                              username: _usernameController.text.trim(),
                             );
                           }
                         },
                       );
                     },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Go to signup
-                  AuthButton(
-                    label: 'Create an account',
-                    isOutlined: true,
-                    onPressed: () => context.router.push(const SignupRoute()),
                   ),
 
                   const SizedBox(height: 32),

@@ -1,0 +1,127 @@
+import 'package:atlas/features/auth/data/models/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+abstract class AuthRemoteDatasource {
+  Future<UserModel> signIn({required String email, required String password});
+
+  Future<UserModel> signUp({
+    required String email,
+    required String password,
+    required String username,
+  });
+
+  Future<void> signOut();
+
+  Future<UserModel?> getCurrentUser();
+}
+
+class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
+  final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
+
+  AuthRemoteDatasourceImpl({
+    required FirebaseAuth firebaseAuth,
+    required FirebaseFirestore firestore,
+  }) : _firebaseAuth = firebaseAuth,
+       _firestore = firestore;
+
+  @override
+  Future<UserModel> signIn({
+    required String email,
+    required String password,
+  }) async {
+    final credential = await _firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    final userMap = {
+      'id': credential.user!.uid,
+      'email': credential.user!.email ?? '',
+      'username': credential.user!.displayName ?? email.split('@')[0],
+      'name': null,
+      'bio': null,
+      'avatarUrl': credential.user!.photoURL,
+      'likedPlaces': [],
+      'createdRoutes': [],
+      'preferences': [],
+      'settings': {
+        'theme': 'system',
+        'biometricsEnabled': false,
+        'language': 'en',
+        'currency': 'USD',
+      },
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    return UserModel.fromJson(userMap);
+  }
+
+  @override
+  Future<UserModel> signUp({
+    required String email,
+    required String password,
+    required String username,
+  }) async {
+    final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    final now = DateTime.now().toIso8601String(); // ← string from the start
+
+    final userMap = {
+      'id': credential.user!.uid,
+      'email': credential.user!.email ?? '',
+      'username': username,
+      'name': null,
+      'bio': null,
+      'avatarUrl': credential.user!.photoURL,
+      'likedPlaces': [],
+      'createdRoutes': [],
+      'preferences': [],
+      'settings': {
+        'theme': 'system',
+        'biometricsEnabled': false,
+        'language': 'en',
+        'currency': 'USD',
+      },
+      'createdAt': now,
+    };
+
+    return UserModel.fromJson(userMap);
+  }
+
+  @override
+  Future<void> signOut() async {
+    await _firebaseAuth.signOut();
+  }
+
+  @override
+  Future<UserModel?> getCurrentUser() async {
+    final firebaseUser = _firebaseAuth.currentUser;
+    if (firebaseUser == null) return null;
+
+    final userMap = {
+      'id': firebaseUser.uid,
+      'email': firebaseUser.email ?? '',
+      'username': firebaseUser.displayName ?? firebaseUser.email!.split('@')[0],
+      'name': null,
+      'bio': null,
+      'avatarUrl': firebaseUser.photoURL,
+      'likedPlaces': [],
+      'createdRoutes': [],
+      'preferences': [],
+      'settings': {
+        'theme': 'system',
+        'biometricsEnabled': false,
+        'language': 'en',
+        'currency': 'USD',
+      },
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    return UserModel.fromJson(userMap);
+  }
+}

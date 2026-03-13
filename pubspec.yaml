@@ -26,6 +26,7 @@ dependencies:
   flutter_dotenv: any
   fl_chart: any
   flutter_native_splash: any
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -37,16 +38,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/svgs/
+    - assets/pngs/
 
 flutter_native_splash:
-
-  # Light mode
   color: "#FFFFFF"
   image: assets/pngs/dark_logo_for_splash.png
-
   color_dark: "#0E0E0E"
-  image_dark:  assets/pngs/light_logo_for_splash.png
-
+  image_dark: assets/pngs/light_logo_for_splash.png
   android: true
   ios: true
   web: false

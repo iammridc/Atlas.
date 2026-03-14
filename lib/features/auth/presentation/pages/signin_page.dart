@@ -1,4 +1,5 @@
 import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -51,11 +52,10 @@ class _SigninViewState extends State<_SigninView> {
           context.router.replace(const HomeRoute());
         }
         if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.redAccent,
-            ),
+          AppSnackbar.show(
+            context,
+            message: state.message,
+            type: SnackbarType.error,
           );
         }
       },
@@ -68,7 +68,7 @@ class _SigninViewState extends State<_SigninView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 80),
 
                   // Logo
                   SvgPicture.asset(
@@ -81,10 +81,9 @@ class _SigninViewState extends State<_SigninView> {
                     ),
                   ),
 
-                  // Push everything below to bottom
                   const Expanded(child: SizedBox()),
 
-                  // Big title — aligned right
+                  // Title
                   Align(
                     alignment: Alignment.bottomLeft,
                     child: Text(
@@ -100,7 +99,7 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 8),
 
-                  // Subtitle — aligned right
+                  // Subtitle
                   Align(
                     alignment: Alignment.bottomLeft,
                     child: Text(
@@ -179,11 +178,11 @@ class _SigninViewState extends State<_SigninView> {
                       "Don't have an account? Sign up",
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white54 : Colors.black54,
+                        color: isDark ? Colors.white38 : Colors.black54,
                         fontWeight: FontWeight.w400,
                         decoration: TextDecoration.underline,
                         decorationColor: isDark
-                            ? Colors.white54
+                            ? Colors.white38
                             : Colors.black54,
                       ),
                     ),

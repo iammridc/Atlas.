@@ -1,4 +1,5 @@
 import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,15 +50,21 @@ class _SignupViewState extends State<_SignupView> {
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is AuthAuthenticated) {
-          context.router.replace(const HomeRoute());
+        if (state is AuthRegistered) {
+          context.router.replace(const SigninRoute());
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            AppSnackbar.show(
+              context,
+              message: 'Account has been successfully created!',
+              type: SnackbarType.success,
+            );
+          });
         }
         if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.redAccent,
-            ),
+          AppSnackbar.show(
+            context,
+            message: state.message,
+            type: SnackbarType.error,
           );
         }
       },
@@ -70,7 +77,7 @@ class _SignupViewState extends State<_SignupView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 80),
 
                   // Logo
                   SvgPicture.asset(
@@ -108,7 +115,7 @@ class _SignupViewState extends State<_SignupView> {
                       'Thousands of places. One account.',
                       style: TextStyle(
                         fontSize: 16,
-                        color: isDark ? Colors.white24 : Colors.black38,
+                        color: isDark ? Colors.white38 : Colors.black38,
                         fontWeight: FontWeight.w300,
                         height: 1,
                       ),
@@ -158,6 +165,7 @@ class _SignupViewState extends State<_SignupView> {
                     hint: 'Confirm Password',
                     controller: _confirmPasswordController,
                     isPassword: true,
+                    matchController: _passwordController,
                     validator: (value) {
                       if (value != _passwordController.text) {
                         return 'Passwords do not match';
@@ -195,11 +203,11 @@ class _SignupViewState extends State<_SignupView> {
                       'Already have an account? Sign in',
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? Colors.white24 : Colors.black54,
+                        color: isDark ? Colors.white38 : Colors.black54,
                         fontWeight: FontWeight.w400,
                         decoration: TextDecoration.underline,
                         decorationColor: isDark
-                            ? Colors.white24
+                            ? Colors.white38
                             : Colors.black54,
                       ),
                     ),

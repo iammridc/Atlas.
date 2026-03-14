@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
+import 'package:atlas/core/errors/auth_exception.dart';
 import 'package:atlas/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:atlas/features/auth/domain/entities/user_entity.dart';
 import 'package:atlas/features/auth/domain/repositories/auth_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDatasource _datasource;
@@ -17,8 +17,10 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = await _datasource.signIn(email: email, password: password);
       return Right(user);
+    } on AuthException catch (e) {
+      return Left(e.message);
     } catch (e) {
-      return Left(_handleError(e));
+      return const Left('An unexpected error occurred.');
     }
   }
 
@@ -30,8 +32,10 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = await _datasource.signUp(email: email, password: password);
       return Right(user);
+    } on AuthException catch (e) {
+      return Left(e.message);
     } catch (e) {
-      return Left(_handleError(e));
+      return const Left('An unexpected error occurred.');
     }
   }
 
@@ -40,8 +44,10 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await _datasource.signOut();
       return const Right(null);
+    } on AuthException catch (e) {
+      return Left(e.message);
     } catch (e) {
-      return Left(_handleError(e));
+      return const Left('An unexpected error occurred.');
     }
   }
 
@@ -50,30 +56,10 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = await _datasource.getCurrentUser();
       return Right(user);
+    } on AuthException catch (e) {
+      return Left(e.message);
     } catch (e) {
-      return Left(_handleError(e));
+      return const Left('An unexpected error occurred.');
     }
-  }
-
-  String _handleError(dynamic e) {
-    if (e is FirebaseAuthException) {
-      switch (e.code) {
-        case 'user-not-found':
-          return 'No user found with this email.';
-        case 'wrong-password':
-          return 'Wrong password.';
-        case 'email-already-in-use':
-          return 'Email is already in use.';
-        case 'invalid-email':
-          return 'Invalid email address.';
-        case 'weak-password':
-          return 'Password is too weak.';
-        case 'network-request-failed':
-          return 'No internet connection.';
-        default:
-          return e.message ?? 'An error occurred.';
-      }
-    }
-    return 'An unexpected error occurred.';
   }
 }

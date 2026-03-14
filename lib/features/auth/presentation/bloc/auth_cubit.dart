@@ -56,7 +56,7 @@ class AuthCubit extends Cubit<AuthState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('last_logged_in_uid', user.id);
       await prefs.setBool('biometrics_enabled_${user.id}', true);
-      emit(AuthAuthenticated(user));
+      emit(AuthRegistered());
     });
   }
 

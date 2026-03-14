@@ -49,17 +49,9 @@ class AuthCubit extends Cubit<AuthState> {
     });
   }
 
-  Future<void> signUp({
-    required String email,
-    required String password,
-    required String username,
-  }) async {
+  Future<void> signUp({required String email, required String password}) async {
     emit(AuthLoading());
-    final result = await _signUpUseCase(
-      email: email,
-      password: password,
-      username: username,
-    );
+    final result = await _signUpUseCase(email: email, password: password);
     result.fold((error) => emit(AuthError(error)), (user) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('last_logged_in_uid', user.id);

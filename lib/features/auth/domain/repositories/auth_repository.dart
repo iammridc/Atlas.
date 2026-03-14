@@ -10,7 +10,6 @@ abstract class AuthRepository {
   Future<Either<String, UserEntity>> signUp({
     required String email,
     required String password,
-    required String username,
   });
 
   Future<Either<String, void>> signOut();

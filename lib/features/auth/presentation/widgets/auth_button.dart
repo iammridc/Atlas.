@@ -21,7 +21,7 @@ class AuthButton extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 54,
       child: isOutlined
           ? OutlinedButton(
               onPressed: isLoading ? null : onPressed,
@@ -30,7 +30,7 @@ class AuthButton extends StatelessWidget {
                   color: isDark ? Colors.white24 : Colors.black26,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(22),
                 ),
               ),
               child: _child(isDark),
@@ -45,7 +45,7 @@ class AuthButton extends StatelessWidget {
                     ? AppColors.appPrimaryBlack
                     : AppColors.appPrimaryWhite,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 elevation: 0,
               ),

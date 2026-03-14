@@ -29,10 +29,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<ThemeCubit>(() => ThemeCubit());
   // Datasource
   getIt.registerLazySingleton<AuthRemoteDatasource>(
-    () => AuthRemoteDatasourceImpl(
-      firebaseAuth: getIt<FirebaseAuth>(),
-      firestore: getIt<FirebaseFirestore>(),
-    ),
+    () => AuthRemoteDatasourceImpl(firebaseAuth: getIt<FirebaseAuth>()),
   );
 
   // Repository

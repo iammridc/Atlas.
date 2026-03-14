@@ -56,21 +56,21 @@ class _AuthTextFieldState extends State<AuthTextField> {
             ? Colors.white.withOpacity(0.05)
             : Colors.black.withOpacity(0.05),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           borderSide: BorderSide(
             color: isDark ? Colors.white24 : Colors.black26,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           borderSide: const BorderSide(color: Colors.redAccent),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           borderSide: const BorderSide(color: Colors.redAccent),
         ),
         contentPadding: const EdgeInsets.symmetric(

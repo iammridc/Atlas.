@@ -2,6 +2,7 @@ import 'package:atlas/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:atlas/features/auth/presentation/bloc/auth_state.dart';
@@ -30,14 +31,12 @@ class _SignupView extends StatefulWidget {
 
 class _SignupViewState extends State<_SignupView> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
-    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -64,66 +63,59 @@ class _SignupViewState extends State<_SignupView> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: SingleChildScrollView(
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 60),
 
-                  // Back button
-                  GestureDetector(
-                    onTap: () => context.router.back(),
-                    child: Icon(
-                      Icons.arrow_back_ios,
-                      color: isDark ? Colors.white : Colors.black,
+                  // Logo
+                  SvgPicture.asset(
+                    'assets/svgs/logo.svg',
+                    width: 64,
+                    height: 64,
+                    colorFilter: ColorFilter.mode(
+                      isDark ? Colors.white : Colors.black,
+                      BlendMode.srcIn,
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  const Expanded(child: SizedBox()),
 
                   // Title
-                  Text(
-                    'Create\naccount.',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      height: 1.1,
-                      color: isDark ? Colors.white : Colors.black,
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      'New\nHorizons.',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                        height: 1,
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
-                  Text(
-                    'Start your journey with Atlas.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? Colors.white54 : Colors.black54,
-                      fontWeight: FontWeight.w300,
+                  // Subtitle
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      'Thousands of places. One account.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDark ? Colors.white24 : Colors.black38,
+                        fontWeight: FontWeight.w300,
+                        height: 1,
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 48),
-
-                  // Username
-                  AuthTextField(
-                    hint: 'Username',
-                    controller: _usernameController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a username';
-                      }
-                      if (value.length < 3) {
-                        return 'Username must be at least 3 characters';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
                   // Email
                   AuthTextField(
@@ -174,7 +166,7 @@ class _SignupViewState extends State<_SignupView> {
                     },
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
                   // Sign up button
                   BlocBuilder<AuthCubit, AuthState>(
@@ -187,7 +179,6 @@ class _SignupViewState extends State<_SignupView> {
                             context.read<AuthCubit>().signUp(
                               email: _emailController.text.trim(),
                               password: _passwordController.text.trim(),
-                              username: _usernameController.text.trim(),
                             );
                           }
                         },
@@ -195,7 +186,24 @@ class _SignupViewState extends State<_SignupView> {
                     },
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+
+                  // Redirect to signin
+                  GestureDetector(
+                    onTap: () => context.router.back(),
+                    child: Text(
+                      'Already have an account? Sign in',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white24 : Colors.black54,
+                        fontWeight: FontWeight.w400,
+                        decoration: TextDecoration.underline,
+                        decorationColor: isDark
+                            ? Colors.white24
+                            : Colors.black54,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

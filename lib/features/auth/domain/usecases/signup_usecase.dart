@@ -10,12 +10,7 @@ class SignUpUseCase {
   Future<Either<String, UserEntity>> call({
     required String email,
     required String password,
-    required String username,
   }) {
-    return _repository.signUp(
-      email: email,
-      password: password,
-      username: username,
-    );
+    return _repository.signUp(email: email, password: password);
   }
 }

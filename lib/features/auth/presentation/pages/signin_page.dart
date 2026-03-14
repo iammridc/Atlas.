@@ -2,6 +2,7 @@ import 'package:atlas/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:atlas/features/auth/presentation/bloc/auth_state.dart';
@@ -60,38 +61,60 @@ class _SigninViewState extends State<_SigninView> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: SingleChildScrollView(
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 60),
 
-                  // Title
-                  Text(
-                    'Welcome\nback.',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      height: 1.1,
-                      color: isDark ? Colors.white : Colors.black,
+                  // Logo
+                  SvgPicture.asset(
+                    'assets/svgs/logo.svg',
+                    width: 64,
+                    height: 64,
+                    colorFilter: ColorFilter.mode(
+                      isDark ? Colors.white : Colors.black,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+
+                  // Push everything below to bottom
+                  const Expanded(child: SizedBox()),
+
+                  // Big title — aligned right
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      'Welcome Back.',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                        height: 1,
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
-                  Text(
-                    'Sign in to continue your journey.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? Colors.white54 : Colors.black54,
-                      fontWeight: FontWeight.w300,
+                  // Subtitle — aligned right
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      'Your next destination is one step away.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDark ? Colors.white38 : Colors.black38,
+                        fontWeight: FontWeight.w300,
+                        height: 1,
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 12),
 
                   // Email
                   AuthTextField(
@@ -127,7 +150,7 @@ class _SigninViewState extends State<_SigninView> {
                     },
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
                   // Sign in button
                   BlocBuilder<AuthCubit, AuthState>(
@@ -149,14 +172,22 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 16),
 
-                  // Go to signup
-                  AuthButton(
-                    label: 'Create an account',
-                    isOutlined: true,
-                    onPressed: () => context.router.push(const SignupRoute()),
+                  // Redirect to signup
+                  GestureDetector(
+                    onTap: () => context.router.push(const SignupRoute()),
+                    child: Text(
+                      "Don't have an account? Sign up",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                        fontWeight: FontWeight.w400,
+                        decoration: TextDecoration.underline,
+                        decorationColor: isDark
+                            ? Colors.white54
+                            : Colors.black54,
+                      ),
+                    ),
                   ),
-
-                  const SizedBox(height: 32),
                 ],
               ),
             ),

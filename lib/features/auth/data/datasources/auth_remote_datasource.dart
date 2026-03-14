@@ -1,30 +1,18 @@
 import 'package:atlas/features/auth/data/models/user_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class AuthRemoteDatasource {
   Future<UserModel> signIn({required String email, required String password});
-
-  Future<UserModel> signUp({
-    required String email,
-    required String password,
-    required String username,
-  });
-
+  Future<UserModel> signUp({required String email, required String password});
   Future<void> signOut();
-
   Future<UserModel?> getCurrentUser();
 }
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   final FirebaseAuth _firebaseAuth;
-  final FirebaseFirestore _firestore;
 
-  AuthRemoteDatasourceImpl({
-    required FirebaseAuth firebaseAuth,
-    required FirebaseFirestore firestore,
-  }) : _firebaseAuth = firebaseAuth,
-       _firestore = firestore;
+  AuthRemoteDatasourceImpl({required FirebaseAuth firebaseAuth})
+    : _firebaseAuth = firebaseAuth;
 
   @override
   Future<UserModel> signIn({
@@ -62,19 +50,16 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   Future<UserModel> signUp({
     required String email,
     required String password,
-    required String username,
   }) async {
     final credential = await _firebaseAuth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    final now = DateTime.now().toIso8601String(); // ← string from the start
-
     final userMap = {
       'id': credential.user!.uid,
       'email': credential.user!.email ?? '',
-      'username': username,
+      'username': email.split('@')[0],
       'name': null,
       'bio': null,
       'avatarUrl': credential.user!.photoURL,
@@ -87,7 +72,7 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         'language': 'en',
         'currency': 'USD',
       },
-      'createdAt': now,
+      'createdAt': DateTime.now().toIso8601String(),
     };
 
     return UserModel.fromJson(userMap);

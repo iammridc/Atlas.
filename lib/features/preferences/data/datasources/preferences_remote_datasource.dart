@@ -24,7 +24,7 @@ class InterestsRemoteDatasourceImpl implements PreferencesRemoteDatasource {
 
       return snapshot.docs
           .map((doc) => CategoryModel.fromJson(doc.data()))
-          .where((cat) => cat.table == 'A')
+          .where((cat) => cat.table == 'A' && cat.group != 'Geographical Areas')
           .toList();
     } catch (e) {
       print('FIRESTORE ERROR: $e');

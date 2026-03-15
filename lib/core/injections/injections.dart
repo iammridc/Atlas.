@@ -14,37 +14,41 @@ import 'package:atlas/features/preferences/domain/usecases/get_categories_usecas
 import 'package:atlas/features/preferences/domain/usecases/has_preferences.dart';
 import 'package:atlas/features/preferences/domain/usecases/save_preferences_usecase.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_cubit.dart';
+import 'package:atlas/features/home/data/datasources/recommendations_remote_datasource.dart';
+import 'package:atlas/features/home/data/repo_impls/recommendations_repository_impl.dart';
+import 'package:atlas/features/home/domain/repositories/recommendations_repository.dart';
+import 'package:atlas/features/home/domain/usecases/get_recommendations_usecase.dart';
+import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_cubit.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 
 final getIt = GetIt.instance;
 
 Future<void> configureDependencies() async {
-  // Firebase
   getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   getIt.registerLazySingleton<FirebaseFirestore>(
     () => FirebaseFirestore.instance,
   );
 
-  // Router
+  getIt.registerLazySingleton<Dio>(() => Dio());
+
   getIt.registerLazySingleton<AppRouter>(() => AppRouter());
 
-  // Theme
   getIt.registerLazySingleton<ThemeCubit>(() => ThemeCubit());
-  // Datasource
-  getIt.registerLazySingleton<AuthRemoteDatasource>(
-    () => AuthRemoteDatasourceImpl(firebaseAuth: getIt<FirebaseAuth>()),
-  );
 
-  // Repository
+  getIt.registerLazySingleton<AuthRemoteDatasource>(
+    () => AuthRemoteDatasourceImpl(
+      firebaseAuth: getIt<FirebaseAuth>(),
+      firestore: getIt<FirebaseFirestore>(),
+    ),
+  );
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(getIt<AuthRemoteDatasource>()),
   );
-
-  // Usecases
   getIt.registerLazySingleton(() => SignInUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => SignUpUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => SignOutUseCase(getIt<AuthRepository>()));
@@ -74,7 +78,6 @@ Future<void> configureDependencies() async {
     ),
   );
 
-  // Cubits
   getIt.registerLazySingleton<AuthCubit>(
     () => AuthCubit(
       signInUseCase: getIt<SignInUseCase>(),
@@ -84,5 +87,22 @@ Future<void> configureDependencies() async {
       hasPreferencesUseCase: getIt<HasPreferencesUseCase>(),
     ),
   );
+
+  getIt.registerLazySingleton<RecommendationsRemoteDatasource>(
+    () => RecommendationsRemoteDatasourceImpl(dio: getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<RecommendationsRepository>(
+    () =>
+        RecommendationsRepositoryImpl(getIt<RecommendationsRemoteDatasource>()),
+  );
+  getIt.registerLazySingleton(
+    () => GetRecommendationsUseCase(getIt<RecommendationsRepository>()),
+  );
+  getIt.registerFactory<RecommendationsCubit>(
+    () => RecommendationsCubit(
+      getRecommendations: getIt<GetRecommendationsUseCase>(),
+    ),
+  );
+
   getIt.registerFactory<SplashCubit>(() => SplashCubit());
 }

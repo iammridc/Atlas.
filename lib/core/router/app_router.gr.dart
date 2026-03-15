@@ -12,18 +12,51 @@ part of 'app_router.dart';
 
 /// generated route for
 /// [HomePage]
-class HomeRoute extends PageRouteInfo<void> {
-  const HomeRoute({List<PageRouteInfo>? children})
-    : super(HomeRoute.name, initialChildren: children);
+class HomeRoute extends PageRouteInfo<HomeRouteArgs> {
+  HomeRoute({
+    Key? key,
+    required List<String> categoryTypes,
+    List<PageRouteInfo>? children,
+  }) : super(
+         HomeRoute.name,
+         args: HomeRouteArgs(key: key, categoryTypes: categoryTypes),
+         initialChildren: children,
+       );
 
   static const String name = 'HomeRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const HomePage();
+      final args = data.argsAs<HomeRouteArgs>();
+      return HomePage(key: args.key, categoryTypes: args.categoryTypes);
     },
   );
+}
+
+class HomeRouteArgs {
+  const HomeRouteArgs({this.key, required this.categoryTypes});
+
+  final Key? key;
+
+  final List<String> categoryTypes;
+
+  @override
+  String toString() {
+    return 'HomeRouteArgs{key: $key, categoryTypes: $categoryTypes}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! HomeRouteArgs) return false;
+    return key == other.key &&
+        const ListEquality<String>().equals(categoryTypes, other.categoryTypes);
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ const ListEquality<String>().hash(categoryTypes);
 }
 
 /// generated route for

@@ -64,7 +64,10 @@ class _SigninViewState extends State<_SigninView> {
           return;
         }
         if (state is AuthAuthenticated) {
-          context.router.replaceAll([const HomeRoute()]);
+          print('PREFERENCES: ${state.user.preferences}');
+          context.router.replaceAll([
+            HomeRoute(categoryTypes: state.user.preferences.cast<String>()),
+          ]);
           return;
         }
         if (state is AuthError) {

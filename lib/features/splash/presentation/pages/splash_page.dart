@@ -22,7 +22,9 @@ class SplashPage extends StatelessWidget {
           } else if (state is SplashNavigateToPreferences) {
             context.router.replaceAll([const PreferencesRoute()]);
           } else if (state is SplashNavigateToHome) {
-            context.router.replaceAll([const HomeRoute()]);
+            context.router.replaceAll([
+              HomeRoute(categoryTypes: state.categoryTypes),
+            ]);
           }
         },
         child: SplashView(),

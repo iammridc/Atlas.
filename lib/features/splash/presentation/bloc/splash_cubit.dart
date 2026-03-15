@@ -1,4 +1,7 @@
+// splash_cubit.dart
+
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:atlas/features/preferences/domain/usecases/has_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
@@ -38,7 +41,11 @@ class SplashCubit extends Cubit<SplashState> {
 
             if (!isClosed) {
               if (hasPrefs) {
-                emit(SplashNavigateToHome());
+                final userResult = await getIt<AuthRemoteDatasource>()
+                    .getCurrentUser();
+                final categoryTypes =
+                    userResult?.preferences.cast<String>() ?? [];
+                emit(SplashNavigateToHome(categoryTypes));
               } else {
                 emit(SplashNavigateToPreferences());
               }
@@ -59,5 +66,6 @@ class SplashCubit extends Cubit<SplashState> {
   }
 
   void navigateToSignin() => emit(SplashNavigateToSignin());
-  void navigateToHome() => emit(SplashNavigateToHome());
+  void navigateToHome(List<String> categoryTypes) =>
+      emit(SplashNavigateToHome(categoryTypes));
 }

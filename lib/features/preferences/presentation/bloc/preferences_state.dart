@@ -12,7 +12,13 @@ class PreferencesLoading extends PreferencesState {}
 
 class PreferencesSaving extends PreferencesState {}
 
-class PreferencesSaved extends PreferencesState {}
+class PreferencesSaved extends PreferencesState {
+  final List<String> categoryTypes;
+  PreferencesSaved(this.categoryTypes);
+
+  @override
+  List<Object?> get props => [categoryTypes];
+}
 
 class PreferencesLoaded extends PreferencesState {
   final Map<String, List<CategoryEntity>> groupedCategories;

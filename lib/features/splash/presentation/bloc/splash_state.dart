@@ -8,7 +8,10 @@ class SplashShowBackground extends SplashState {}
 
 class SplashBiometricsFailed extends SplashState {}
 
-class SplashNavigateToHome extends SplashState {}
+class SplashNavigateToHome extends SplashState {
+  final List<String> categoryTypes;
+  SplashNavigateToHome(this.categoryTypes);
+}
 
 class SplashNavigateToSignin extends SplashState {}
 

@@ -1,38 +1,82 @@
+import 'package:atlas/features/home/presentation/widgets/hot_places_section.dart';
+import 'package:atlas/features/home/presentation/widgets/map_section.dart';
+import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
+import 'package:atlas/features/home/presentation/bloc/recommendations_state.dart';
+import 'package:atlas/features/home/presentation/widgets/recommendation_section.dart';
 import 'package:atlas/core/injections/injections.dart';
-import 'package:atlas/features/auth/presentation/bloc/auth_cubit.dart';
-import 'package:atlas/features/auth/presentation/bloc/auth_state.dart';
-import 'package:atlas/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  final List<String> categoryTypes;
+
+  const HomePage({super.key, required this.categoryTypes});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: getIt<AuthCubit>(),
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthUnauthenticated) {
-            context.router.replaceAll([const SigninRoute()]);
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Atlas'),
-            actions: [
-              Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.logout_rounded),
-                  onPressed: () => context.read<AuthCubit>().signOut(),
-                ),
+    return BlocProvider(
+      create: (_) => getIt<RecommendationsCubit>(),
+      child: _HomeView(categoryTypes: categoryTypes),
+    );
+  }
+}
+
+class _HomeView extends StatefulWidget {
+  final List<String> categoryTypes;
+
+  const _HomeView({required this.categoryTypes});
+
+  @override
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<RecommendationsCubit>().loadRecommendations(
+      widget.categoryTypes,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            const SliverToBoxAdapter(child: HotPlacesSection()),
+
+            SliverToBoxAdapter(
+              child: BlocBuilder<RecommendationsCubit, RecommendationsState>(
+                builder: (context, state) {
+                  return switch (state) {
+                    RecommendationsLoading() => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    RecommendationsLoaded(
+                      recommendations: final places,
+                      isLoadingMore: final isLoadingMore,
+                    ) =>
+                      RecommendationsSection(
+                        recommendations: places,
+                        isLoadingMore: isLoadingMore,
+                      ),
+                    RecommendationsError(message: final msg) => Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(child: Text(msg)),
+                    ),
+                    _ => const SizedBox.shrink(),
+                  };
+                },
               ),
-            ],
-          ),
-          body: const Center(child: Text('Home')),
+            ),
+
+            const SliverToBoxAdapter(child: MapSection()),
+          ],
         ),
       ),
     );

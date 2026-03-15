@@ -4,6 +4,8 @@ import 'package:atlas/features/auth/presentation/pages/signin_page.dart';
 import 'package:atlas/features/auth/presentation/pages/signup_page.dart';
 import 'package:atlas/features/home/presentation/pages/home_page.dart';
 import 'package:atlas/features/preferences/presentation/pages/preferences_page.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 
 part 'app_router.gr.dart';
 

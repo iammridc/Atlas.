@@ -1,3 +1,5 @@
+// preferences_cubit.dart
+
 import 'package:atlas/features/preferences/domain/entities/category_entity.dart';
 import 'package:atlas/features/preferences/domain/usecases/get_categories_usecase.dart';
 import 'package:atlas/features/preferences/domain/usecases/save_preferences_usecase.dart';
@@ -43,13 +45,16 @@ class PreferencesCubit extends Cubit<PreferencesState> {
   Future<void> savePreferences(String uid) async {
     final current = state;
     if (current is! PreferencesLoaded) return;
+
+    final selectedList = current.selected.toList();
+
     emit(PreferencesSaving());
     final result = await _savePreferencesUseCase(
-      SavePreferencesParams(uid: uid, categoryIds: current.selected.toList()),
+      SavePreferencesParams(uid: uid, categoryIds: selectedList),
     );
     result.fold(
       (failure) => emit(InterestsError(failure.message)),
-      (_) => emit(PreferencesSaved()),
+      (_) => emit(PreferencesSaved(selectedList)), // 👈 pass selected list
     );
   }
 }

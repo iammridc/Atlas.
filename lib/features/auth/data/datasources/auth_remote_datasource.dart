@@ -1,5 +1,8 @@
+// auth_remote_datasource.dart — fetch preferences from Firestore
+
 import 'package:atlas/core/errors/auth_exception.dart';
 import 'package:atlas/features/auth/data/models/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class AuthRemoteDatasource {
@@ -11,9 +14,18 @@ abstract class AuthRemoteDatasource {
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
   final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
 
-  AuthRemoteDatasourceImpl({required FirebaseAuth firebaseAuth})
-    : _firebaseAuth = firebaseAuth;
+  AuthRemoteDatasourceImpl({
+    required FirebaseAuth firebaseAuth,
+    required FirebaseFirestore firestore,
+  }) : _firebaseAuth = firebaseAuth,
+       _firestore = firestore;
+
+  Future<Map<String, dynamic>> _fetchUserDoc(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    return doc.data() ?? {};
+  }
 
   @override
   Future<UserModel> signIn({
@@ -26,23 +38,30 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         password: password,
       );
 
+      final uid = credential.user!.uid;
+      final userData = await _fetchUserDoc(uid);
       final userMap = {
-        'id': credential.user!.uid,
+        'id': uid,
         'email': credential.user!.email ?? '',
-        'username': credential.user!.displayName ?? email.split('@')[0],
-        'name': null,
-        'bio': null,
-        'avatarUrl': credential.user!.photoURL,
-        'likedPlaces': [],
-        'createdRoutes': [],
-        'preferences': [],
-        'settings': {
-          'theme': 'system',
-          'biometricsEnabled': false,
-          'language': 'en',
-          'currency': 'USD',
-        },
-        'createdAt': DateTime.now().toIso8601String(),
+        'username':
+            userData['username'] ??
+            credential.user!.displayName ??
+            email.split('@')[0],
+        'name': userData['name'],
+        'bio': userData['bio'],
+        'avatarUrl': userData['avatarUrl'] ?? credential.user!.photoURL,
+        'likedPlaces': userData['likedPlaces'] ?? [],
+        'createdRoutes': userData['createdRoutes'] ?? [],
+        'preferences': userData['preferences'] ?? [],
+        'settings':
+            userData['settings'] ??
+            {
+              'theme': 'system',
+              'biometricsEnabled': false,
+              'language': 'en',
+              'currency': 'USD',
+            },
+        'createdAt': userData['createdAt'] ?? DateTime.now().toIso8601String(),
       };
 
       return UserModel.fromJson(userMap);
@@ -67,8 +86,10 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         password: password,
       );
 
+      final uid = credential.user!.uid;
+
       final userMap = {
-        'id': credential.user!.uid,
+        'id': uid,
         'email': credential.user!.email ?? '',
         'username': email.split('@')[0],
         'name': null,
@@ -85,6 +106,8 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         },
         'createdAt': DateTime.now().toIso8601String(),
       };
+
+      await _firestore.collection('users').doc(uid).set(userMap);
 
       return UserModel.fromJson(userMap);
     } on FirebaseAuthException catch (e) {
@@ -117,24 +140,31 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
       final firebaseUser = _firebaseAuth.currentUser;
       if (firebaseUser == null) return null;
 
+      final uid = firebaseUser.uid;
+      final userData = await _fetchUserDoc(uid);
+
       final userMap = {
-        'id': firebaseUser.uid,
+        'id': uid,
         'email': firebaseUser.email ?? '',
         'username':
-            firebaseUser.displayName ?? firebaseUser.email!.split('@')[0],
-        'name': null,
-        'bio': null,
-        'avatarUrl': firebaseUser.photoURL,
-        'likedPlaces': [],
-        'createdRoutes': [],
-        'preferences': [],
-        'settings': {
-          'theme': 'system',
-          'biometricsEnabled': false,
-          'language': 'en',
-          'currency': 'USD',
-        },
-        'createdAt': DateTime.now().toIso8601String(),
+            userData['username'] ??
+            firebaseUser.displayName ??
+            firebaseUser.email!.split('@')[0],
+        'name': userData['name'],
+        'bio': userData['bio'],
+        'avatarUrl': userData['avatarUrl'] ?? firebaseUser.photoURL,
+        'likedPlaces': userData['likedPlaces'] ?? [],
+        'createdRoutes': userData['createdRoutes'] ?? [],
+        'preferences': userData['preferences'] ?? [],
+        'settings':
+            userData['settings'] ??
+            {
+              'theme': 'system',
+              'biometricsEnabled': false,
+              'language': 'en',
+              'currency': 'USD',
+            },
+        'createdAt': userData['createdAt'] ?? DateTime.now().toIso8601String(),
       };
 
       return UserModel.fromJson(userMap);

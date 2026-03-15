@@ -39,7 +39,9 @@ class _InterestsView extends StatelessWidget {
     return BlocListener<PreferencesCubit, PreferencesState>(
       listener: (context, state) {
         if (state is PreferencesSaved) {
-          context.router.replaceAll([const HomeRoute()]);
+          context.router.replaceAll([
+            HomeRoute(categoryTypes: state.categoryTypes),
+          ]);
         }
         if (state is InterestsError) {
           AppSnackbar.show(
@@ -88,8 +90,9 @@ class _InterestsView extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () =>
-                          context.router.replaceAll([const HomeRoute()]),
+                      onPressed: () => context.router.replaceAll([
+                        HomeRoute(categoryTypes: []),
+                      ]),
                       child: Text(
                         'Skip',
                         style: TextStyle(

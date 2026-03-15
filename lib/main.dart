@@ -13,12 +13,11 @@ import 'package:atlas/firebase_options.dart';
 void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-
+  await dotenv.load(fileName: '.env');
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await CategoriesService.seedIfNeeded();
   await configureDependencies();
   await getIt<ThemeCubit>().loadGuestTheme();
-  await dotenv.load(fileName: '.env');
 
   FlutterNativeSplash.remove();
   runApp(const MainApp());

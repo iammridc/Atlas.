@@ -31,7 +31,6 @@ class SplashCubit extends Cubit<SplashState> {
           );
 
           if (authenticated) {
-            // Check preferences before navigating
             final hasPrefsResult = await getIt<HasPreferencesUseCase>()(
               lastUid,
             );

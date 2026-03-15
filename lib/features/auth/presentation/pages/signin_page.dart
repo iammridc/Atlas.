@@ -34,17 +34,28 @@ class _SigninViewState extends State<_SigninView> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_emailFocusNode);
+    });
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
@@ -65,52 +76,59 @@ class _SigninViewState extends State<_SigninView> {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 80),
-                  SvgPicture.asset(
-                    'assets/svgs/logo.svg',
-                    width: 64,
-                    height: 64,
-                    colorFilter: ColorFilter.mode(
-                      isDark ? Colors.white : Colors.black,
-                      BlendMode.srcIn,
+                  const SizedBox(height: 40),
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeIn,
+                    opacity: keyboardVisible ? 0.0 : 1.0,
+                    child: IgnorePointer(
+                      child: SizedBox(
+                        height: keyboardVisible ? 0 : 144,
+                        child: Center(
+                          child: SvgPicture.asset(
+                            'assets/svgs/logo.svg',
+                            width: 64,
+                            height: 64,
+                            colorFilter: ColorFilter.mode(
+                              isDark ? Colors.white : Colors.black,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 
-                  const Expanded(child: SizedBox()),
+                  const Spacer(),
 
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Text(
-                      'Welcome Back.',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
-                        height: 1,
-                      ),
+                  Text(
+                    'Welcome Back.',
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                      height: 1,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Text(
-                      'Your next destination is one step away.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: isDark ? Colors.white38 : Colors.black38,
-                        fontWeight: FontWeight.w300,
-                        height: 1,
-                      ),
+                  Text(
+                    'Your next destination is one step away.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white38 : Colors.black38,
+                      fontWeight: FontWeight.w300,
+                      height: 1,
                     ),
                   ),
 
@@ -119,6 +137,7 @@ class _SigninViewState extends State<_SigninView> {
                   AuthTextField(
                     hint: 'Email',
                     controller: _emailController,
+                    focusNode: _emailFocusNode,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -169,20 +188,28 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 16),
 
-                  GestureDetector(
-                    onTap: () => context.router.push(const SignupRoute()),
-                    child: Text(
-                      "Don't have an account? Sign up",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.white38 : Colors.black54,
-                        fontWeight: FontWeight.w400,
-                        decoration: TextDecoration.underline,
-                        decorationColor: isDark
-                            ? Colors.white38
-                            : Colors.black54,
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => context.router.push(const SignupRoute()),
+                      child: Text(
+                        "Don't have an account? Sign up",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white38 : Colors.black54,
+                          fontWeight: FontWeight.w400,
+                          decoration: TextDecoration.underline,
+                          decorationColor: isDark
+                              ? Colors.white38
+                              : Colors.black54,
+                        ),
                       ),
                     ),
+                  ),
+
+                  SizedBox(
+                    height: keyboardVisible
+                        ? MediaQuery.of(context).viewInsets.bottom + 16
+                        : 32,
                   ),
                 ],
               ),

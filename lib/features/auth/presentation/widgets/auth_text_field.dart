@@ -7,6 +7,7 @@ class AuthTextField extends StatefulWidget {
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final TextEditingController? matchController;
+  final FocusNode? focusNode;
 
   const AuthTextField({
     super.key,
@@ -16,6 +17,7 @@ class AuthTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.validator,
     this.matchController,
+    this.focusNode,
   });
 
   @override
@@ -25,7 +27,7 @@ class AuthTextField extends StatefulWidget {
 class _AuthTextFieldState extends State<AuthTextField> {
   bool _obscure = true;
   String? _errorText;
-  bool _isDirty = false; // only show error after user typed something
+  bool _isDirty = false;
 
   void _validate(String value) {
     if (!_isDirty) return;
@@ -43,6 +45,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
       children: [
         TextFormField(
           controller: widget.controller,
+          focusNode: widget.focusNode,
           obscureText: widget.isPassword ? _obscure : false,
           keyboardType: widget.keyboardType,
           validator: widget.validator,
@@ -113,7 +116,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
             errorStyle: const TextStyle(height: 0, fontSize: 0),
           ),
         ),
-
         if (_errorText != null) ...[
           const SizedBox(height: 6),
           Padding(

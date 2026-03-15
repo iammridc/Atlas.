@@ -1,9 +1,5 @@
-class AuthException implements Exception {
-  final String message;
-  final String code;
+import 'package:atlas/core/errors/app_exception.dart';
 
-  AuthException({required this.message, required this.code});
-
-  @override
-  String toString() => message;
+class AuthException extends AppException {
+  const AuthException({required super.message, required super.code});
 }

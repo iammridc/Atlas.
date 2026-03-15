@@ -11,6 +11,12 @@ class AuthAuthenticated extends AuthState {
   AuthAuthenticated(this.user);
 }
 
+class AuthNeedsPreferences extends AuthState {
+  final UserEntity user;
+  AuthNeedsPreferences(this.user);
+  List<Object?> get props => [user];
+}
+
 class AuthRegistered extends AuthState {}
 
 class AuthUnauthenticated extends AuthState {}

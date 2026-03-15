@@ -1,13 +1,15 @@
+import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/features/preferences/domain/usecases/has_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'splash_state.dart';
 
 class SplashCubit extends Cubit<SplashState> {
-  SplashCubit() : super(SplashInitial());
-
   final _auth = LocalAuthentication();
   static const _lastUserKey = 'last_logged_in_uid';
+
+  SplashCubit() : super(SplashInitial());
 
   Future<void> init() async {
     emit(SplashLogoVisible());
@@ -29,21 +31,32 @@ class SplashCubit extends Cubit<SplashState> {
           );
 
           if (authenticated) {
-            emit(SplashNavigateToHome());
+            // Check preferences before navigating
+            final hasPrefsResult = await getIt<HasPreferencesUseCase>()(
+              lastUid,
+            );
+            final hasPrefs = hasPrefsResult.fold((_) => false, (v) => v);
+
+            if (!isClosed) {
+              if (hasPrefs) {
+                emit(SplashNavigateToHome());
+              } else {
+                emit(SplashNavigateToPreferences());
+              }
+            }
           } else {
             await prefs.remove(_lastUserKey);
-            emit(SplashShowBackground());
+            if (!isClosed) emit(SplashShowBackground());
           }
           return;
         } catch (e) {
-          print('BIOMETRICS ERROR: $e');
-          emit(SplashNavigateToSignin());
+          if (!isClosed) emit(SplashNavigateToSignin());
           return;
         }
       }
     }
 
-    emit(SplashShowBackground());
+    if (!isClosed) emit(SplashShowBackground());
   }
 
   void navigateToSignin() => emit(SplashNavigateToSignin());

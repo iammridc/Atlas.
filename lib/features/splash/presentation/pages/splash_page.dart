@@ -1,6 +1,5 @@
 import 'package:atlas/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:atlas/core/injections/injections.dart';
@@ -19,9 +18,11 @@ class SplashPage extends StatelessWidget {
       child: BlocListener<SplashCubit, SplashState>(
         listener: (context, state) {
           if (state is SplashNavigateToSignin) {
-            context.router.replace(const SigninRoute());
+            context.router.replaceAll([const SigninRoute()]);
+          } else if (state is SplashNavigateToPreferences) {
+            context.router.replaceAll([const PreferencesRoute()]);
           } else if (state is SplashNavigateToHome) {
-            context.router.replace(const HomeRoute());
+            context.router.replaceAll([const HomeRoute()]);
           }
         },
         child: SplashView(),

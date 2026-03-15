@@ -16,8 +16,8 @@ class SigninPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<AuthCubit>(),
+    return BlocProvider.value(
+      value: getIt<AuthCubit>(),
       child: const _SigninView(),
     );
   }
@@ -48,8 +48,13 @@ class _SigninViewState extends State<_SigninView> {
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
+        if (state is AuthNeedsPreferences) {
+          context.router.replaceAll([const PreferencesRoute()]);
+          return;
+        }
         if (state is AuthAuthenticated) {
-          context.router.replace(const HomeRoute());
+          context.router.replaceAll([const HomeRoute()]);
+          return;
         }
         if (state is AuthError) {
           AppSnackbar.show(

@@ -1,3 +1,4 @@
+import 'package:atlas/features/preferences/domain/usecases/has_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:atlas/features/auth/domain/usecases/signin_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/signup_usecase.dart';
@@ -13,16 +14,19 @@ class AuthCubit extends Cubit<AuthState> {
   final SignUpUseCase _signUpUseCase;
   final SignOutUseCase _signOutUseCase;
   final GetCurrentUserUseCase _getCurrentUserUseCase;
+  final HasPreferencesUseCase _hasPreferencesUseCase;
 
   AuthCubit({
     required SignInUseCase signInUseCase,
     required SignUpUseCase signUpUseCase,
     required SignOutUseCase signOutUseCase,
     required GetCurrentUserUseCase getCurrentUserUseCase,
+    required HasPreferencesUseCase hasPreferencesUseCase,
   }) : _signInUseCase = signInUseCase,
        _signUpUseCase = signUpUseCase,
        _signOutUseCase = signOutUseCase,
        _getCurrentUserUseCase = getCurrentUserUseCase,
+       _hasPreferencesUseCase = hasPreferencesUseCase,
        super(AuthInitial());
 
   Future<void> checkCurrentUser() async {
@@ -45,7 +49,12 @@ class AuthCubit extends Cubit<AuthState> {
       await prefs.setString('last_logged_in_uid', user.id);
       await prefs.setBool('biometrics_enabled_${user.id}', true);
       await getIt<ThemeCubit>().loadUserTheme(user.id);
+
+      final hasPrefsResult = await _hasPreferencesUseCase(user.id);
+      final hasPrefs = hasPrefsResult.fold((_) => false, (v) => v);
+
       emit(AuthAuthenticated(user));
+      if (!hasPrefs) emit(AuthNeedsPreferences(user));
     });
   }
 

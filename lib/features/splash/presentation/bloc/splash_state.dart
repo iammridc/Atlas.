@@ -11,3 +11,5 @@ class SplashBiometricsFailed extends SplashState {}
 class SplashNavigateToHome extends SplashState {}
 
 class SplashNavigateToSignin extends SplashState {}
+
+class SplashNavigateToPreferences extends SplashState {}

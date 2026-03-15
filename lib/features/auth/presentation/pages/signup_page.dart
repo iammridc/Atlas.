@@ -79,7 +79,6 @@ class _SignupViewState extends State<_SignupView> {
                 children: [
                   const SizedBox(height: 80),
 
-                  // Logo
                   SvgPicture.asset(
                     'assets/svgs/logo.svg',
                     width: 64,
@@ -92,7 +91,6 @@ class _SignupViewState extends State<_SignupView> {
 
                   const Expanded(child: SizedBox()),
 
-                  // Title
                   Align(
                     alignment: Alignment.bottomLeft,
                     child: Text(
@@ -108,7 +106,6 @@ class _SignupViewState extends State<_SignupView> {
 
                   const SizedBox(height: 8),
 
-                  // Subtitle
                   Align(
                     alignment: Alignment.bottomLeft,
                     child: Text(
@@ -124,7 +121,6 @@ class _SignupViewState extends State<_SignupView> {
 
                   const SizedBox(height: 12),
 
-                  // Email
                   AuthTextField(
                     hint: 'Email',
                     controller: _emailController,
@@ -142,7 +138,6 @@ class _SignupViewState extends State<_SignupView> {
 
                   const SizedBox(height: 16),
 
-                  // Password
                   AuthTextField(
                     hint: 'Password',
                     controller: _passwordController,
@@ -160,7 +155,6 @@ class _SignupViewState extends State<_SignupView> {
 
                   const SizedBox(height: 16),
 
-                  // Confirm password
                   AuthTextField(
                     hint: 'Confirm Password',
                     controller: _confirmPasswordController,
@@ -176,7 +170,6 @@ class _SignupViewState extends State<_SignupView> {
 
                   const SizedBox(height: 24),
 
-                  // Sign up button
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
                       return AuthButton(
@@ -196,7 +189,6 @@ class _SignupViewState extends State<_SignupView> {
 
                   const SizedBox(height: 16),
 
-                  // Redirect to signin
                   GestureDetector(
                     onTap: () => context.router.back(),
                     child: Text(

@@ -69,8 +69,6 @@ class _SigninViewState extends State<_SigninView> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 80),
-
-                  // Logo
                   SvgPicture.asset(
                     'assets/svgs/logo.svg',
                     width: 64,
@@ -83,7 +81,6 @@ class _SigninViewState extends State<_SigninView> {
 
                   const Expanded(child: SizedBox()),
 
-                  // Title
                   Align(
                     alignment: Alignment.bottomLeft,
                     child: Text(
@@ -99,7 +96,6 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 8),
 
-                  // Subtitle
                   Align(
                     alignment: Alignment.bottomLeft,
                     child: Text(
@@ -115,7 +111,6 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 12),
 
-                  // Email
                   AuthTextField(
                     hint: 'Email',
                     controller: _emailController,
@@ -133,7 +128,6 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 16),
 
-                  // Password
                   AuthTextField(
                     hint: 'Password',
                     controller: _passwordController,
@@ -151,7 +145,6 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 24),
 
-                  // Sign in button
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
                       return AuthButton(
@@ -171,7 +164,6 @@ class _SigninViewState extends State<_SigninView> {
 
                   const SizedBox(height: 16),
 
-                  // Redirect to signup
                   GestureDetector(
                     onTap: () => context.router.push(const SignupRoute()),
                     child: Text(

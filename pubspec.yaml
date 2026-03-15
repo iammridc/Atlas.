@@ -12,7 +12,7 @@ dependencies:
   flutter_bloc: any
   auto_route: ^11.1.0
   equatable: any
-  dio: any
+  dio: ^5.9.2
   firebase_core: any
   firebase_auth: any
   get_it: any
@@ -23,7 +23,7 @@ dependencies:
   path_provider: ^2.0.15
   local_auth: any
   json_annotation: any
-  flutter_dotenv: any
+  flutter_dotenv: ^6.0.0
   fl_chart: any
   flutter_native_splash: any
   flutter_animate: ^4.5.2
@@ -41,6 +41,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/svgs/
     - assets/pngs/
 

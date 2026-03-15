@@ -6,7 +6,7 @@ class AuthTextField extends StatefulWidget {
   final bool isPassword;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
-  final TextEditingController? matchController; // ← for confirm password
+  final TextEditingController? matchController;
 
   const AuthTextField({
     super.key,
@@ -49,7 +49,6 @@ class _AuthTextFieldState extends State<AuthTextField> {
           onChanged: (value) {
             if (!_isDirty) setState(() => _isDirty = true);
             _validate(value);
-            // re-validate match controller if exists (confirm password)
             if (widget.matchController != null) {
               setState(() {
                 if (value != widget.matchController!.text) {
@@ -111,12 +110,10 @@ class _AuthTextFieldState extends State<AuthTextField> {
               horizontal: 20,
               vertical: 18,
             ),
-            // hide default error text — we show it ourselves below
             errorStyle: const TextStyle(height: 0, fontSize: 0),
           ),
         ),
 
-        // Custom error text
         if (_errorText != null) ...[
           const SizedBox(height: 6),
           Padding(

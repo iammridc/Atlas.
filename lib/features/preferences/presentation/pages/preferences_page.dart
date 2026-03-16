@@ -8,6 +8,7 @@ import 'package:atlas/features/preferences/domain/entities/category_entity.dart'
 import 'package:atlas/features/preferences/presentation/bloc/preferences_cubit.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_state.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -60,52 +61,54 @@ class _InterestsView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'What interests\nyou?',
-                            style: TextStyle(
-                              fontSize: 34,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black,
-                              height: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Pick categories to personalise your experience.',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: isDark ? Colors.white54 : Colors.black45,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      'Pick Categories',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                        height: 1,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () => context.router.replaceAll([
-                        HomeRoute(categoryTypes: []),
-                      ]),
-                      child: Text(
-                        'Skip',
+                    const SizedBox(height: 5),
+                    RichText(
+                      text: TextSpan(
                         style: TextStyle(
-                          color: isDark ? Colors.white38 : Colors.black38,
                           fontSize: 15,
+                          color: isDark ? Colors.white54 : Colors.black45,
+                          height: 1,
                         ),
+                        children: [
+                          const TextSpan(
+                            text:
+                                'Choose precisely to personalise your experience, ',
+                          ),
+                          TextSpan(
+                            text: 'or set it up later.',
+                            style: TextStyle(
+                              color: isDark ? Colors.white54 : Colors.black54,
+                              decoration: TextDecoration.underline,
+                              decorationColor: isDark
+                                  ? Colors.white54
+                                  : Colors.black54,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => context.router.replaceAll([
+                                HomeRoute(categoryTypes: []),
+                              ]),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
 
               Expanded(
                 child: BlocBuilder<PreferencesCubit, PreferencesState>(
@@ -165,13 +168,6 @@ class _InterestsView extends StatelessWidget {
                 color: isDark
                     ? AppColors.backgroundDark
                     : AppColors.backgroundLight,
-                border: Border(
-                  top: BorderSide(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.black.withOpacity(0.06),
-                  ),
-                ),
               ),
               child: BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, authState) {
@@ -205,7 +201,7 @@ class _InterestsView extends StatelessWidget {
                             ? Colors.white.withOpacity(0.08)
                             : Colors.black.withOpacity(0.08),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(22),
                         ),
                         elevation: 0,
                       ),
@@ -258,14 +254,15 @@ class _GroupSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 12, top: 24),
+          padding: const EdgeInsets.only(bottom: 6, top: 18),
           child: Text(
             group.toUpperCase(),
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-              color: isDark ? Colors.white38 : Colors.black38,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? AppColors.appPrimaryWhite
+                  : AppColors.appPrimaryBlack,
             ),
           ),
         ),
@@ -287,23 +284,21 @@ class _GroupSection extends StatelessWidget {
                       ? (isDark ? Colors.white : Colors.black)
                       : (isDark
                             ? Colors.white.withOpacity(0.07)
-                            : Colors.black.withOpacity(0.05)),
+                            : Colors.black.withOpacity(0.07)),
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
                     color: isSelected
                         ? Colors.transparent
                         : (isDark
-                              ? Colors.white.withOpacity(0.1)
-                              : Colors.black.withOpacity(0.08)),
+                              ? Colors.black.withOpacity(0.07)
+                              : Colors.white.withOpacity(0.07)),
                   ),
                 ),
                 child: Text(
                   cat.label,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                     color: isSelected
                         ? (isDark ? Colors.black : Colors.white)
                         : (isDark ? Colors.white70 : Colors.black87),

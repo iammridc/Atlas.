@@ -60,11 +60,12 @@ class _SigninViewState extends State<_SigninView> {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthNeedsPreferences) {
-          context.router.replaceAll([const PreferencesRoute()]);
+          context.router.replaceAll([
+            PreferencesRoute(uid: state.user.id), // 👈 pass uid
+          ]);
           return;
         }
         if (state is AuthAuthenticated) {
-          print('PREFERENCES: ${state.user.preferences}');
           context.router.replaceAll([
             HomeRoute(categoryTypes: state.user.preferences.cast<String>()),
           ]);
@@ -212,7 +213,7 @@ class _SigninViewState extends State<_SigninView> {
                   SizedBox(
                     height: keyboardVisible
                         ? MediaQuery.of(context).viewInsets.bottom + 16
-                        : 32,
+                        : 0,
                   ),
                 ],
               ),

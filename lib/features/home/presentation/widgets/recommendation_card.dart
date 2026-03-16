@@ -12,9 +12,9 @@ class RecommendationCard extends StatelessWidget {
     return GestureDetector(
       onTap: null,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(26),
         child: SizedBox(
-          width: 250,
+          width: 360,
           height: 250,
           child: Stack(
             fit: StackFit.expand,

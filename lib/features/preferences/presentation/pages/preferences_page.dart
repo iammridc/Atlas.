@@ -2,8 +2,6 @@ import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
-import 'package:atlas/features/auth/presentation/bloc/auth_cubit.dart';
-import 'package:atlas/features/auth/presentation/bloc/auth_state.dart';
 import 'package:atlas/features/preferences/domain/entities/category_entity.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_cubit.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_state.dart';
@@ -14,24 +12,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
 class PreferencesPage extends StatelessWidget {
-  const PreferencesPage({super.key});
+  final String uid;
+  const PreferencesPage({super.key, required this.uid});
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) => getIt<PreferencesCubit>()..loadCategories(),
-        ),
-        BlocProvider.value(value: getIt<AuthCubit>()),
-      ],
-      child: const _InterestsView(),
+    return BlocProvider(
+      create: (_) => getIt<PreferencesCubit>()..loadCategories(),
+      child: _InterestsView(uid: uid),
     );
   }
 }
 
 class _InterestsView extends StatelessWidget {
-  const _InterestsView();
+  final String uid;
+  const _InterestsView({required this.uid});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +61,7 @@ class _InterestsView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pick Categories',
+                      'Make It Yours.',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -90,11 +85,11 @@ class _InterestsView extends StatelessWidget {
                           TextSpan(
                             text: 'or set it up later.',
                             style: TextStyle(
-                              color: isDark ? Colors.white54 : Colors.black54,
+                              color: isDark ? Colors.white54 : Colors.black45,
                               decoration: TextDecoration.underline,
                               decorationColor: isDark
                                   ? Colors.white54
-                                  : Colors.black54,
+                                  : Colors.black45,
                             ),
                             recognizer: TapGestureRecognizer()
                               ..onTap = () => context.router.replaceAll([
@@ -157,75 +152,61 @@ class _InterestsView extends StatelessWidget {
         ),
 
         bottomNavigationBar: BlocBuilder<PreferencesCubit, PreferencesState>(
-          builder: (context, interestsState) {
-            final isLoaded = interestsState is PreferencesLoaded;
-            final isSaving = interestsState is PreferencesSaving;
-            final selectedCount = isLoaded ? interestsState.selected.length : 0;
+          builder: (context, state) {
+            final isLoaded = state is PreferencesLoaded;
+            final isSaving = state is PreferencesSaving;
+            final selectedCount = isLoaded ? state.selected.length : 0;
 
             return Container(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 26),
               decoration: BoxDecoration(
                 color: isDark
                     ? AppColors.backgroundDark
                     : AppColors.backgroundLight,
               ),
-              child: BlocBuilder<AuthCubit, AuthState>(
-                builder: (context, authState) {
-                  final uid = authState is AuthAuthenticated
-                      ? authState.user.id
-                      : authState is AuthNeedsPreferences
-                      ? authState.user.id
-                      : null;
-
-                  return SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      onPressed:
-                          (!isLoaded ||
-                              isSaving ||
-                              selectedCount == 0 ||
-                              uid == null)
-                          ? null
-                          : () => context
-                                .read<PreferencesCubit>()
-                                .savePreferences(uid),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark
-                            ? AppColors.appPrimaryWhite
-                            : AppColors.appPrimaryBlack,
-                        foregroundColor: isDark
-                            ? AppColors.appPrimaryBlack
-                            : AppColors.appPrimaryWhite,
-                        disabledBackgroundColor: isDark
-                            ? Colors.white.withOpacity(0.08)
-                            : Colors.black.withOpacity(0.08),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: (!isLoaded || isSaving || selectedCount == 0)
+                      ? null
+                      : () => context.read<PreferencesCubit>().savePreferences(
+                          uid,
                         ),
-                        elevation: 0,
-                      ),
-                      child: isSaving
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: isDark ? Colors.black : Colors.white,
-                              ),
-                            )
-                          : Text(
-                              selectedCount == 0
-                                  ? 'Select interests to continue'
-                                  : 'Save $selectedCount interest${selectedCount == 1 ? '' : 's'}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark
+                        ? AppColors.appPrimaryWhite
+                        : AppColors.appPrimaryBlack,
+                    foregroundColor: isDark
+                        ? AppColors.appPrimaryBlack
+                        : AppColors.appPrimaryWhite,
+                    disabledBackgroundColor: isDark
+                        ? Colors.white.withOpacity(0.08)
+                        : Colors.black.withOpacity(0.08),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
                     ),
-                  );
-                },
+                    elevation: 0,
+                  ),
+                  child: isSaving
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: isDark ? Colors.black : Colors.white,
+                          ),
+                        )
+                      : Text(
+                          selectedCount == 0
+                              ? 'Choose your preferences to continue'
+                              : 'Save $selectedCount preference${selectedCount == 1 ? '' : 's'}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
               ),
             );
           },
@@ -254,7 +235,7 @@ class _GroupSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 6, top: 18),
+          padding: const EdgeInsets.only(bottom: 6, top: 22),
           child: Text(
             group.toUpperCase(),
             style: TextStyle(
@@ -276,7 +257,7 @@ class _GroupSection extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                  horizontal: 16,
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
@@ -298,7 +279,7 @@ class _GroupSection extends StatelessWidget {
                   cat.label,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     color: isSelected
                         ? (isDark ? Colors.black : Colors.white)
                         : (isDark ? Colors.white70 : Colors.black87),

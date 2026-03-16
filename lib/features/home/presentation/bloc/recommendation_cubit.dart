@@ -42,7 +42,6 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
       return;
     }
 
-    // otherwise fetch a new batch then append
     emit(
       RecommendationsLoaded(recommendations: _displayed, isLoadingMore: true),
     );
@@ -57,11 +56,22 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
     });
   }
 
+  Future<void> reload() async {
+    if (state is RecommendationsError) {
+      emit(
+        RecommendationsError(
+          (state as RecommendationsError).message,
+          isReloading: true,
+        ),
+      );
+    }
+    await loadRecommendations(_categoryTypes);
+  }
+
   void _appendNextPage() {
     final nextItems = _cached.take(_pageSize).toList();
     _cached = _cached.skip(_pageSize).toList();
     _displayed = [..._displayed, ...nextItems];
-
     emit(RecommendationsLoaded(recommendations: _displayed));
   }
 }

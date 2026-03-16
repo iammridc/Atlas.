@@ -1,3 +1,5 @@
+// splash_state.dart
+
 abstract class SplashState {}
 
 class SplashInitial extends SplashState {}
@@ -15,4 +17,7 @@ class SplashNavigateToHome extends SplashState {
 
 class SplashNavigateToSignin extends SplashState {}
 
-class SplashNavigateToPreferences extends SplashState {}
+class SplashNavigateToPreferences extends SplashState {
+  final String uid; // 👈 added
+  SplashNavigateToPreferences(this.uid);
+}

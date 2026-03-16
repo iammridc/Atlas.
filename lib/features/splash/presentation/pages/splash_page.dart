@@ -1,3 +1,5 @@
+// splash_page.dart
+
 import 'package:atlas/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +22,9 @@ class SplashPage extends StatelessWidget {
           if (state is SplashNavigateToSignin) {
             context.router.replaceAll([const SigninRoute()]);
           } else if (state is SplashNavigateToPreferences) {
-            context.router.replaceAll([const PreferencesRoute()]);
+            context.router.replaceAll([
+              PreferencesRoute(uid: state.uid), // 👈 pass uid
+            ]);
           } else if (state is SplashNavigateToHome) {
             context.router.replaceAll([
               HomeRoute(categoryTypes: state.categoryTypes),

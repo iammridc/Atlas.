@@ -30,7 +30,7 @@ class AuthButton extends StatelessWidget {
                   color: isDark ? Colors.white24 : Colors.black26,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(26),
                 ),
               ),
               child: _child(isDark),
@@ -45,7 +45,7 @@ class AuthButton extends StatelessWidget {
                     ? AppColors.appPrimaryBlack
                     : AppColors.appPrimaryWhite,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(26),
                 ),
                 elevation: 0,
               ),

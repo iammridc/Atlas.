@@ -18,5 +18,7 @@ class RecommendationsLoaded extends RecommendationsState {
 
 class RecommendationsError extends RecommendationsState {
   final String message;
-  RecommendationsError(this.message);
+  final bool isReloading;
+
+  RecommendationsError(this.message, {this.isReloading = false});
 }

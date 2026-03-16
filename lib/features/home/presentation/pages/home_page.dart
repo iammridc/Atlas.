@@ -44,40 +44,43 @@ class _HomeViewState extends State<_HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            const SliverToBoxAdapter(child: HotPlacesSection()),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: SizedBox(height: MediaQuery.of(context).padding.top),
+          ),
+          const SliverToBoxAdapter(child: HotPlacesSection()),
 
-            SliverToBoxAdapter(
-              child: BlocBuilder<RecommendationsCubit, RecommendationsState>(
-                builder: (context, state) {
-                  return switch (state) {
-                    RecommendationsLoading() => const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48),
-                      child: Center(child: CircularProgressIndicator()),
+          SliverToBoxAdapter(
+            child: BlocBuilder<RecommendationsCubit, RecommendationsState>(
+              builder: (context, state) {
+                return switch (state) {
+                  RecommendationsLoading() => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  RecommendationsLoaded(
+                    recommendations: final places,
+                    isLoadingMore: final isLoadingMore,
+                  ) =>
+                    RecommendationsSection(
+                      recommendations: places,
+                      isLoadingMore: isLoadingMore,
                     ),
-                    RecommendationsLoaded(
-                      recommendations: final places,
-                      isLoadingMore: final isLoadingMore,
-                    ) =>
-                      RecommendationsSection(
-                        recommendations: places,
-                        isLoadingMore: isLoadingMore,
-                      ),
-                    RecommendationsError(message: final msg) => Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Center(child: Text(msg)),
+                  RecommendationsError(isReloading: final isReloading) =>
+                    RecommendationsSection(
+                      recommendations: [],
+                      hasError: true,
+                      isReloading: isReloading,
                     ),
-                    _ => const SizedBox.shrink(),
-                  };
-                },
-              ),
+                  _ => const SizedBox.shrink(),
+                };
+              },
             ),
+          ),
 
-            const SliverToBoxAdapter(child: MapSection()),
-          ],
-        ),
+          const SliverToBoxAdapter(child: MapSection()),
+        ],
       ),
     );
   }

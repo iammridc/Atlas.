@@ -47,7 +47,7 @@ class SplashCubit extends Cubit<SplashState> {
                     userResult?.preferences.cast<String>() ?? [];
                 emit(SplashNavigateToHome(categoryTypes));
               } else {
-                emit(SplashNavigateToPreferences());
+                emit(SplashNavigateToPreferences(lastUid)); // 👈 pass uid
               }
             }
           } else {

@@ -61,18 +61,49 @@ class HomeRouteArgs {
 
 /// generated route for
 /// [PreferencesPage]
-class PreferencesRoute extends PageRouteInfo<void> {
-  const PreferencesRoute({List<PageRouteInfo>? children})
-    : super(PreferencesRoute.name, initialChildren: children);
+class PreferencesRoute extends PageRouteInfo<PreferencesRouteArgs> {
+  PreferencesRoute({
+    Key? key,
+    required String uid,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PreferencesRoute.name,
+         args: PreferencesRouteArgs(key: key, uid: uid),
+         initialChildren: children,
+       );
 
   static const String name = 'PreferencesRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const PreferencesPage();
+      final args = data.argsAs<PreferencesRouteArgs>();
+      return PreferencesPage(key: args.key, uid: args.uid);
     },
   );
+}
+
+class PreferencesRouteArgs {
+  const PreferencesRouteArgs({this.key, required this.uid});
+
+  final Key? key;
+
+  final String uid;
+
+  @override
+  String toString() {
+    return 'PreferencesRouteArgs{key: $key, uid: $uid}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! PreferencesRouteArgs) return false;
+    return key == other.key && uid == other.uid;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ uid.hashCode;
 }
 
 /// generated route for

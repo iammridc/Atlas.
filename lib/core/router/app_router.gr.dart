@@ -60,6 +60,97 @@ class HomeRouteArgs {
 }
 
 /// generated route for
+/// [PlaceDetailsPage]
+class PlaceDetailsRoute extends PageRouteInfo<PlaceDetailsRouteArgs> {
+  PlaceDetailsRoute({
+    Key? key,
+    required String placeId,
+    required String placeName,
+    required String city,
+    required String country,
+    String? photoReference,
+    List<PageRouteInfo>? children,
+  }) : super(
+         PlaceDetailsRoute.name,
+         args: PlaceDetailsRouteArgs(
+           key: key,
+           placeId: placeId,
+           placeName: placeName,
+           city: city,
+           country: country,
+           photoReference: photoReference,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'PlaceDetailsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PlaceDetailsRouteArgs>();
+      return PlaceDetailsPage(
+        key: args.key,
+        placeId: args.placeId,
+        placeName: args.placeName,
+        city: args.city,
+        country: args.country,
+        photoReference: args.photoReference,
+      );
+    },
+  );
+}
+
+class PlaceDetailsRouteArgs {
+  const PlaceDetailsRouteArgs({
+    this.key,
+    required this.placeId,
+    required this.placeName,
+    required this.city,
+    required this.country,
+    this.photoReference,
+  });
+
+  final Key? key;
+
+  final String placeId;
+
+  final String placeName;
+
+  final String city;
+
+  final String country;
+
+  final String? photoReference;
+
+  @override
+  String toString() {
+    return 'PlaceDetailsRouteArgs{key: $key, placeId: $placeId, placeName: $placeName, city: $city, country: $country, photoReference: $photoReference}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! PlaceDetailsRouteArgs) return false;
+    return key == other.key &&
+        placeId == other.placeId &&
+        placeName == other.placeName &&
+        city == other.city &&
+        country == other.country &&
+        photoReference == other.photoReference;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      placeId.hashCode ^
+      placeName.hashCode ^
+      city.hashCode ^
+      country.hashCode ^
+      photoReference.hashCode;
+}
+
+/// generated route for
 /// [PreferencesPage]
 class PreferencesRoute extends PageRouteInfo<PreferencesRouteArgs> {
   PreferencesRoute({

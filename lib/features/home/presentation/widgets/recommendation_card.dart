@@ -1,6 +1,8 @@
+import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RecommendationCard extends StatelessWidget {
   final RecommendationEntity recommendation;
@@ -10,7 +12,15 @@ class RecommendationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: null,
+      onTap: () => context.router.push(
+        PlaceDetailsRoute(
+          placeId: recommendation.id,
+          placeName: recommendation.name,
+          city: recommendation.city,
+          country: recommendation.country,
+          photoReference: recommendation.photoReference,
+        ),
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(26),
         child: SizedBox(
@@ -21,9 +31,12 @@ class RecommendationCard extends StatelessWidget {
             children: [
               if (recommendation.photoReference != null)
                 Image.network(
-                  _buildPhotoUrl(recommendation.photoReference!),
+                  buildGooglePlacePhotoUrl(
+                    recommendation.photoReference!,
+                    maxWidthPx: 800,
+                  ),
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _photoPlaceholder(),
+                  errorBuilder: (_, _, _) => _photoPlaceholder(),
                 )
               else
                 _photoPlaceholder(),
@@ -37,8 +50,8 @@ class RecommendationCard extends StatelessWidget {
                       colors: [
                         Colors.transparent,
                         Colors.transparent,
-                        Colors.black.withOpacity(0.3),
-                        Colors.black.withOpacity(0.85),
+                        Colors.black.withValues(alpha: 0.3),
+                        Colors.black.withValues(alpha: 0.85),
                       ],
                       stops: const [0.0, 0.4, 0.7, 1.0],
                     ),
@@ -69,7 +82,7 @@ class RecommendationCard extends StatelessWidget {
                     Text(
                       '${recommendation.city}, ${recommendation.country}',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
                       ),
@@ -85,10 +98,6 @@ class RecommendationCard extends StatelessWidget {
       ),
     );
   }
-
-  String _buildPhotoUrl(String photoName) =>
-      'https://places.googleapis.com/v1/$photoName/media'
-      '?maxWidthPx=800&key=${dotenv.env['GOOGLE_API_KEY'] ?? ''}';
 
   Widget _photoPlaceholder() => Container(
     color: Colors.grey[300],

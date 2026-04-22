@@ -19,6 +19,12 @@ import 'package:atlas/features/home/data/repo_impls/recommendations_repository_i
 import 'package:atlas/features/home/domain/repositories/recommendations_repository.dart';
 import 'package:atlas/features/home/domain/usecases/get_recommendations_usecase.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
+import 'package:atlas/features/place_details/data/datasources/place_details_remote_datasource.dart';
+import 'package:atlas/features/place_details/data/repo_impls/place_details_repository_impl.dart';
+import 'package:atlas/features/place_details/domain/repositories/place_details_repository.dart';
+import 'package:atlas/features/place_details/domain/usecases/get_place_community_reviews_usecase.dart';
+import 'package:atlas/features/place_details/domain/usecases/get_place_details_usecase.dart';
+import 'package:atlas/features/place_details/presentation/bloc/place_details_cubit.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_cubit.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -101,6 +107,28 @@ Future<void> configureDependencies() async {
   getIt.registerFactory<RecommendationsCubit>(
     () => RecommendationsCubit(
       getRecommendations: getIt<GetRecommendationsUseCase>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<PlaceDetailsRemoteDatasource>(
+    () => PlaceDetailsRemoteDatasourceImpl(
+      dio: getIt<Dio>(),
+      firestore: getIt<FirebaseFirestore>(),
+    ),
+  );
+  getIt.registerLazySingleton<PlaceDetailsRepository>(
+    () => PlaceDetailsRepositoryImpl(getIt<PlaceDetailsRemoteDatasource>()),
+  );
+  getIt.registerLazySingleton(
+    () => GetPlaceDetailsUseCase(getIt<PlaceDetailsRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => GetPlaceCommunityReviewsUseCase(getIt<PlaceDetailsRepository>()),
+  );
+  getIt.registerFactory<PlaceDetailsCubit>(
+    () => PlaceDetailsCubit(
+      getPlaceDetailsUseCase: getIt<GetPlaceDetailsUseCase>(),
+      getPlaceCommunityReviewsUseCase: getIt<GetPlaceCommunityReviewsUseCase>(),
     ),
   );
 

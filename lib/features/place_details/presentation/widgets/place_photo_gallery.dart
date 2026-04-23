@@ -8,7 +8,7 @@ class PlacePhotoGallery extends StatelessWidget {
   const PlacePhotoGallery({
     super.key,
     required this.photoNames,
-    this.height = 340,
+    this.height = 320,
   });
 
   @override

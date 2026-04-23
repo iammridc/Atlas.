@@ -166,13 +166,13 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        PlacePhotoGallery(photoNames: photoNames, height: 388),
+        PlacePhotoGallery(photoNames: photoNames, height: 320),
         Positioned(
           top: topInset + 16,
           left: 12,
           child: GestureDetector(
             onTap: onBackPressed,
-            child: const _HeroIcon(CupertinoIcons.arrow_left),
+            child: const _HeroIcon(CupertinoIcons.chevron_left),
           ),
         ),
         Positioned(

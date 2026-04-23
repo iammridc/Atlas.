@@ -31,13 +31,7 @@ class PlaceReviewsPage extends StatelessWidget {
               slivers: [
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: _Header(
-                      title: state.place.name,
-                      rating: state.place.rating,
-                      totalReviewCount: state.totalReviewCount,
-                    ),
-                  ),
+                  sliver: const SliverToBoxAdapter(child: _Header()),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -61,72 +55,65 @@ class PlaceReviewsPage extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  final String title;
-  final double? rating;
-  final int totalReviewCount;
-
-  const _Header({
-    required this.title,
-    required this.totalReviewCount,
-    this.rating,
-  });
+  const _Header();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondaryColor = isDark ? Colors.white54 : Colors.black45;
     final emphasisColor = isDark
         ? AppColors.appPrimaryWhite
         : AppColors.appPrimaryBlack;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              CupertinoIcons.back,
-              color: isDark ? Colors.white : Colors.black,
+    return SizedBox(
+      height: 44,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: const _HeaderIcon(CupertinoIcons.arrow_left),
             ),
           ),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            height: 1,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            if (rating != null) ...[
-              Icon(CupertinoIcons.star_fill, size: 18, color: emphasisColor),
-              const SizedBox(width: 6),
-              Text(
-                rating!.toStringAsFixed(1),
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Text(
-              '$totalReviewCount reviews',
-              style: TextStyle(color: secondaryColor),
+          Text(
+            'Reviews',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+              color: emphasisColor,
+              height: 1,
             ),
-          ],
-        ),
-      ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () {},
+              child: const _HeaderIcon(CupertinoIcons.add),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderIcon extends StatelessWidget {
+  final IconData icon;
+
+  const _HeaderIcon(this.icon);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark
+        ? AppColors.appPrimaryWhite
+        : AppColors.appPrimaryBlack;
+
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Center(child: Icon(icon, color: iconColor, size: 32)),
     );
   }
 }

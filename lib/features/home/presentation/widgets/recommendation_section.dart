@@ -47,8 +47,8 @@ class RecommendationsSection extends StatelessWidget {
               height: 250,
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.04),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(26),
               ),
               child: isReloading
@@ -86,7 +86,7 @@ class RecommendationsSection extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: recommendations.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(width: 24),
+              separatorBuilder: (_, index) => const SizedBox(width: 24),
               itemBuilder: (context, index) {
                 if (index == recommendations.length) {
                   return _LoadMoreButton(isLoading: isLoadingMore);
@@ -124,13 +124,13 @@ class _LoadMoreButton extends StatelessWidget {
           height: 250,
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withOpacity(0.07)
-                : Colors.black.withOpacity(0.05),
+                ? Colors.white.withValues(alpha: 0.07)
+                : Colors.black.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(26),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.08),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.08),
             ),
           ),
           child: isLoading
@@ -138,7 +138,7 @@ class _LoadMoreButton extends StatelessWidget {
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
+                    SizedBox(
                       width: 120,
                       height: 120,
                       child: Icon(

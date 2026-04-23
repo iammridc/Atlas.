@@ -2,10 +2,12 @@ import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendations_state.dart';
+import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
 import 'package:atlas/features/home/presentation/widgets/home_bottom_nav_bar.dart';
 import 'package:atlas/features/home/presentation/widgets/hot_places_section.dart';
 import 'package:atlas/features/home/presentation/widgets/map_section.dart';
 import 'package:atlas/features/home/presentation/widgets/recommendation_section.dart';
+import 'package:atlas/features/home/presentation/widgets/search_tab_view.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final RecommendationsCubit _recommendationsCubit;
+  late final SearchPlacesCubit _searchPlacesCubit;
   int _selectedIndex = 0;
 
   @override
@@ -30,18 +33,23 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _recommendationsCubit = getIt<RecommendationsCubit>()
       ..loadRecommendations(widget.categoryTypes);
+    _searchPlacesCubit = getIt<SearchPlacesCubit>()..initialize();
   }
 
   @override
   void dispose() {
     _recommendationsCubit.close();
+    _searchPlacesCubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _recommendationsCubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _recommendationsCubit),
+        BlocProvider.value(value: _searchPlacesCubit),
+      ],
       child: Scaffold(
         extendBody: true,
         backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -50,7 +58,28 @@ class _HomePageState extends State<HomePage> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Positioned.fill(child: _buildActivePage()),
+            Positioned.fill(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  const _RecommendationsView(),
+                  SearchTabView(
+                    onBackToHome: () => setState(() => _selectedIndex = 0),
+                  ),
+                  const _PlaceholderTab(
+                    icon: CupertinoIcons.person_crop_circle,
+                    title: 'Profile',
+                    description: 'Profile page will be implemented here later.',
+                  ),
+                  const _PlaceholderTab(
+                    icon: CupertinoIcons.gear_alt,
+                    title: 'Settings',
+                    description:
+                        'Settings page will be implemented here later.',
+                  ),
+                ],
+              ),
+            ),
             Positioned(
               left: 0,
               right: 0,
@@ -94,27 +123,6 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-  }
-
-  Widget _buildActivePage() {
-    return switch (_selectedIndex) {
-      0 => const _RecommendationsView(),
-      1 => const _PlaceholderTab(
-        icon: CupertinoIcons.search,
-        title: 'Search',
-        description: 'Search page will be implemented here later.',
-      ),
-      2 => const _PlaceholderTab(
-        icon: CupertinoIcons.person_crop_circle,
-        title: 'Profile',
-        description: 'Profile page will be implemented here later.',
-      ),
-      _ => const _PlaceholderTab(
-        icon: CupertinoIcons.gear_alt,
-        title: 'Settings',
-        description: 'Settings page will be implemented here later.',
-      ),
-    };
   }
 }
 

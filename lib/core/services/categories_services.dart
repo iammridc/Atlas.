@@ -1,26 +1,35 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CategoriesService {
   static final _firestore = FirebaseFirestore.instance;
   static const _version = 7;
+  static final List<CategorySearchDefinition> searchableCategories = _categories
+      .map(
+        (category) => CategorySearchDefinition(
+          id: category['id'] as String,
+          label: category['label'] as String,
+        ),
+      )
+      .toList(growable: false);
 
   static Future<void> seedIfNeeded() async {
     try {
       final meta = await _firestore.collection('meta').doc('categories').get();
 
       if (!meta.exists || meta.data()?['version'] != _version) {
-        print('Seeding categories...');
+        debugPrint('Seeding categories...');
         await _seedCategories();
         await _firestore.collection('meta').doc('categories').set({
           'version': _version,
           'updatedAt': DateTime.now().toIso8601String(),
         });
-        print('Categories seeded successfully!');
+        debugPrint('Categories seeded successfully!');
       } else {
-        print('Categories already up to date.');
+        debugPrint('Categories already up to date.');
       }
     } catch (e) {
-      print('Seed error: $e');
+      debugPrint('Seed error: $e');
     }
   }
 
@@ -3284,4 +3293,11 @@ class CategoriesService {
       'order': 36,
     },
   ];
+}
+
+class CategorySearchDefinition {
+  final String id;
+  final String label;
+
+  const CategorySearchDefinition({required this.id, required this.label});
 }

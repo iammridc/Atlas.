@@ -351,7 +351,7 @@ class _TitleBlock extends StatelessWidget {
           place.name,
           style: const TextStyle(
             fontSize: 28,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             height: 1,
           ),
         ),

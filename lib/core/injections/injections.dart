@@ -19,6 +19,8 @@ import 'package:atlas/features/home/data/repo_impls/recommendations_repository_i
 import 'package:atlas/features/home/domain/repositories/recommendations_repository.dart';
 import 'package:atlas/features/home/domain/usecases/get_recommendations_usecase.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
+import 'package:atlas/features/home/domain/usecases/search_places_usecase.dart';
+import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
 import 'package:atlas/features/place_details/data/datasources/place_details_remote_datasource.dart';
 import 'package:atlas/features/place_details/data/repo_impls/place_details_repository_impl.dart';
 import 'package:atlas/features/place_details/domain/repositories/place_details_repository.dart';
@@ -104,10 +106,16 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(
     () => GetRecommendationsUseCase(getIt<RecommendationsRepository>()),
   );
+  getIt.registerLazySingleton(
+    () => SearchPlacesUseCase(getIt<RecommendationsRepository>()),
+  );
   getIt.registerFactory<RecommendationsCubit>(
     () => RecommendationsCubit(
       getRecommendations: getIt<GetRecommendationsUseCase>(),
     ),
+  );
+  getIt.registerFactory<SearchPlacesCubit>(
+    () => SearchPlacesCubit(searchPlaces: getIt<SearchPlacesUseCase>()),
   );
 
   getIt.registerLazySingleton<PlaceDetailsRemoteDatasource>(

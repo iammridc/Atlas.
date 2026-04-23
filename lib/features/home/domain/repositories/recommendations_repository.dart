@@ -6,4 +6,8 @@ abstract class RecommendationsRepository {
   Future<Either<AppException, List<RecommendationEntity>>> getRecommendations(
     List<String> categoryTypes,
   );
+
+  Future<Either<AppException, List<RecommendationEntity>>> searchPlaces(
+    String query,
+  );
 }

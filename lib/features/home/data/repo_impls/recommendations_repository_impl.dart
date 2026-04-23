@@ -24,4 +24,18 @@ class RecommendationsRepositoryImpl implements RecommendationsRepository {
       return Left(UnknownException(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<AppException, List<RecommendationEntity>>> searchPlaces(
+    String query,
+  ) async {
+    try {
+      final places = await _datasource.searchPlaces(query);
+      return Right(places);
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(UnknownException(message: e.toString()));
+    }
+  }
 }

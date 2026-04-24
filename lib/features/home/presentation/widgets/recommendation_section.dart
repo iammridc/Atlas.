@@ -1,12 +1,15 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
+import 'package:atlas/features/home/presentation/bloc/recommendations_state.dart';
 import 'package:atlas/features/home/presentation/widgets/recommendation_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class RecommendationsSection extends StatelessWidget {
+  static const _loadMoreThreshold = 220.0;
+
   final List<RecommendationEntity> recommendations;
   final bool isLoadingMore;
   final bool hasError;
@@ -34,7 +37,6 @@ class RecommendationsSection extends StatelessWidget {
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
         ),
-
         if (hasError || recommendations.isEmpty)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -82,77 +84,45 @@ class RecommendationsSection extends StatelessWidget {
         else
           SizedBox(
             height: 260,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: recommendations.length + 1,
-              separatorBuilder: (_, index) => const SizedBox(width: 24),
-              itemBuilder: (context, index) {
-                if (index == recommendations.length) {
-                  return _LoadMoreButton(isLoading: isLoadingMore);
-                }
-                return RecommendationCard(
-                  recommendation: recommendations[index],
-                );
-              },
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) =>
+                  _handleScrollNotification(context, notification),
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: recommendations.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 24),
+                itemBuilder: (context, index) =>
+                    RecommendationCard(recommendation: recommendations[index]),
+              ),
             ),
           ),
-
         const SizedBox(height: 16),
       ],
     );
   }
-}
 
-class _LoadMoreButton extends StatelessWidget {
-  final bool isLoading;
+  bool _handleScrollNotification(
+    BuildContext context,
+    ScrollNotification notification,
+  ) {
+    if (notification.metrics.axis != Axis.horizontal) return false;
 
-  const _LoadMoreButton({required this.isLoading});
+    final isRelevantScroll =
+        notification is ScrollUpdateNotification ||
+        notification is OverscrollNotification;
+    if (!isRelevantScroll) return false;
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (notification.metrics.extentAfter > _loadMoreThreshold) {
+      return false;
+    }
 
-    return GestureDetector(
-      onTap: isLoading
-          ? null
-          : () => context.read<RecommendationsCubit>().loadMore(),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: Container(
-          width: 360,
-          height: 250,
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.07)
-                : Colors.black.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.08),
-            ),
-          ),
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: Icon(
-                        CupertinoIcons.add_circled,
-                        color: isDark
-                            ? AppColors.appPrimaryWhite
-                            : AppColors.appPrimaryBlack,
-                        size: 64,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      ),
-    );
+    final cubit = context.read<RecommendationsCubit>();
+    final state = cubit.state;
+    if (state is RecommendationsLoaded && !state.isLoadingMore) {
+      cubit.loadMore();
+    }
+
+    return false;
   }
 }

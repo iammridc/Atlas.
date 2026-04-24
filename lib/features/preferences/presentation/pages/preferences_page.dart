@@ -13,20 +13,47 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 @RoutePage()
 class PreferencesPage extends StatelessWidget {
   final String uid;
-  const PreferencesPage({super.key, required this.uid});
+  final bool replaceStackOnSave;
+  final bool showSkipAction;
+  final bool allowEmptySelection;
+  final List<String> initialSelectedCategoryIds;
+
+  const PreferencesPage({
+    super.key,
+    required this.uid,
+    this.replaceStackOnSave = true,
+    this.showSkipAction = true,
+    this.allowEmptySelection = false,
+    this.initialSelectedCategoryIds = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<PreferencesCubit>()..loadCategories(),
-      child: _InterestsView(uid: uid),
+      create: (_) => getIt<PreferencesCubit>()
+        ..loadCategories(initiallySelected: initialSelectedCategoryIds.toSet()),
+      child: _InterestsView(
+        uid: uid,
+        replaceStackOnSave: replaceStackOnSave,
+        showSkipAction: showSkipAction,
+        allowEmptySelection: allowEmptySelection,
+      ),
     );
   }
 }
 
 class _InterestsView extends StatelessWidget {
   final String uid;
-  const _InterestsView({required this.uid});
+  final bool replaceStackOnSave;
+  final bool showSkipAction;
+  final bool allowEmptySelection;
+
+  const _InterestsView({
+    required this.uid,
+    required this.replaceStackOnSave,
+    required this.showSkipAction,
+    required this.allowEmptySelection,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +62,13 @@ class _InterestsView extends StatelessWidget {
     return BlocListener<PreferencesCubit, PreferencesState>(
       listener: (context, state) {
         if (state is PreferencesSaved) {
-          context.router.replaceAll([
-            HomeRoute(categoryTypes: state.categoryTypes),
-          ]);
+          if (replaceStackOnSave) {
+            context.router.replaceAll([
+              HomeRoute(categoryTypes: state.categoryTypes),
+            ]);
+          } else {
+            Navigator.of(context).pop(state.categoryTypes);
+          }
         }
         if (state is InterestsError) {
           AppSnackbar.show(
@@ -82,20 +113,21 @@ class _InterestsView extends StatelessWidget {
                             text:
                                 'Choose precisely to personalise your experience, ',
                           ),
-                          TextSpan(
-                            text: 'or set it up later.',
-                            style: TextStyle(
-                              color: isDark ? Colors.white54 : Colors.black45,
-                              decoration: TextDecoration.underline,
-                              decorationColor: isDark
-                                  ? Colors.white54
-                                  : Colors.black45,
+                          if (showSkipAction)
+                            TextSpan(
+                              text: 'or set it up later.',
+                              style: TextStyle(
+                                color: isDark ? Colors.white54 : Colors.black45,
+                                decoration: TextDecoration.underline,
+                                decorationColor: isDark
+                                    ? Colors.white54
+                                    : Colors.black45,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => context.router.replaceAll([
+                                  HomeRoute(categoryTypes: []),
+                                ]),
                             ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () => context.router.replaceAll([
-                                HomeRoute(categoryTypes: []),
-                              ]),
-                          ),
                         ],
                       ),
                     ),
@@ -168,7 +200,10 @@ class _InterestsView extends StatelessWidget {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: (!isLoaded || isSaving || selectedCount == 0)
+                  onPressed:
+                      (!isLoaded ||
+                          isSaving ||
+                          (!allowEmptySelection && selectedCount == 0))
                       ? null
                       : () => context.read<PreferencesCubit>().savePreferences(
                           uid,
@@ -181,8 +216,8 @@ class _InterestsView extends StatelessWidget {
                         ? AppColors.appPrimaryBlack
                         : AppColors.appPrimaryWhite,
                     disabledBackgroundColor: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.black.withOpacity(0.08),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.08),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(26),
                     ),
@@ -199,7 +234,9 @@ class _InterestsView extends StatelessWidget {
                         )
                       : Text(
                           selectedCount == 0
-                              ? 'Choose your preferences to continue'
+                              ? (allowEmptySelection
+                                    ? 'Save without preferences'
+                                    : 'Choose your preferences to continue')
                               : 'Save $selectedCount preference${selectedCount == 1 ? '' : 's'}',
                           style: const TextStyle(
                             fontSize: 16,
@@ -264,15 +301,15 @@ class _GroupSection extends StatelessWidget {
                   color: isSelected
                       ? (isDark ? Colors.white : Colors.black)
                       : (isDark
-                            ? Colors.white.withOpacity(0.07)
-                            : Colors.black.withOpacity(0.07)),
+                            ? Colors.white.withValues(alpha: 0.07)
+                            : Colors.black.withValues(alpha: 0.07)),
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
                     color: isSelected
                         ? Colors.transparent
                         : (isDark
-                              ? Colors.black.withOpacity(0.07)
-                              : Colors.white.withOpacity(0.07)),
+                              ? Colors.black.withValues(alpha: 0.07)
+                              : Colors.white.withValues(alpha: 0.07)),
                   ),
                 ),
                 child: Text(

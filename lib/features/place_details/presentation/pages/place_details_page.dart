@@ -1,5 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/features/place_details/domain/entities/place_details_entity.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
 import 'package:atlas/features/place_details/presentation/bloc/place_details_cubit.dart';
@@ -112,6 +113,23 @@ class _PlaceDetailsView extends StatelessWidget {
                   photoNames: place.photoNames,
                   topInset: topInset,
                   onBackPressed: () => context.router.maybePop(),
+                  isFavorite: loadedState.isFavorite,
+                  isSavingFavorite: loadedState.isSavingFavorite,
+                  onFavoritePressed: () async {
+                    final result = await context
+                        .read<PlaceDetailsCubit>()
+                        .toggleFavoritePlace();
+                    if (!context.mounted ||
+                        result.status != PlaceFavoriteActionStatus.failed) {
+                      return;
+                    }
+
+                    AppSnackbar.show(
+                      context,
+                      message: result.message,
+                      type: SnackbarType.error,
+                    );
+                  },
                 ),
               ),
               SliverFillRemaining(
@@ -124,7 +142,7 @@ class _PlaceDetailsView extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => BlocProvider.value(
                         value: context.read<PlaceDetailsCubit>(),
-                        child: const PlaceReviewsPage(),
+                        child: PlaceReviewsPage(),
                       ),
                     ),
                   ),
@@ -155,11 +173,17 @@ class _HeroSection extends StatelessWidget {
   final List<String> photoNames;
   final double topInset;
   final VoidCallback onBackPressed;
+  final VoidCallback onFavoritePressed;
+  final bool isFavorite;
+  final bool isSavingFavorite;
 
   const _HeroSection({
     required this.photoNames,
     required this.topInset,
     required this.onBackPressed,
+    required this.onFavoritePressed,
+    required this.isFavorite,
+    required this.isSavingFavorite,
   });
 
   @override
@@ -179,8 +203,10 @@ class _HeroSection extends StatelessWidget {
           top: topInset + 16,
           right: 16,
           child: GestureDetector(
-            onTap: () {},
-            child: const _HeroIcon(CupertinoIcons.star),
+            onTap: isSavingFavorite ? null : onFavoritePressed,
+            child: _HeroIcon(
+              isFavorite ? CupertinoIcons.star_fill : CupertinoIcons.star,
+            ),
           ),
         ),
       ],

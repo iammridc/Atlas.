@@ -28,7 +28,11 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
     result.fold((exception) => emit(RecommendationsError(exception.message)), (
       places,
     ) {
-      _cached = places..shuffle(Random());
+      _mergeFreshRecommendations(places);
+      if (_cached.isEmpty) {
+        emit(RecommendationsLoaded(recommendations: _displayed));
+        return;
+      }
       _appendNextPage();
     });
   }
@@ -37,21 +41,25 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
     final current = state;
     if (current is! RecommendationsLoaded || current.isLoadingMore) return;
 
+    emit(
+      RecommendationsLoaded(recommendations: _displayed, isLoadingMore: true),
+    );
+
     if (_cached.length >= _pageSize) {
       _appendNextPage();
       return;
     }
-
-    emit(
-      RecommendationsLoaded(recommendations: _displayed, isLoadingMore: true),
-    );
 
     final result = await _getRecommendations(_categoryTypes);
 
     result.fold((exception) => emit(RecommendationsError(exception.message)), (
       places,
     ) {
-      _cached = places..shuffle(Random());
+      _mergeFreshRecommendations(places);
+      if (_cached.isEmpty) {
+        emit(RecommendationsLoaded(recommendations: _displayed));
+        return;
+      }
       _appendNextPage();
     });
   }
@@ -73,5 +81,21 @@ class RecommendationsCubit extends Cubit<RecommendationsState> {
     _cached = _cached.skip(_pageSize).toList();
     _displayed = [..._displayed, ...nextItems];
     emit(RecommendationsLoaded(recommendations: _displayed));
+  }
+
+  void _mergeFreshRecommendations(List<RecommendationEntity> places) {
+    final seenIds = {
+      ..._displayed.map((place) => place.id),
+      ..._cached.map((place) => place.id),
+    };
+
+    final shuffledPlaces = List<RecommendationEntity>.from(places)
+      ..shuffle(Random());
+
+    final uniqueFreshPlaces = shuffledPlaces
+        .where((place) => seenIds.add(place.id))
+        .toList();
+
+    _cached = [..._cached, ...uniqueFreshPlaces];
   }
 }

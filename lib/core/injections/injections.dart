@@ -27,6 +27,12 @@ import 'package:atlas/features/place_details/domain/repositories/place_details_r
 import 'package:atlas/features/place_details/domain/usecases/get_place_community_reviews_usecase.dart';
 import 'package:atlas/features/place_details/domain/usecases/get_place_details_usecase.dart';
 import 'package:atlas/features/place_details/presentation/bloc/place_details_cubit.dart';
+import 'package:atlas/features/profile/data/datasources/profile_remote_datasource.dart';
+import 'package:atlas/features/profile/data/repo_impls/profile_repository_impl.dart';
+import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
+import 'package:atlas/features/profile/domain/services/favorite_places_sync_service.dart';
+import 'package:atlas/features/profile/domain/services/profile_reviews_sync_service.dart';
+import 'package:atlas/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_cubit.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -133,11 +139,33 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(
     () => GetPlaceCommunityReviewsUseCase(getIt<PlaceDetailsRepository>()),
   );
+  getIt.registerLazySingleton<FavoritePlacesSyncService>(
+    () => FavoritePlacesSyncService(),
+  );
+  getIt.registerLazySingleton<ProfileReviewsSyncService>(
+    () => ProfileReviewsSyncService(),
+  );
   getIt.registerFactory<PlaceDetailsCubit>(
     () => PlaceDetailsCubit(
       getPlaceDetailsUseCase: getIt<GetPlaceDetailsUseCase>(),
       getPlaceCommunityReviewsUseCase: getIt<GetPlaceCommunityReviewsUseCase>(),
+      profileRepository: getIt<ProfileRepository>(),
+      favoritePlacesSyncService: getIt<FavoritePlacesSyncService>(),
+      profileReviewsSyncService: getIt<ProfileReviewsSyncService>(),
     ),
+  );
+
+  getIt.registerLazySingleton<ProfileRemoteDatasource>(
+    () => ProfileRemoteDatasourceImpl(
+      firestore: getIt<FirebaseFirestore>(),
+      firebaseAuth: getIt<FirebaseAuth>(),
+    ),
+  );
+  getIt.registerLazySingleton<ProfileRepository>(
+    () => ProfileRepositoryImpl(getIt<ProfileRemoteDatasource>()),
+  );
+  getIt.registerFactory<ProfileCubit>(
+    () => ProfileCubit(profileRepository: getIt<ProfileRepository>()),
   );
 
   getIt.registerFactory<SplashCubit>(() => SplashCubit());

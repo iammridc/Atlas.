@@ -1,5 +1,9 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/features/auth/presentation/bloc/auth_cubit.dart';
+import 'package:atlas/features/auth/presentation/bloc/auth_state.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendations_state.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
@@ -8,8 +12,10 @@ import 'package:atlas/features/home/presentation/widgets/hot_places_section.dart
 import 'package:atlas/features/home/presentation/widgets/map_section.dart';
 import 'package:atlas/features/home/presentation/widgets/recommendation_section.dart';
 import 'package:atlas/features/home/presentation/widgets/search_tab_view.dart';
+import 'package:atlas/features/profile/presentation/pages/profile_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,13 +32,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late final RecommendationsCubit _recommendationsCubit;
   late final SearchPlacesCubit _searchPlacesCubit;
+  late List<String> _categoryTypes;
   int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _categoryTypes = List<String>.from(widget.categoryTypes);
     _recommendationsCubit = getIt<RecommendationsCubit>()
-      ..loadRecommendations(widget.categoryTypes);
+      ..loadRecommendations(_categoryTypes);
     _searchPlacesCubit = getIt<SearchPlacesCubit>()..initialize();
   }
 
@@ -41,6 +49,15 @@ class _HomePageState extends State<HomePage> {
     _recommendationsCubit.close();
     _searchPlacesCubit.close();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(oldWidget.categoryTypes, widget.categoryTypes)) {
+      _categoryTypes = List<String>.from(widget.categoryTypes);
+      _recommendationsCubit.loadRecommendations(_categoryTypes);
+    }
   }
 
   @override
@@ -66,17 +83,21 @@ class _HomePageState extends State<HomePage> {
                   SearchTabView(
                     onBackToHome: () => setState(() => _selectedIndex = 0),
                   ),
-                  const _PlaceholderTab(
-                    icon: CupertinoIcons.person_crop_circle,
-                    title: 'Profile',
-                    description: 'Profile page will be implemented here later.',
+                  ProfilePage(
+                    onPreferencesUpdated: (categoryTypes) {
+                      final nextCategoryTypes = List<String>.from(
+                        categoryTypes,
+                      );
+                      setState(() {
+                        _categoryTypes = nextCategoryTypes;
+                        _selectedIndex = 0;
+                      });
+                      _recommendationsCubit.loadRecommendations(
+                        nextCategoryTypes,
+                      );
+                    },
                   ),
-                  const _PlaceholderTab(
-                    icon: CupertinoIcons.gear_alt,
-                    title: 'Settings',
-                    description:
-                        'Settings page will be implemented here later.',
-                  ),
+                  const _SettingsView(),
                 ],
               ),
             ),
@@ -172,55 +193,94 @@ class _RecommendationsView extends StatelessWidget {
   }
 }
 
-class _PlaceholderTab extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-
-  const _PlaceholderTab({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
+class _SettingsView extends StatelessWidget {
+  const _SettingsView();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondaryColor = isDark ? Colors.white54 : Colors.black45;
 
-    return SafeArea(
-      bottom: false,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(32, 0, 32, 120),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 56,
-                color: isDark ? Colors.white70 : Colors.black54,
-              ),
-              const SizedBox(height: 18),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : Colors.black,
+    return BlocProvider.value(
+      value: getIt<AuthCubit>(),
+      child: BlocListener<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is AuthUnauthenticated) {
+            context.router.replaceAll([const SplashRoute()]);
+            return;
+          }
+
+          if (state is AuthError) {
+            AppSnackbar.show(
+              context,
+              message: state.message,
+              type: SnackbarType.error,
+            );
+          }
+        },
+        child: SafeArea(
+          bottom: false,
+          child: BlocBuilder<AuthCubit, AuthState>(
+            builder: (context, state) {
+              final isLoading = state is AuthLoading;
+
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Just one action for now.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () => context.read<AuthCubit>().signOut(),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(56),
+                          backgroundColor: isDark ? Colors.white : Colors.black,
+                          foregroundColor: isDark ? Colors.black : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                        ),
+                        child: isLoading
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: isDark ? Colors.black : Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                description,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.45,
-                  color: secondaryColor,
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

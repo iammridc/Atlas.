@@ -17,7 +17,9 @@ class PreferencesCubit extends Cubit<PreferencesState> {
        _savePreferencesUseCase = savePreferencesUseCase,
        super(PreferencesInitial());
 
-  Future<void> loadCategories() async {
+  Future<void> loadCategories({
+    Set<String> initiallySelected = const {},
+  }) async {
     emit(PreferencesLoading());
     final result = await _getCategoriesUseCase();
     result.fold((failure) => emit(InterestsError(failure.message)), (
@@ -28,7 +30,12 @@ class PreferencesCubit extends Cubit<PreferencesState> {
         grouped.putIfAbsent(cat.group, () => []);
         grouped[cat.group]!.add(cat);
       }
-      emit(PreferencesLoaded(groupedCategories: grouped, selected: {}));
+      emit(
+        PreferencesLoaded(
+          groupedCategories: grouped,
+          selected: Set<String>.from(initiallySelected),
+        ),
+      );
     });
   }
 

@@ -1,4 +1,5 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/utils/relative_time.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,13 @@ class PlaceReviewCard extends StatelessWidget {
     final emphasisColor = isDark
         ? AppColors.appPrimaryWhite
         : AppColors.appPrimaryBlack;
+    final subtitleParts = [
+      if ((review.authorSubtitle ?? '').isNotEmpty) review.authorSubtitle!,
+      if ((review.relativeTimeDescription ?? '').isNotEmpty)
+        review.relativeTimeDescription!
+      else if (review.publishedAt != null)
+        formatRelativeTime(review.publishedAt!),
+    ];
 
     return Container(
       width: double.infinity,
@@ -53,16 +61,9 @@ class PlaceReviewCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (showSubtitle &&
-                        ((review.authorSubtitle ?? '').isNotEmpty ||
-                            (review.relativeTimeDescription ?? '').isNotEmpty))
+                    if (showSubtitle && subtitleParts.isNotEmpty)
                       Text(
-                        [
-                          if ((review.authorSubtitle ?? '').isNotEmpty)
-                            review.authorSubtitle!,
-                          if ((review.relativeTimeDescription ?? '').isNotEmpty)
-                            review.relativeTimeDescription!,
-                        ].join(' • '),
+                        subtitleParts.join(' • '),
                         style: TextStyle(
                           fontSize: compact ? 12 : 13,
                           color: subtitleColor,

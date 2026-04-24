@@ -31,17 +31,21 @@ class PlaceReviewModel extends PlaceReviewEntity {
 
   factory PlaceReviewModel.fromCommunityJson(Map<String, dynamic> json) {
     final placesVisited = json['placesVisited'];
+    final rawAuthorSubtitle = (json['authorSubtitle'] as String?)?.trim();
     final authorSubtitle =
-        json['authorSubtitle'] as String? ??
-        (placesVisited is num
-            ? 'Traveler, ${placesVisited.toInt()} places visited'
-            : null);
+        rawAuthorSubtitle != null &&
+            rawAuthorSubtitle.isNotEmpty &&
+            rawAuthorSubtitle.toLowerCase() != 'atlas traveler'
+        ? rawAuthorSubtitle
+        : (placesVisited is num
+              ? 'Traveler, ${placesVisited.toInt()} places visited'
+              : null);
 
     return PlaceReviewModel(
       authorName:
           json['authorName'] as String? ??
           json['userName'] as String? ??
-          'Atlas traveler',
+          'Traveler',
       authorSubtitle: authorSubtitle,
       text:
           json['text'] as String? ??

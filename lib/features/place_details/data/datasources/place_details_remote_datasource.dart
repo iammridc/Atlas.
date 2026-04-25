@@ -27,6 +27,7 @@ class PlaceDetailsRemoteDatasourceImpl implements PlaceDetailsRemoteDatasource {
       'displayName,'
       'primaryTypeDisplayName,'
       'formattedAddress,'
+      'location,'
       'addressComponents,'
       'editorialSummary,'
       'rating,'

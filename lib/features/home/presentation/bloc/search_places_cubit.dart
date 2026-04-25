@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:atlas/features/home/domain/usecases/search_places_usecase.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,24 +9,41 @@ import 'search_places_state.dart';
 
 class SearchPlacesCubit extends Cubit<SearchPlacesState> {
   final SearchPlacesUseCase _searchPlaces;
+  final FirebaseAuth _firebaseAuth;
 
   Timer? _searchDebounce;
   int _activeRequestId = 0;
   bool _isInitialized = false;
 
-  static const _recentQueriesKey = 'atlas_recent_search_queries';
+  static const legacyRecentQueriesKey = 'atlas_recent_search_queries';
   static const _recentLimit = 6;
   static const _debounceDuration = Duration(milliseconds: 350);
 
-  SearchPlacesCubit({required SearchPlacesUseCase searchPlaces})
-    : _searchPlaces = searchPlaces,
-      super(const SearchPlacesState());
+  SearchPlacesCubit({
+    required SearchPlacesUseCase searchPlaces,
+    required FirebaseAuth firebaseAuth,
+  }) : _firebaseAuth = firebaseAuth,
+       _searchPlaces = searchPlaces,
+       super(const SearchPlacesState());
+
+  static String recentQueriesKeyForUser(String? uid) {
+    final normalizedUid = uid?.trim();
+    if (normalizedUid == null || normalizedUid.isEmpty) {
+      return '${legacyRecentQueriesKey}_guest';
+    }
+
+    return '${legacyRecentQueriesKey}_$normalizedUid';
+  }
+
+  String get _recentQueriesKey =>
+      recentQueriesKeyForUser(_firebaseAuth.currentUser?.uid);
 
   Future<void> initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;
 
     final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(legacyRecentQueriesKey);
     final recentQueries = prefs.getStringList(_recentQueriesKey) ?? const [];
 
     emit(state.copyWith(recentQueries: recentQueries));

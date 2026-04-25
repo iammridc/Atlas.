@@ -17,6 +17,7 @@ import 'package:atlas/features/home/presentation/widgets/search_tab_view.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:atlas/features/profile/presentation/pages/profile_page.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -213,8 +214,6 @@ class _SettingsViewState extends State<_SettingsView> {
   static const _distanceUnitKey = UnitConversions.distanceUnitKey;
   static const _languageKey = 'settings_language';
   static const _currencyKey = UnitConversions.currencyKey;
-  static const _recentQueriesKey = 'atlas_recent_search_queries';
-
   bool _useFavorites = true;
   bool _useReviews = true;
   bool _recommendationNotifications = false;
@@ -511,7 +510,12 @@ class _SettingsViewState extends State<_SettingsView> {
 
   Future<void> _clearLocalHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_recentQueriesKey);
+    final uid = getIt<FirebaseAuth>().currentUser?.uid;
+    await prefs.remove(SearchPlacesCubit.recentQueriesKeyForUser(uid));
+    await prefs.remove(SearchPlacesCubit.legacyRecentQueriesKey);
+    if (mounted) {
+      await context.read<SearchPlacesCubit>().clearRecentQueries();
+    }
     if (!mounted) return;
     AppSnackbar.show(
       context,

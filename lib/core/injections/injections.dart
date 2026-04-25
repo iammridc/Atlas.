@@ -28,6 +28,13 @@ import 'package:atlas/features/place_details/domain/repositories/place_details_r
 import 'package:atlas/features/place_details/domain/usecases/get_place_community_reviews_usecase.dart';
 import 'package:atlas/features/place_details/domain/usecases/get_place_details_usecase.dart';
 import 'package:atlas/features/place_details/presentation/bloc/place_details_cubit.dart';
+import 'package:atlas/features/travel_planner/data/datasources/travel_planner_remote_datasource.dart';
+import 'package:atlas/features/travel_planner/data/repo_impls/travel_planner_repository_impl.dart';
+import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
+import 'package:atlas/features/travel_planner/domain/repositories/travel_planner_repository.dart';
+import 'package:atlas/features/travel_planner/domain/usecases/build_travel_plan_usecase.dart';
+import 'package:atlas/features/travel_planner/domain/usecases/search_travel_locations_usecase.dart';
+import 'package:atlas/features/travel_planner/presentation/bloc/travel_planner_cubit.dart';
 import 'package:atlas/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:atlas/features/profile/data/repo_impls/profile_repository_impl.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
@@ -126,7 +133,10 @@ Future<void> configureDependencies() async {
     ),
   );
   getIt.registerFactory<SearchPlacesCubit>(
-    () => SearchPlacesCubit(searchPlaces: getIt<SearchPlacesUseCase>()),
+    () => SearchPlacesCubit(
+      searchPlaces: getIt<SearchPlacesUseCase>(),
+      firebaseAuth: getIt<FirebaseAuth>(),
+    ),
   );
 
   getIt.registerLazySingleton<PlaceDetailsRemoteDatasource>(
@@ -157,6 +167,27 @@ Future<void> configureDependencies() async {
       profileRepository: getIt<ProfileRepository>(),
       favoritePlacesSyncService: getIt<FavoritePlacesSyncService>(),
       profileReviewsSyncService: getIt<ProfileReviewsSyncService>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<TravelPlannerRemoteDatasource>(
+    () => TravelPlannerRemoteDatasourceImpl(dio: getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<TravelPlannerRepository>(
+    () => TravelPlannerRepositoryImpl(getIt<TravelPlannerRemoteDatasource>()),
+  );
+  getIt.registerLazySingleton(
+    () => BuildTravelPlanUseCase(getIt<TravelPlannerRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => SearchTravelLocationsUseCase(getIt<TravelPlannerRepository>()),
+  );
+  getIt.registerFactoryParam<TravelPlannerCubit, TravelLocationEntity, void>(
+    (destination, _) => TravelPlannerCubit(
+      buildTravelPlan: getIt<BuildTravelPlanUseCase>(),
+      searchLocations: getIt<SearchTravelLocationsUseCase>(),
+      profileRepository: getIt<ProfileRepository>(),
+      destination: destination,
     ),
   );
 

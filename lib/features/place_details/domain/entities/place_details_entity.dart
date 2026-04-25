@@ -8,6 +8,8 @@ class PlaceDetailsEntity {
   final String country;
   final String? description;
   final double? rating;
+  final double latitude;
+  final double longitude;
   final int userRatingCount;
   final List<String> photoNames;
   final List<String> categories;
@@ -23,6 +25,8 @@ class PlaceDetailsEntity {
     required this.city,
     required this.country,
     required this.userRatingCount,
+    required this.latitude,
+    required this.longitude,
     required this.photoNames,
     required this.categories,
     required this.openingHours,

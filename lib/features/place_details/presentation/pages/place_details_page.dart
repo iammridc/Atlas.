@@ -1,5 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/features/place_details/domain/entities/place_details_entity.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
@@ -146,6 +147,20 @@ class _PlaceDetailsView extends StatelessWidget {
                       ),
                     ),
                   ),
+                  onStartJourneyTap: () => context.router.push(
+                    TravelPlannerRoute(
+                      placeId: place.id,
+                      placeName: place.name,
+                      address: place.formattedAddress,
+                      city: place.city,
+                      country: place.country,
+                      latitude: place.latitude,
+                      longitude: place.longitude,
+                      photoReference: place.photoNames.isEmpty
+                          ? null
+                          : place.photoNames.first,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -245,12 +260,14 @@ class _DetailsSheet extends StatelessWidget {
   final List<PlaceReviewEntity> previewReviews;
   final int totalReviewCount;
   final VoidCallback onReviewsTap;
+  final VoidCallback onStartJourneyTap;
 
   const _DetailsSheet({
     required this.place,
     required this.previewReviews,
     required this.totalReviewCount,
     required this.onReviewsTap,
+    required this.onStartJourneyTap,
   });
 
   @override
@@ -294,7 +311,7 @@ class _DetailsSheet extends StatelessWidget {
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: onStartJourneyTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark
                     ? AppColors.appPrimaryWhite

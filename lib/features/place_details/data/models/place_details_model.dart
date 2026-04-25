@@ -10,6 +10,8 @@ class PlaceDetailsModel extends PlaceDetailsEntity {
     required super.city,
     required super.country,
     required super.userRatingCount,
+    required super.latitude,
+    required super.longitude,
     required super.photoNames,
     required super.categories,
     required super.openingHours,
@@ -33,6 +35,7 @@ class PlaceDetailsModel extends PlaceDetailsEntity {
         json['editorialSummary'] as Map<String, dynamic>? ?? {};
     final regularOpeningHours =
         json['regularOpeningHours'] as Map<String, dynamic>? ?? {};
+    final location = json['location'] as Map<String, dynamic>? ?? {};
     final photos = json['photos'] as List<dynamic>? ?? [];
     final reviews = json['reviews'] as List<dynamic>? ?? [];
     final addressComponents =
@@ -67,6 +70,8 @@ class PlaceDetailsModel extends PlaceDetailsEntity {
       country: parsedCountry,
       description: editorialSummary['text'] as String?,
       rating: _toDoubleOrNull(json['rating']),
+      latitude: _toDouble(location['latitude']),
+      longitude: _toDouble(location['longitude']),
       userRatingCount: _toInt(json['userRatingCount']),
       photoNames: safePhotoNames,
       categories: _extractCategories(json),
@@ -182,6 +187,12 @@ class PlaceDetailsModel extends PlaceDetailsEntity {
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value);
     return null;
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0;
+    return 0;
   }
 
   static int _toInt(dynamic value) {

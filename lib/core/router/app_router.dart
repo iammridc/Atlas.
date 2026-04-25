@@ -5,6 +5,7 @@ import 'package:atlas/features/auth/presentation/pages/signup_page.dart';
 import 'package:atlas/features/home/presentation/pages/home_page.dart';
 import 'package:atlas/features/place_details/presentation/pages/place_details_page.dart';
 import 'package:atlas/features/preferences/presentation/pages/preferences_page.dart';
+import 'package:atlas/features/travel_planner/presentation/pages/travel_planner_page.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
@@ -19,6 +20,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: SignupRoute.page),
     AutoRoute(page: HomeRoute.page),
     AutoRoute(page: PlaceDetailsRoute.page),
+    AutoRoute(page: TravelPlannerRoute.page),
     AutoRoute(page: PreferencesRoute.page),
   ];
 }

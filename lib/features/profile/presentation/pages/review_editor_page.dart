@@ -85,16 +85,24 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
       backgroundColor: isDark
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: Text(widget.title)),
       body: SafeArea(
         top: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            keyboardInset > 0 ? 104 : 118,
+          ),
           children: [
             if (widget.allowPlaceNameEditing) ...[
               TextField(
@@ -142,15 +150,23 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
                 alignLabelWithHint: true,
               ),
             ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _save,
-                child: const Text('Save review'),
-              ),
-            ),
           ],
+        ),
+      ),
+      bottomNavigationBar: AnimatedPadding(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _save,
+              child: const Text('Save review'),
+            ),
+          ),
         ),
       ),
     );

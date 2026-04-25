@@ -8,6 +8,7 @@ import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart'
 import 'package:atlas/features/profile/domain/entities/profile_review_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class ProfileRemoteDatasource {
   Future<ProfileSummaryModel> getProfileSummary();
@@ -21,6 +22,7 @@ abstract class ProfileRemoteDatasource {
   Future<ProfileReviewModel?> getProfileReviewForPlace(String placeId);
   Future<ProfileReviewModel> saveProfileReview(ProfileReviewEntity review);
   Future<void> deleteProfileReview(ProfileReviewEntity review);
+  Future<void> setReviewsPublic(bool isPublic);
   Future<List<PlannedTripModel>> getPlannedTrips();
   Future<PlannedTripModel> savePlannedTrip(PlannedTripEntity trip);
   Future<void> deletePlannedTrip(String id);
@@ -128,6 +130,7 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
       await _ensureUserDoc();
       await _userDoc.set({'username': trimmed}, SetOptions(merge: true));
       await _currentUser.updateDisplayName(trimmed);
+      await _syncCommunityReviewAuthor({'authorName': trimmed});
     } on AppException {
       rethrow;
     } catch (_) {
@@ -140,6 +143,7 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
     try {
       await _ensureUserDoc();
       await _userDoc.set({'avatarUrl': avatarUrl}, SetOptions(merge: true));
+      await _syncCommunityReviewAuthor({'profilePhotoUrl': avatarUrl});
     } on AppException {
       rethrow;
     } catch (_) {
@@ -303,7 +307,15 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
 
       await doc.set(model.toJson(), SetOptions(merge: true));
       if (trimmedPlaceId.isNotEmpty) {
-        await _upsertPlaceReview(model);
+        final prefs = await SharedPreferences.getInstance();
+        final isPublic = prefs.getBool('settings_public_reviews') ?? true;
+        if (isPublic) {
+          await _upsertPlaceReview(model);
+        } else {
+          await _placeReviewsCollection(
+            trimmedPlaceId,
+          ).doc(_currentUser.uid).delete();
+        }
       }
       return model;
     } on AppException {
@@ -328,6 +340,29 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
     }
   }
 
+  @override
+  Future<void> setReviewsPublic(bool isPublic) async {
+    try {
+      await _ensureUserDoc();
+      final snapshot = await _reviewsCollection.get();
+      for (final doc in snapshot.docs) {
+        final review = ProfileReviewModel.fromDocument(doc);
+        final placeId = review.placeId.trim();
+        if (placeId.isEmpty) continue;
+
+        if (isPublic) {
+          await _upsertPlaceReview(review);
+        } else {
+          await _placeReviewsCollection(placeId).doc(_currentUser.uid).delete();
+        }
+      }
+    } on AppException {
+      rethrow;
+    } catch (_) {
+      throw const ServerException(message: 'Failed to update review privacy.');
+    }
+  }
+
   Future<void> _upsertPlaceReview(ProfileReviewModel review) async {
     final user = _currentUser;
     final userSnapshot = await _userDoc.get();
@@ -340,6 +375,9 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
         : (user.displayName?.trim().isNotEmpty == true
               ? user.displayName!.trim()
               : fallbackName);
+    final avatarUrl = userData.containsKey('avatarUrl')
+        ? userData['avatarUrl'] as String?
+        : user.photoURL;
 
     await _placeReviewsCollection(review.placeId).doc(user.uid).set({
       'userId': user.uid,
@@ -349,12 +387,26 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
       'rating': review.rating,
       'createdAt': review.createdAt,
       'updatedAt': review.updatedAt,
-      'profilePhotoUrl': userData['avatarUrl'] ?? user.photoURL,
+      'profilePhotoUrl': avatarUrl,
       'placeId': review.placeId,
       'placeName': review.placeName,
       'placeCity': review.placeCity,
       'placeCountry': review.placeCountry,
     }, SetOptions(merge: true));
+  }
+
+  Future<void> _syncCommunityReviewAuthor(Map<String, dynamic> data) async {
+    final snapshot = await _reviewsCollection.get();
+    final futures = snapshot.docs.map((doc) {
+      final reviewData = doc.data();
+      final placeId = (reviewData['placeId'] as String?)?.trim();
+      if (placeId == null || placeId.isEmpty) return Future<void>.value();
+      return _placeReviewsCollection(
+        placeId,
+      ).doc(_currentUser.uid).set(data, SetOptions(merge: true));
+    });
+
+    await Future.wait(futures);
   }
 
   @override

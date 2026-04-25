@@ -9,6 +9,7 @@ abstract class AuthRemoteDatasource {
   Future<UserModel> signIn({required String email, required String password});
   Future<UserModel> signUp({required String email, required String password});
   Future<void> signOut();
+  Future<void> deleteAccount();
   Future<UserModel?> getCurrentUser();
 }
 
@@ -130,6 +131,70 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
       throw AuthException(
         code: 'unknown',
         message: 'An unexpected error occurred.',
+      );
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw AuthException(
+          code: 'no-current-user',
+          message: 'Please sign in again.',
+        );
+      }
+
+      final userDoc = _firestore.collection('users').doc(user.uid);
+      final reviewsSnapshot = await userDoc.collection('reviews').get();
+
+      final batch = _firestore.batch();
+      for (final reviewDoc in reviewsSnapshot.docs) {
+        final placeId = (reviewDoc.data()['placeId'] as String?)?.trim();
+        if (placeId != null && placeId.isNotEmpty) {
+          batch.delete(
+            _firestore
+                .collection('places')
+                .doc(placeId)
+                .collection('reviews')
+                .doc(user.uid),
+          );
+        }
+        batch.delete(reviewDoc.reference);
+      }
+
+      final favoritePlacesSnapshot = await userDoc
+          .collection('favorite_places')
+          .get();
+      for (final doc in favoritePlacesSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      final plannedTripsSnapshot = await userDoc
+          .collection('planned_trips')
+          .get();
+      for (final doc in plannedTripsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      batch.delete(userDoc);
+      await batch.commit();
+      await user.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw AuthException(
+          code: e.code,
+          message: 'Please sign in again before deleting your account.',
+        );
+      }
+      throw _handleFirebaseException(e);
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException(
+        code: 'unknown',
+        message: 'Failed to delete account.',
       );
     }
   }

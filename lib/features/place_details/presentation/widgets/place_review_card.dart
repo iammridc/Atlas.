@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/utils/relative_time.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
@@ -121,8 +123,9 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return CircleAvatar(radius: 22, backgroundImage: NetworkImage(imageUrl!));
+    final imageProvider = _buildImageProvider(imageUrl);
+    if (imageProvider != null) {
+      return CircleAvatar(radius: 22, backgroundImage: imageProvider);
     }
 
     return const CircleAvatar(
@@ -130,5 +133,26 @@ class _Avatar extends StatelessWidget {
       backgroundColor: Colors.transparent,
       child: Icon(CupertinoIcons.person_crop_circle, size: 34),
     );
+  }
+
+  ImageProvider<Object>? _buildImageProvider(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final normalized = value.trim();
+
+    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+      return NetworkImage(normalized);
+    }
+
+    if (normalized.startsWith('data:image')) {
+      final parts = normalized.split(',');
+      if (parts.length < 2) return null;
+      try {
+        return MemoryImage(base64Decode(parts.last));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return null;
   }
 }

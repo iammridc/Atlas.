@@ -4,6 +4,7 @@ import 'package:atlas/features/auth/domain/usecases/signin_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/signup_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/signout_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/get_current_user_usecase.dart';
+import 'package:atlas/features/auth/domain/usecases/delete_account_usecase.dart';
 import 'package:atlas/core/theme/cubit/theme_cubit.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +14,7 @@ class AuthCubit extends Cubit<AuthState> {
   final SignInUseCase _signInUseCase;
   final SignUpUseCase _signUpUseCase;
   final SignOutUseCase _signOutUseCase;
+  final DeleteAccountUseCase _deleteAccountUseCase;
   final GetCurrentUserUseCase _getCurrentUserUseCase;
   final HasPreferencesUseCase _hasPreferencesUseCase;
 
@@ -20,11 +22,13 @@ class AuthCubit extends Cubit<AuthState> {
     required SignInUseCase signInUseCase,
     required SignUpUseCase signUpUseCase,
     required SignOutUseCase signOutUseCase,
+    required DeleteAccountUseCase deleteAccountUseCase,
     required GetCurrentUserUseCase getCurrentUserUseCase,
     required HasPreferencesUseCase hasPreferencesUseCase,
   }) : _signInUseCase = signInUseCase,
        _signUpUseCase = signUpUseCase,
        _signOutUseCase = signOutUseCase,
+       _deleteAccountUseCase = deleteAccountUseCase,
        _getCurrentUserUseCase = getCurrentUserUseCase,
        _hasPreferencesUseCase = hasPreferencesUseCase,
        super(AuthInitial());
@@ -72,6 +76,17 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signOut() async {
     emit(AuthLoading());
     final result = await _signOutUseCase();
+    result.fold((error) => emit(AuthError(error)), (_) async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('last_logged_in_uid');
+      getIt<ThemeCubit>().resetTheme();
+      emit(AuthUnauthenticated());
+    });
+  }
+
+  Future<void> deleteAccount() async {
+    emit(AuthLoading());
+    final result = await _deleteAccountUseCase();
     result.fold((error) => emit(AuthError(error)), (_) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('last_logged_in_uid');

@@ -52,6 +52,18 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<String, void>> deleteAccount() async {
+    try {
+      await _datasource.deleteAccount();
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(e.message);
+    } catch (e) {
+      return const Left('An unexpected error occurred.');
+    }
+  }
+
+  @override
   Future<Either<String, UserEntity?>> getCurrentUser() async {
     try {
       final user = await _datasource.getCurrentUser();

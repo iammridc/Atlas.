@@ -14,5 +14,7 @@ abstract class AuthRepository {
 
   Future<Either<String, void>> signOut();
 
+  Future<Either<String, void>> deleteAccount();
+
   Future<Either<String, UserEntity?>> getCurrentUser();
 }

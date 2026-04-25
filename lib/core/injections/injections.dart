@@ -5,6 +5,7 @@ import 'package:atlas/features/auth/domain/repositories/auth_repository.dart';
 import 'package:atlas/features/auth/domain/usecases/signin_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/signup_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/signout_usecase.dart';
+import 'package:atlas/features/auth/domain/usecases/delete_account_usecase.dart';
 import 'package:atlas/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:atlas/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:atlas/features/preferences/data/datasources/preferences_remote_datasource.dart';
@@ -67,6 +68,9 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => SignUpUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => SignOutUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(
+    () => DeleteAccountUseCase(getIt<AuthRepository>()),
+  );
+  getIt.registerLazySingleton(
     () => GetCurrentUserUseCase(getIt<AuthRepository>()),
   );
 
@@ -97,6 +101,7 @@ Future<void> configureDependencies() async {
       signInUseCase: getIt<SignInUseCase>(),
       signUpUseCase: getIt<SignUpUseCase>(),
       signOutUseCase: getIt<SignOutUseCase>(),
+      deleteAccountUseCase: getIt<DeleteAccountUseCase>(),
       getCurrentUserUseCase: getIt<GetCurrentUserUseCase>(),
       hasPreferencesUseCase: getIt<HasPreferencesUseCase>(),
     ),

@@ -25,6 +25,7 @@ abstract class ProfileRepository {
   Future<Either<AppException, void>> deleteProfileReview(
     ProfileReviewEntity review,
   );
+  Future<Either<AppException, void>> setReviewsPublic(bool isPublic);
   Future<Either<AppException, List<PlannedTripEntity>>> getPlannedTrips();
   Future<Either<AppException, PlannedTripEntity>> savePlannedTrip(
     PlannedTripEntity trip,

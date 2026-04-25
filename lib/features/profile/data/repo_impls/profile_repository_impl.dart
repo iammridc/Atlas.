@@ -155,6 +155,18 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
+  Future<Either<AppException, void>> setReviewsPublic(bool isPublic) async {
+    try {
+      await _datasource.setReviewsPublic(isPublic);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(UnknownException(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<AppException, List<PlannedTripEntity>>>
   getPlannedTrips() async {
     try {

@@ -1,7 +1,9 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/theme/cubit/theme_cubit.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/utils/unit_conversions.dart';
 import 'package:atlas/features/auth/presentation/bloc/auth_cubit.dart';
 import 'package:atlas/features/auth/presentation/bloc/auth_state.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
@@ -12,12 +14,14 @@ import 'package:atlas/features/home/presentation/widgets/hot_places_section.dart
 import 'package:atlas/features/home/presentation/widgets/map_section.dart';
 import 'package:atlas/features/home/presentation/widgets/recommendation_section.dart';
 import 'package:atlas/features/home/presentation/widgets/search_tab_view.dart';
+import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:atlas/features/profile/presentation/pages/profile_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
 class HomePage extends StatefulWidget {
@@ -193,8 +197,83 @@ class _RecommendationsView extends StatelessWidget {
   }
 }
 
-class _SettingsView extends StatelessWidget {
+class _SettingsView extends StatefulWidget {
   const _SettingsView();
+
+  @override
+  State<_SettingsView> createState() => _SettingsViewState();
+}
+
+class _SettingsViewState extends State<_SettingsView> {
+  static const _useFavoritesKey = 'settings_use_favorites_for_recommendations';
+  static const _useReviewsKey = 'settings_use_reviews_for_recommendations';
+  static const _recommendationNotificationsKey =
+      'settings_recommendation_notifications';
+  static const _publicReviewsKey = 'settings_public_reviews';
+  static const _distanceUnitKey = UnitConversions.distanceUnitKey;
+  static const _languageKey = 'settings_language';
+  static const _currencyKey = UnitConversions.currencyKey;
+  static const _recentQueriesKey = 'atlas_recent_search_queries';
+
+  bool _useFavorites = true;
+  bool _useReviews = true;
+  bool _recommendationNotifications = false;
+  bool _publicReviews = true;
+  String _distanceUnit = 'km';
+  String _language = 'English';
+  String _currency = 'USD';
+  bool _settingsLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _useFavorites = prefs.getBool(_useFavoritesKey) ?? true;
+      _useReviews = prefs.getBool(_useReviewsKey) ?? true;
+      _recommendationNotifications =
+          prefs.getBool(_recommendationNotificationsKey) ?? false;
+      _publicReviews = prefs.getBool(_publicReviewsKey) ?? true;
+      _distanceUnit = prefs.getString(_distanceUnitKey) ?? 'km';
+      _language = prefs.getString(_languageKey) ?? 'English';
+      if (_language == 'Deutsch') {
+        _language = 'English';
+        prefs.setString(_languageKey, _language);
+      }
+      _currency = UnitConversions.normalizeCurrency(
+        prefs.getString(_currencyKey) ?? 'USD',
+      );
+      if (prefs.getString(_currencyKey) == 'GBP') {
+        prefs.setString(_currencyKey, _currency);
+      }
+      _settingsLoaded = true;
+    });
+  }
+
+  Future<void> _setBool(
+    String key,
+    bool value,
+    ValueChanged<bool> apply,
+  ) async {
+    setState(() => apply(value));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+  }
+
+  Future<void> _setString(
+    String key,
+    String value,
+    ValueChanged<String> apply,
+  ) async {
+    setState(() => apply(value));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,67 +301,539 @@ class _SettingsView extends StatelessWidget {
           child: BlocBuilder<AuthCubit, AuthState>(
             builder: (context, state) {
               final isLoading = state is AuthLoading;
+              final user = state is AuthAuthenticated ? state.user : null;
 
-              return Padding(
+              return ListView(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Settings',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
+                children: [
+                  Text(
+                    'Settings',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Just one action for now.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: isDark ? Colors.white54 : Colors.black54,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tune Atlas around how you travel.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDark ? Colors.white54 : Colors.black54,
                     ),
-                    const SizedBox(height: 28),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isLoading
-                            ? null
-                            : () => context.read<AuthCubit>().signOut(),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
-                          backgroundColor: isDark ? Colors.white : Colors.black,
-                          foregroundColor: isDark ? Colors.black : Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
+                  ),
+                  const SizedBox(height: 24),
+                  if (!_settingsLoaded)
+                    const Center(child: CircularProgressIndicator())
+                  else ...[
+                    _SettingsSection(
+                      title: 'Appearance',
+                      children: [
+                        BlocBuilder<ThemeCubit, AppThemeMode>(
+                          bloc: getIt<ThemeCubit>(),
+                          builder: (context, themeMode) {
+                            return _ThemeModeSetting(
+                              value: themeMode,
+                              onChanged: (value) => getIt<ThemeCubit>()
+                                  .setTheme(value, userId: user?.id),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    _SettingsSection(
+                      title: 'Personalization',
+                      children: [
+                        _SettingsSwitchTile(
+                          icon: CupertinoIcons.heart,
+                          title: 'Use favorites',
+                          subtitle: 'Improve recommendations from saved places',
+                          value: _useFavorites,
+                          onChanged: (value) => _setBool(
+                            _useFavoritesKey,
+                            value,
+                            (next) => _useFavorites = next,
                           ),
                         ),
-                        child: isLoading
-                            ? SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: isDark ? Colors.black : Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Log Out',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                      ),
+                        _SettingsSwitchTile(
+                          icon: CupertinoIcons.star,
+                          title: 'Use reviews',
+                          subtitle: 'Improve recommendations from your ratings',
+                          value: _useReviews,
+                          onChanged: (value) => _setBool(
+                            _useReviewsKey,
+                            value,
+                            (next) => _useReviews = next,
+                          ),
+                        ),
+                        _SettingsSwitchTile(
+                          icon: CupertinoIcons.bell,
+                          title: 'Recommendation notifications',
+                          subtitle: 'Get prompts when Atlas finds new ideas',
+                          value: _recommendationNotifications,
+                          onChanged: (value) => _setBool(
+                            _recommendationNotificationsKey,
+                            value,
+                            (next) => _recommendationNotifications = next,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _SettingsSection(
+                      title: 'Privacy & Data',
+                      children: [
+                        _SettingsSwitchTile(
+                          icon: CupertinoIcons.eye,
+                          title: 'Public reviews',
+                          subtitle: _publicReviews
+                              ? 'Your name and avatar can appear on reviews'
+                              : 'Reviews stay private to your profile',
+                          value: _publicReviews,
+                          onChanged: _setPublicReviews,
+                        ),
+                        _SettingsActionTile(
+                          icon: CupertinoIcons.trash,
+                          title: 'Clear local cache/history',
+                          subtitle: 'Remove recent searches on this device',
+                          onTap: _clearLocalHistory,
+                        ),
+                        _SettingsActionTile(
+                          icon: CupertinoIcons.delete_simple,
+                          title: 'Delete account',
+                          subtitle: 'Permanently remove your Atlas account',
+                          isDestructive: true,
+                          onTap: isLoading ? null : _confirmDeleteAccount,
+                        ),
+                      ],
+                    ),
+                    _SettingsSection(
+                      title: 'Region',
+                      children: [
+                        _SettingsValueTile(
+                          icon: CupertinoIcons.location,
+                          title: 'Distance units',
+                          value: _distanceUnit,
+                          onTap: () => _chooseValue(
+                            title: 'Distance units',
+                            values: const ['km', 'mi'],
+                            current: _distanceUnit,
+                            onSelected: (value) => _setString(
+                              _distanceUnitKey,
+                              value,
+                              (next) => _distanceUnit = next,
+                            ),
+                          ),
+                        ),
+                        _SettingsValueTile(
+                          icon: CupertinoIcons.globe,
+                          title: 'Language',
+                          value: _language,
+                          onTap: () => _chooseValue(
+                            title: 'Language',
+                            values: const ['English', 'Русский'],
+                            current: _language,
+                            onSelected: (value) => _setString(
+                              _languageKey,
+                              value,
+                              (next) => _language = next,
+                            ),
+                          ),
+                        ),
+                        _SettingsValueTile(
+                          icon: CupertinoIcons.money_dollar_circle,
+                          title: 'Currency',
+                          value: _currency,
+                          onTap: () => _chooseValue(
+                            title: 'Currency',
+                            values: const ['RUB', 'BYN', 'EUR', 'USD'],
+                            current: _currency,
+                            onSelected: (value) => _setString(
+                              _currencyKey,
+                              value,
+                              (next) => _currency = next,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    _SettingsSection(
+                      title: 'Support',
+                      children: [
+                        const _SettingsInfoTile(
+                          icon: CupertinoIcons.info,
+                          title: 'App version',
+                          value: '0.1.0',
+                        ),
+                        _SettingsActionTile(
+                          icon: CupertinoIcons.doc_text,
+                          title: 'Terms / Privacy policy',
+                          subtitle: 'Read Atlas terms and privacy notes',
+                          onTap: () => _showInfoDialog(
+                            title: 'Terms / Privacy policy',
+                            message:
+                                'Atlas stores profile, preference, favorite, review, and trip data to provide recommendations and sync your travel activity. Add your final legal text or external policy links here before release.',
+                          ),
+                        ),
+                        _SettingsActionTile(
+                          icon: CupertinoIcons.mail,
+                          title: 'Contact support / feedback',
+                          subtitle: 'Send feedback to the Atlas team',
+                          onTap: () => _showInfoDialog(
+                            title: 'Contact support / feedback',
+                            message:
+                                'Email support@atlas.app with your feedback, bug reports, or feature ideas.',
+                          ),
+                        ),
+                      ],
+                    ),
+                    _SettingsSection(
+                      title: 'Account',
+                      children: [
+                        _SettingsActionTile(
+                          icon: CupertinoIcons.square_arrow_right,
+                          title: 'Log out',
+                          subtitle: user?.email ?? 'Return to sign in',
+                          onTap: isLoading
+                              ? null
+                              : () => context.read<AuthCubit>().signOut(),
+                        ),
+                      ],
                     ),
                   ],
-                ),
+                ],
               );
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _clearLocalHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_recentQueriesKey);
+    if (!mounted) return;
+    AppSnackbar.show(
+      context,
+      message: 'Local search history cleared.',
+      type: SnackbarType.success,
+    );
+  }
+
+  Future<void> _setPublicReviews(bool value) async {
+    final previous = _publicReviews;
+    await _setBool(_publicReviewsKey, value, (next) => _publicReviews = next);
+    final result = await getIt<ProfileRepository>().setReviewsPublic(value);
+    if (!mounted) return;
+
+    result.fold(
+      (error) {
+        _setBool(_publicReviewsKey, previous, (next) => _publicReviews = next);
+        AppSnackbar.show(
+          context,
+          message: error.message,
+          type: SnackbarType.error,
+        );
+      },
+      (_) => AppSnackbar.show(
+        context,
+        message: value ? 'Reviews are public.' : 'Reviews are private.',
+        type: SnackbarType.success,
+      ),
+    );
+  }
+
+  Future<void> _chooseValue({
+    required String title,
+    required List<String> values,
+    Map<String, String> labels = const {},
+    required String current,
+    required ValueChanged<String> onSelected,
+  }) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              for (final value in values)
+                ListTile(
+                  title: Text(labels[value] ?? value),
+                  trailing: value == current
+                      ? const Icon(CupertinoIcons.checkmark)
+                      : null,
+                  onTap: () => Navigator.of(context).pop(value),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      onSelected(selected);
+    }
+  }
+
+  Future<void> _showInfoDialog({
+    required String title,
+    required String message,
+  }) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final controller = TextEditingController();
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete account?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'This removes your profile, favorites, reviews, and trips. Type DELETE to confirm.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(hintText: 'DELETE'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim() == 'DELETE'),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+
+    if (shouldDelete == true && mounted) {
+      context.read<AuthCubit>().deleteAccount();
+    }
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SettingsSection({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white54 : Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 10),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.black.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(children: children),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsSwitchTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SettingsSwitchTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile.adaptive(
+      secondary: Icon(icon),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+      subtitle: Text(subtitle),
+      value: value,
+      onChanged: onChanged,
+      contentPadding: const EdgeInsets.fromLTRB(16, 2, 12, 2),
+    );
+  }
+}
+
+class _SettingsActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool isDestructive;
+  final VoidCallback? onTap;
+
+  const _SettingsActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.isDestructive = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive ? Colors.redAccent : null;
+
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.w700, color: color),
+      ),
+      subtitle: Text(subtitle),
+      trailing: const Icon(CupertinoIcons.chevron_right, size: 18),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+}
+
+class _SettingsValueTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final VoidCallback onTap;
+
+  const _SettingsValueTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+      subtitle: Text(value),
+      trailing: const Icon(CupertinoIcons.chevron_right, size: 18),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+}
+
+class _SettingsInfoTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _SettingsInfoTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+      subtitle: Text(value),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+}
+
+class _ThemeModeSetting extends StatelessWidget {
+  final AppThemeMode value;
+  final ValueChanged<AppThemeMode> onChanged;
+
+  const _ThemeModeSetting({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(CupertinoIcons.moon_stars),
+              SizedBox(width: 16),
+              Text(
+                'Theme',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SegmentedButton<AppThemeMode>(
+            segments: const [
+              ButtonSegment(value: AppThemeMode.light, label: Text('Light')),
+              ButtonSegment(value: AppThemeMode.dark, label: Text('Dark')),
+              ButtonSegment(value: AppThemeMode.system, label: Text('System')),
+            ],
+            selected: {value},
+            onSelectionChanged: (selected) => onChanged(selected.first),
+            showSelectedIcon: false,
+          ),
+        ],
       ),
     );
   }

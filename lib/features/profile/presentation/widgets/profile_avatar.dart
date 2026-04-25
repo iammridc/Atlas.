@@ -6,6 +6,7 @@ class ProfileAvatar extends StatelessWidget {
   final String? avatarUrl;
   final double size;
   final bool isLoading;
+  final bool canEdit;
   final VoidCallback onTap;
 
   const ProfileAvatar({
@@ -13,6 +14,7 @@ class ProfileAvatar extends StatelessWidget {
     required this.avatarUrl,
     required this.size,
     required this.isLoading,
+    this.canEdit = true,
     required this.onTap,
   });
 
@@ -22,7 +24,7 @@ class ProfileAvatar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: isLoading ? null : onTap,
+      onTap: canEdit && !isLoading ? onTap : null,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -52,27 +54,28 @@ class ProfileAvatar extends StatelessWidget {
               height: size * 0.28,
               child: const CircularProgressIndicator(strokeWidth: 2.4),
             ),
-          Positioned(
-            right: 4,
-            bottom: 4,
-            child: Container(
-              width: size * 0.27,
-              height: size * 0.27,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary,
-                border: Border.all(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  width: 2,
+          if (canEdit)
+            Positioned(
+              right: 4,
+              bottom: 4,
+              child: Container(
+                width: size * 0.27,
+                height: size * 0.27,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.primary,
+                  border: Border.all(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.edit_rounded,
+                  size: size * 0.12,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
-              child: Icon(
-                Icons.edit_rounded,
-                size: size * 0.12,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
             ),
-          ),
         ],
       ),
     );

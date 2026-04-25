@@ -15,6 +15,7 @@ import 'package:atlas/features/profile/presentation/pages/planned_trips_page.dar
 import 'package:atlas/features/profile/presentation/pages/profile_reviews_page.dart';
 import 'package:atlas/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:atlas/features/profile/presentation/widgets/profile_section_button.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
@@ -49,6 +50,8 @@ class _ProfileViewState extends State<_ProfileView> {
   final _imagePicker = ImagePicker();
   StreamSubscription<int>? _favoritePlacesSubscription;
   StreamSubscription<int>? _profileReviewsSubscription;
+  bool _isEditingProfile = false;
+  String? _draftAvatarUrl;
 
   @override
   void initState() {
@@ -80,16 +83,20 @@ class _ProfileViewState extends State<_ProfileView> {
 
     return BlocListener<ProfileCubit, ProfileState>(
       listenWhen: (previous, current) =>
-          previous.profile?.username != current.profile?.username,
+          previous.profile?.username != current.profile?.username ||
+          previous.profile?.avatarUrl != current.profile?.avatarUrl,
       listener: (context, state) {
-        final username = state.profile?.username;
-        if (username == null) return;
+        final profile = state.profile;
+        if (profile == null || _isEditingProfile) return;
+
+        final username = profile.username;
         if (!_usernameFocusNode.hasFocus || _usernameController.text.isEmpty) {
           _usernameController.value = TextEditingValue(
             text: username,
             selection: TextSelection.collapsed(offset: username.length),
           );
         }
+        setState(() => _draftAvatarUrl = profile.avatarUrl);
       },
       child: Scaffold(
         backgroundColor: isDark
@@ -122,11 +129,24 @@ class _ProfileViewState extends State<_ProfileView> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(24, 18, 24, 120),
                   children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _ProfileEditButton(
+                        isEditing: _isEditingProfile,
+                        isSaving:
+                            state.isSavingAvatar || state.isSavingUsername,
+                        onPressed: () => _toggleEditMode(profile),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     Center(
                       child: ProfileAvatar(
-                        avatarUrl: profile.avatarUrl,
+                        avatarUrl: _isEditingProfile
+                            ? _draftAvatarUrl
+                            : profile.avatarUrl,
                         size: 124,
                         isLoading: state.isSavingAvatar,
+                        canEdit: _isEditingProfile,
                         onTap: _handleAvatarTap,
                       ),
                     ),
@@ -136,7 +156,8 @@ class _ProfileViewState extends State<_ProfileView> {
                       focusNode: _usernameFocusNode,
                       textAlign: TextAlign.center,
                       textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _saveUsername(),
+                      readOnly: !_isEditingProfile || state.isSavingUsername,
+                      onSubmitted: (_) => _usernameFocusNode.unfocus(),
                       decoration: InputDecoration(
                         hintText: 'Username',
                         filled: true,
@@ -166,30 +187,6 @@ class _ProfileViewState extends State<_ProfileView> {
                           color: isDark ? Colors.white60 : Colors.black54,
                           fontWeight: FontWeight.w600,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: FilledButton(
-                        onPressed: state.isSavingUsername
-                            ? null
-                            : _saveUsername,
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: state.isSavingUsername
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('Save username'),
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -237,7 +234,19 @@ class _ProfileViewState extends State<_ProfileView> {
     );
   }
 
-  Future<void> _saveUsername() async {
+  Future<void> _toggleEditMode(ProfileSummaryEntity profile) async {
+    if (!_isEditingProfile) {
+      setState(() {
+        _isEditingProfile = true;
+        _draftAvatarUrl = profile.avatarUrl;
+        _usernameController.value = TextEditingValue(
+          text: profile.username,
+          selection: TextSelection.collapsed(offset: profile.username.length),
+        );
+      });
+      return;
+    }
+
     final trimmed = _usernameController.text.trim();
     if (trimmed.isEmpty) {
       AppSnackbar.show(
@@ -248,17 +257,35 @@ class _ProfileViewState extends State<_ProfileView> {
       return;
     }
 
-    final error = await context.read<ProfileCubit>().updateUsername(trimmed);
+    _usernameFocusNode.unfocus();
+
+    final cubit = context.read<ProfileCubit>();
+    String? error;
+    if (trimmed != profile.username.trim()) {
+      error = await cubit.updateUsername(trimmed);
+    }
+
     if (!mounted) return;
+    if (error == null && (_draftAvatarUrl ?? '') != (profile.avatarUrl ?? '')) {
+      error = await cubit.updateAvatar(_draftAvatarUrl);
+    }
+
+    if (!mounted) return;
+
+    if (error == null) {
+      setState(() => _isEditingProfile = false);
+    }
 
     AppSnackbar.show(
       context,
-      message: error ?? 'Username updated.',
+      message: error ?? 'Profile updated.',
       type: error == null ? SnackbarType.success : SnackbarType.error,
     );
   }
 
   Future<void> _handleAvatarTap() async {
+    if (!_isEditingProfile) return;
+
     final shouldRemove = await showModalBottomSheet<bool>(
       context: context,
       builder: (context) {
@@ -285,13 +312,7 @@ class _ProfileViewState extends State<_ProfileView> {
     if (!mounted || shouldRemove == null) return;
 
     if (shouldRemove) {
-      final error = await context.read<ProfileCubit>().updateAvatar(null);
-      if (!mounted) return;
-      AppSnackbar.show(
-        context,
-        message: error ?? 'Avatar removed.',
-        type: error == null ? SnackbarType.success : SnackbarType.error,
-      );
+      setState(() => _draftAvatarUrl = null);
       return;
     }
 
@@ -330,14 +351,7 @@ class _ProfileViewState extends State<_ProfileView> {
     final mimeType = _mimeTypeForPath(pickedFile.path);
     final dataUri = 'data:$mimeType;base64,${base64Encode(bytes)}';
 
-    final error = await context.read<ProfileCubit>().updateAvatar(dataUri);
-    if (!mounted) return;
-
-    AppSnackbar.show(
-      context,
-      message: error ?? 'Avatar updated.',
-      type: error == null ? SnackbarType.success : SnackbarType.error,
-    );
+    setState(() => _draftAvatarUrl = dataUri);
   }
 
   Future<void> _openPreferences(ProfileSummaryEntity profile) async {
@@ -380,6 +394,45 @@ class _ProfileViewState extends State<_ProfileView> {
     if (lower.endsWith('.webp')) return 'image/webp';
     if (lower.endsWith('.gif')) return 'image/gif';
     return 'image/jpeg';
+  }
+}
+
+class _ProfileEditButton extends StatelessWidget {
+  final bool isEditing;
+  final bool isSaving;
+  final VoidCallback onPressed;
+
+  const _ProfileEditButton({
+    required this.isEditing,
+    required this.isSaving,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return IconButton(
+      tooltip: isEditing ? 'Apply profile changes' : 'Edit profile',
+      onPressed: isSaving ? null : onPressed,
+      style: IconButton.styleFrom(
+        backgroundColor: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.06),
+        foregroundColor: isDark ? Colors.white : Colors.black87,
+        disabledForegroundColor: isDark ? Colors.white38 : Colors.black38,
+        fixedSize: const Size(44, 44),
+      ),
+      icon: isSaving
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(
+              isEditing ? CupertinoIcons.checkmark_circle : CupertinoIcons.gear,
+            ),
+    );
   }
 }
 

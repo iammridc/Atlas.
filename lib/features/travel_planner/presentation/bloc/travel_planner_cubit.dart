@@ -1,5 +1,6 @@
 import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
+import 'package:atlas/features/profile/domain/services/planned_trips_sync_service.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:atlas/features/travel_planner/domain/usecases/build_travel_plan_usecase.dart';
@@ -12,15 +13,18 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
   final BuildTravelPlanUseCase _buildTravelPlan;
   final SearchTravelLocationsUseCase _searchLocations;
   final ProfileRepository _profileRepository;
+  final PlannedTripsSyncService _plannedTripsSyncService;
 
   TravelPlannerCubit({
     required BuildTravelPlanUseCase buildTravelPlan,
     required SearchTravelLocationsUseCase searchLocations,
     required ProfileRepository profileRepository,
+    required PlannedTripsSyncService plannedTripsSyncService,
     required TravelLocationEntity destination,
   }) : _buildTravelPlan = buildTravelPlan,
        _searchLocations = searchLocations,
        _profileRepository = profileRepository,
+       _plannedTripsSyncService = plannedTripsSyncService,
        super(TravelPlannerState(destination: destination));
 
   Future<void> initialize() async {
@@ -151,6 +155,11 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
         routeSummary: _buildRouteSummary(route, origin, state.destination),
         note: _buildTripNote(route),
         updatedAt: DateTime.now(),
+        origin: origin,
+        destination: state.destination,
+        route: route,
+        selectedPointsOfInterest: state.selectedPointsOfInterest,
+        selectedHotels: state.selectedHotels,
       ),
     );
 
@@ -161,12 +170,15 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
           actionMessage: error.message,
         ),
       ),
-      (_) => emit(
-        state.copyWith(
-          actionStatus: TravelPlannerActionStatus.saved,
-          actionMessage: 'Trip saved to Planned Trips.',
-        ),
-      ),
+      (_) {
+        _plannedTripsSyncService.notifyChanged();
+        emit(
+          state.copyWith(
+            actionStatus: TravelPlannerActionStatus.saved,
+            actionMessage: 'Trip saved to Planned Trips.',
+          ),
+        );
+      },
     );
   }
 

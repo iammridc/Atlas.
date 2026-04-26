@@ -7,6 +7,7 @@ import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/features/preferences/presentation/pages/preferences_page.dart';
 import 'package:atlas/features/profile/domain/entities/profile_summary_entity.dart';
 import 'package:atlas/features/profile/domain/services/favorite_places_sync_service.dart';
+import 'package:atlas/features/profile/domain/services/planned_trips_sync_service.dart';
 import 'package:atlas/features/profile/domain/services/profile_reviews_sync_service.dart';
 import 'package:atlas/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:atlas/features/profile/presentation/bloc/profile_state.dart';
@@ -50,6 +51,7 @@ class _ProfileViewState extends State<_ProfileView> {
   final _imagePicker = ImagePicker();
   StreamSubscription<int>? _favoritePlacesSubscription;
   StreamSubscription<int>? _profileReviewsSubscription;
+  StreamSubscription<int>? _plannedTripsSubscription;
   bool _isEditingProfile = false;
   String? _draftAvatarUrl;
 
@@ -66,12 +68,19 @@ class _ProfileViewState extends State<_ProfileView> {
           if (!mounted) return;
           context.read<ProfileCubit>().loadProfile(showLoader: false);
         });
+    _plannedTripsSubscription = getIt<PlannedTripsSyncService>().changes.listen(
+      (_) {
+        if (!mounted) return;
+        context.read<ProfileCubit>().loadProfile(showLoader: false);
+      },
+    );
   }
 
   @override
   void dispose() {
     _favoritePlacesSubscription?.cancel();
     _profileReviewsSubscription?.cancel();
+    _plannedTripsSubscription?.cancel();
     _usernameController.dispose();
     _usernameFocusNode.dispose();
     super.dispose();

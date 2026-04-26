@@ -39,6 +39,7 @@ import 'package:atlas/features/profile/data/datasources/profile_remote_datasourc
 import 'package:atlas/features/profile/data/repo_impls/profile_repository_impl.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:atlas/features/profile/domain/services/favorite_places_sync_service.dart';
+import 'package:atlas/features/profile/domain/services/planned_trips_sync_service.dart';
 import 'package:atlas/features/profile/domain/services/profile_reviews_sync_service.dart';
 import 'package:atlas/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_cubit.dart';
@@ -160,6 +161,9 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<ProfileReviewsSyncService>(
     () => ProfileReviewsSyncService(),
   );
+  getIt.registerLazySingleton<PlannedTripsSyncService>(
+    () => PlannedTripsSyncService(),
+  );
   getIt.registerFactory<PlaceDetailsCubit>(
     () => PlaceDetailsCubit(
       getPlaceDetailsUseCase: getIt<GetPlaceDetailsUseCase>(),
@@ -187,6 +191,7 @@ Future<void> configureDependencies() async {
       buildTravelPlan: getIt<BuildTravelPlanUseCase>(),
       searchLocations: getIt<SearchTravelLocationsUseCase>(),
       profileRepository: getIt<ProfileRepository>(),
+      plannedTripsSyncService: getIt<PlannedTripsSyncService>(),
       destination: destination,
     ),
   );

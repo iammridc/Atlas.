@@ -168,8 +168,12 @@ class _TravelPlannerView extends StatelessWidget {
                     : () =>
                           context.read<TravelPlannerCubit>().saveSelectedTrip(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFB800),
-                  foregroundColor: Colors.black,
+                  backgroundColor: isDark
+                      ? AppColors.appPrimaryWhite
+                      : AppColors.appPrimaryBlack,
+                  foregroundColor: isDark
+                      ? AppColors.appPrimaryBlack
+                      : AppColors.appPrimaryWhite,
                   disabledBackgroundColor: isDark
                       ? Colors.white.withValues(alpha: 0.12)
                       : Colors.black.withValues(alpha: 0.08),
@@ -179,12 +183,14 @@ class _TravelPlannerView extends StatelessWidget {
                   elevation: 0,
                 ),
                 child: state.actionStatus == TravelPlannerActionStatus.saving
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.black,
+                          color: isDark
+                              ? AppColors.appPrimaryBlack
+                              : AppColors.appPrimaryWhite,
                         ),
                       )
                     : const Text(
@@ -480,7 +486,11 @@ class _RouteCard extends StatelessWidget {
               : Colors.black.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: selected ? const Color(0xFFFFB800) : Colors.transparent,
+            color: selected
+                ? isDark
+                      ? AppColors.appPrimaryWhite
+                      : AppColors.appPrimaryBlack
+                : Colors.transparent,
             width: 2,
           ),
         ),
@@ -602,12 +612,26 @@ class _StopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedBorderColor = isDark
+        ? AppColors.appPrimaryWhite
+        : AppColors.appPrimaryBlack;
+
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: SizedBox(
-          width: 190,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        width: 190,
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: selected ? selectedBorderColor : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -631,24 +655,6 @@ class _StopCard extends StatelessWidget {
                         Colors.black.withValues(alpha: 0.78),
                       ],
                     ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: selected ? const Color(0xFFFFB800) : Colors.white70,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    selected ? CupertinoIcons.check_mark : CupertinoIcons.add,
-                    size: 17,
-                    color: Colors.black,
                   ),
                 ),
               ),

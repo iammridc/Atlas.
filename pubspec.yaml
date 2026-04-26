@@ -49,10 +49,10 @@ flutter:
     - assets/pngs/
 
 flutter_native_splash:
-  color: "#0E0E0E"
-  image: assets/pngs/alt_light_logo.png
-  color_dark: "#FFFFFF"
-  image_dark: assets/pngs/alt_dark_logo.png
+  color: "FFFFFF"
+  image: assets/pngs/alt_dark_logo.png
+  color_dark: "##0E0E0E"
+  image_dark: assets/pngs/alt_light_logo.png
   android: true
   ios: true
   web: false

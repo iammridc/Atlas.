@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
+import 'package:atlas/features/profile/domain/services/planned_trips_sync_service.dart';
 import 'package:atlas/features/profile/presentation/pages/favorite_places_page.dart';
+import 'package:atlas/features/profile/presentation/pages/planned_trip_details_page.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class PlannedTripsPage extends StatefulWidget {
@@ -18,18 +24,32 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
   bool _isLoading = true;
   String? _errorMessage;
   List<PlannedTripEntity> _trips = const [];
+  StreamSubscription<int>? _plannedTripsSubscription;
 
   @override
   void initState() {
     super.initState();
+    _plannedTripsSubscription = getIt<PlannedTripsSyncService>().changes.listen(
+      (_) => _loadTrips(showLoader: false),
+    );
     _loadTrips();
   }
 
-  Future<void> _loadTrips() async {
-    setState(() {
-      _isLoading = true;
+  @override
+  void dispose() {
+    _plannedTripsSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadTrips({bool showLoader = true}) async {
+    if (showLoader) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    } else {
       _errorMessage = null;
-    });
+    }
 
     final result = await _repository.getPlannedTrips();
     if (!mounted) return;
@@ -46,125 +66,21 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
     );
   }
 
-  Future<void> _showTripForm({PlannedTripEntity? trip}) async {
-    final titleController = TextEditingController(text: trip?.title ?? '');
-    final routeController = TextEditingController(
-      text: trip?.routeSummary ?? '',
-    );
-    final noteController = TextEditingController(text: trip?.note ?? '');
-    var isSaving = false;
-
-    final saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    trip == null ? 'Add planned trip' : 'Edit planned trip',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Trip title'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: routeController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Route',
-                      hintText: 'Minsk -> Vilnius -> Warsaw',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: noteController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes',
-                      hintText: 'Timing, hotels, transport swaps, reminders',
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              setModalState(() => isSaving = true);
-                              final result = await _repository.savePlannedTrip(
-                                PlannedTripEntity(
-                                  id: trip?.id ?? '',
-                                  title: titleController.text,
-                                  routeSummary: routeController.text,
-                                  note: noteController.text,
-                                  updatedAt: DateTime.now(),
-                                ),
-                              );
-
-                              if (!mounted) return;
-                              result.fold((error) {
-                                setModalState(() => isSaving = false);
-                                AppSnackbar.show(
-                                  context,
-                                  message: error.message,
-                                  type: SnackbarType.error,
-                                );
-                              }, (_) => Navigator.of(context).pop(true));
-                            },
-                      child: isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(trip == null ? 'Save trip' : 'Save changes'),
-                    ),
-                  ),
-                ],
-              ),
-            );
+  Future<void> _openTripDetails(PlannedTripEntity trip) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PlannedTripDetailsPage(
+          trip: trip,
+          onDelete: (trip) async {
+            final deleted = await _deleteTrip(trip);
+            if (deleted && mounted) Navigator.of(context).pop();
           },
-        );
-      },
+        ),
+      ),
     );
-
-    titleController.dispose();
-    routeController.dispose();
-    noteController.dispose();
-
-    if (saved == true) {
-      await _loadTrips();
-      if (!mounted) return;
-      AppSnackbar.show(
-        context,
-        message: trip == null ? 'Trip added.' : 'Trip updated.',
-        type: SnackbarType.success,
-      );
-    }
   }
 
-  Future<void> _deleteTrip(PlannedTripEntity trip) async {
+  Future<bool> _deleteTrip(PlannedTripEntity trip) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -185,25 +101,31 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
       },
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) return false;
 
     final result = await _repository.deletePlannedTrip(trip.id);
-    if (!mounted) return;
+    if (!mounted) return false;
 
-    result.fold(
-      (error) => AppSnackbar.show(
-        context,
-        message: error.message,
-        type: SnackbarType.error,
-      ),
+    return await result.fold<Future<bool>>(
+      (error) async {
+        AppSnackbar.show(
+          context,
+          message: error.message,
+          type: SnackbarType.error,
+        );
+        return false;
+      },
       (_) async {
-        await _loadTrips();
-        if (!mounted) return;
+        setState(() {
+          _trips = _trips.where((item) => item.id != trip.id).toList();
+        });
         AppSnackbar.show(
           context,
           message: 'Trip deleted.',
           type: SnackbarType.success,
         );
+        getIt<PlannedTripsSyncService>().notifyChanged();
+        return true;
       },
     );
   }
@@ -217,11 +139,6 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
       appBar: AppBar(title: const Text('Planned Trips')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showTripForm(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add trip'),
-      ),
       body: RefreshIndicator(
         onRefresh: _loadTrips,
         child: _isLoading
@@ -235,7 +152,7 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
             ? const ProfileCollectionEmptyState(
                 title: 'No trips planned yet',
                 message:
-                    'Save trip ideas here so you can edit routes and notes later.',
+                    'Save a route from the planner so it is ready when you need it.',
               )
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
@@ -243,16 +160,142 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
                 separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   final trip = _trips[index];
-                  return ProfileManagementCard(
-                    title: trip.title,
-                    subtitle: trip.routeSummary,
-                    body: trip.note.isEmpty ? null : trip.note,
-                    trailing: formatProfileDate(trip.updatedAt),
-                    onTap: () => _showTripForm(trip: trip),
-                    onDelete: () => _deleteTrip(trip),
+                  return _PlannedTripCard(
+                    trip: trip,
+                    onTap: () => _openTripDetails(trip),
                   );
                 },
               ),
+      ),
+    );
+  }
+}
+
+class _PlannedTripCard extends StatelessWidget {
+  final PlannedTripEntity trip;
+  final VoidCallback onTap;
+
+  const _PlannedTripCard({required this.trip, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final photoReference = trip.destination?.photoReference?.trim();
+
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: SizedBox(
+          height: 138,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (photoReference != null && photoReference.isNotEmpty)
+                Image.network(
+                  buildGooglePlacePhotoUrl(photoReference, maxWidthPx: 1200),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const _PlannedTripPlaceholder(),
+                )
+              else
+                const _PlannedTripPlaceholder(),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.82),
+                        Colors.black.withValues(alpha: 0.48),
+                        Colors.black.withValues(alpha: 0.16),
+                      ],
+                      stops: const [0.0, 0.48, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                right: 18,
+                bottom: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      trip.title.isEmpty ? 'Saved route' : trip.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        height: 1.05,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      trip.routeSummary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      formatProfileDate(trip.updatedAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.58),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlannedTripPlaceholder extends StatelessWidget {
+  const _PlannedTripPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.08),
+            isDark
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.black.withValues(alpha: 0.03),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          CupertinoIcons.map,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.38)
+              : Colors.black.withValues(alpha: 0.28),
+          size: 30,
+        ),
       ),
     );
   }

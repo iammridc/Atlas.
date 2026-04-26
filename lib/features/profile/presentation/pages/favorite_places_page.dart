@@ -1,7 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
-import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/profile/domain/entities/favorite_place_entity.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
@@ -64,47 +63,6 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
     );
   }
 
-  Future<void> _deletePlace(FavoritePlaceEntity place) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete place?'),
-          content: Text('Remove "${place.name}" from your favourites?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true) return;
-
-    final result = await _repository.deleteFavoritePlace(place.id);
-    if (!mounted) return;
-
-    result.fold(
-      (error) => AppSnackbar.show(
-        context,
-        message: error.message,
-        type: SnackbarType.error,
-      ),
-      (_) {
-        setState(() {
-          _places = _places.where((item) => item.id != place.id).toList();
-        });
-        getIt<FavoritePlacesSyncService>().notifyChanged();
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -135,10 +93,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
                 separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   final place = _places[index];
-                  return _FavoritePlaceCard(
-                    place: place,
-                    onDelete: () => _deletePlace(place),
-                  );
+                  return _FavoritePlaceCard(place: place);
                 },
               ),
       ),
@@ -148,9 +103,8 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
 
 class _FavoritePlaceCard extends StatelessWidget {
   final FavoritePlaceEntity place;
-  final VoidCallback onDelete;
 
-  const _FavoritePlaceCard({required this.place, required this.onDelete});
+  const _FavoritePlaceCard({required this.place});
 
   @override
   Widget build(BuildContext context) {
@@ -195,26 +149,6 @@ class _FavoritePlaceCard extends StatelessWidget {
                         Colors.black.withValues(alpha: 0.12),
                       ],
                       stops: const [0.0, 0.45, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Material(
-                  color: Colors.black.withValues(alpha: 0.22),
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: onDelete,
-                    child: const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(
-                        CupertinoIcons.delete_simple,
-                        color: Colors.white,
-                        size: 18,
-                      ),
                     ),
                   ),
                 ),

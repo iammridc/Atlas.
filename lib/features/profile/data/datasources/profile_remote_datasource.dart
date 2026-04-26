@@ -448,6 +448,11 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
         routeSummary: trimmedRouteSummary,
         note: trip.note.trim(),
         updatedAt: DateTime.now(),
+        origin: trip.origin,
+        destination: trip.destination,
+        route: trip.route,
+        selectedPointsOfInterest: trip.selectedPointsOfInterest,
+        selectedHotels: trip.selectedHotels,
       );
 
       await doc.set(model.toJson(), SetOptions(merge: true));

@@ -26,6 +26,24 @@ class RecommendationsRepositoryImpl implements RecommendationsRepository {
   }
 
   @override
+  Future<Either<AppException, List<RecommendationEntity>>>
+  getHotPlaces() async {
+    try {
+      final places = await _datasource.getHotPlaces();
+      return Right(places);
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(UnknownException(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<void> syncCurrentUserFavoritesToHotPlaces() {
+    return _datasource.syncCurrentUserFavoritesToHotPlaces();
+  }
+
+  @override
   Future<Either<AppException, List<RecommendationEntity>>> searchPlaces(
     String query,
   ) async {

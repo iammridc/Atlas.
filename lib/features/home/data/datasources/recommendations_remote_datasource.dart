@@ -4,7 +4,9 @@ import 'dart:math';
 import 'package:atlas/core/errors/app_exception.dart';
 import 'package:atlas/core/services/categories_services.dart';
 import 'package:atlas/features/home/data/models/recommendation_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 abstract class RecommendationsRemoteDatasource {
@@ -12,12 +14,18 @@ abstract class RecommendationsRemoteDatasource {
     List<String> categoryTypes,
   );
 
+  Future<void> syncCurrentUserFavoritesToHotPlaces();
+
+  Future<List<RecommendationModel>> getHotPlaces();
+
   Future<List<RecommendationModel>> searchPlaces(String query);
 }
 
 class RecommendationsRemoteDatasourceImpl
     implements RecommendationsRemoteDatasource {
   final Dio _dio;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _firebaseAuth;
 
   static const _baseUrl = 'https://places.googleapis.com/v1/places:searchText';
   static const _fieldMask =
@@ -40,7 +48,13 @@ class RecommendationsRemoteDatasourceImpl
     'hidden gem',
   ];
 
-  RecommendationsRemoteDatasourceImpl({required Dio dio}) : _dio = dio;
+  RecommendationsRemoteDatasourceImpl({
+    required Dio dio,
+    required FirebaseFirestore firestore,
+    required FirebaseAuth firebaseAuth,
+  }) : _dio = dio,
+       _firestore = firestore,
+       _firebaseAuth = firebaseAuth;
 
   String get _apiKey => dotenv.env['GOOGLE_API_KEY'] ?? '';
 
@@ -59,6 +73,123 @@ class RecommendationsRemoteDatasourceImpl
 
     combined.shuffle(Random());
     return combined;
+  }
+
+  @override
+  Future<List<RecommendationModel>> getHotPlaces() async {
+    final currentUserId = _firebaseAuth.currentUser?.uid;
+    final hotFeedPlaces = await _getHotPlacesFromLikeFeed(currentUserId);
+    if (hotFeedPlaces.isNotEmpty) return hotFeedPlaces;
+
+    return _getHotPlacesFromUserFavorites(currentUserId);
+  }
+
+  @override
+  Future<void> syncCurrentUserFavoritesToHotPlaces() async {
+    final currentUser = _firebaseAuth.currentUser;
+    if (currentUser == null) return;
+
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('favorite_places')
+          .orderBy('savedAt', descending: true)
+          .limit(20)
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        final json = doc.data();
+        final savedAt = json['savedAt'] ?? DateTime.now();
+        final hotDoc = _firestore
+            .collection('hot_atlas_likes')
+            .doc('${currentUser.uid}_${doc.id}');
+
+        batch.set(hotDoc, {
+          'placeId': doc.id,
+          'likedByUserId': currentUser.uid,
+          'likedAt': savedAt,
+          'name': (json['name'] as String?)?.trim() ?? '',
+          'location': (json['location'] as String?)?.trim() ?? '',
+          'city': (json['city'] as String?)?.trim() ?? '',
+          'country': (json['country'] as String?)?.trim() ?? '',
+          'photoReference': (json['photoReference'] as String?)?.trim(),
+        }, SetOptions(merge: true));
+      }
+
+      await batch.commit();
+    } catch (_) {
+      // Hot places are a secondary community feed. Failing to mirror old
+      // favourites should never block the Home page from loading.
+    }
+  }
+
+  Future<List<RecommendationModel>> _getHotPlacesFromLikeFeed(
+    String? currentUserId,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection('hot_atlas_likes')
+          .orderBy('likedAt', descending: true)
+          .limit(120)
+          .get();
+
+      final seenPlaceIds = <String>{};
+      final places = <RecommendationModel>[];
+
+      for (final doc in snapshot.docs) {
+        final json = doc.data();
+        final ownerId = (json['likedByUserId'] as String?)?.trim();
+        // Hot in Atlas is community activity only; never surface the
+        // current user's own favourites in this carousel.
+        if (ownerId != null && ownerId == currentUserId) continue;
+
+        final place = RecommendationModel.fromHotLikeJson(json);
+        if (place.id.trim().isEmpty || place.name.trim().isEmpty) continue;
+        if (!seenPlaceIds.add(place.id)) continue;
+
+        places.add(place);
+        if (places.length == 20) break;
+      }
+
+      return places;
+    } on FirebaseException {
+      return const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<RecommendationModel>> _getHotPlacesFromUserFavorites(
+    String? currentUserId,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collectionGroup('favorite_places')
+          .orderBy('savedAt', descending: true)
+          .limit(120)
+          .get();
+
+      final seenPlaceIds = <String>{};
+      final places = <RecommendationModel>[];
+
+      for (final doc in snapshot.docs) {
+        final ownerId = doc.reference.parent.parent?.id;
+        if (ownerId != null && ownerId == currentUserId) continue;
+        if (!seenPlaceIds.add(doc.id)) continue;
+
+        final place = RecommendationModel.fromFavoriteJson(doc.id, doc.data());
+        if (place.name.trim().isEmpty) continue;
+
+        places.add(place);
+        if (places.length == 20) break;
+      }
+
+      return places;
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<List<RecommendationModel>> _fetchByCategory(

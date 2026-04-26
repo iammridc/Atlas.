@@ -80,7 +80,7 @@ class RecommendationCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${recommendation.city}, ${recommendation.country}',
+                      _locationLabel,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 16,
@@ -105,4 +105,13 @@ class RecommendationCard extends StatelessWidget {
       child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
     ),
   );
+
+  String get _locationLabel {
+    final parts = [
+      recommendation.city,
+      recommendation.country,
+    ].where((part) => part.trim().isNotEmpty).toList();
+
+    return parts.isEmpty ? 'Atlas favourite' : parts.join(', ');
+  }
 }

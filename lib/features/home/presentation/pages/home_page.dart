@@ -9,6 +9,7 @@ import 'package:atlas/features/auth/presentation/bloc/auth_state.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendations_state.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
+import 'package:atlas/features/home/presentation/bloc/hot_places_cubit.dart';
 import 'package:atlas/features/home/presentation/widgets/home_bottom_nav_bar.dart';
 import 'package:atlas/features/home/presentation/widgets/hot_places_section.dart';
 import 'package:atlas/features/home/presentation/widgets/map_section.dart';
@@ -36,6 +37,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final RecommendationsCubit _recommendationsCubit;
+  late final HotPlacesCubit _hotPlacesCubit;
   late final SearchPlacesCubit _searchPlacesCubit;
   late List<String> _categoryTypes;
   int _selectedIndex = 0;
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _categoryTypes = List<String>.from(widget.categoryTypes);
+    _hotPlacesCubit = getIt<HotPlacesCubit>()..loadHotPlaces();
     _recommendationsCubit = getIt<RecommendationsCubit>()
       ..loadRecommendations(_categoryTypes);
     _searchPlacesCubit = getIt<SearchPlacesCubit>()..initialize();
@@ -51,6 +54,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    _hotPlacesCubit.close();
     _recommendationsCubit.close();
     _searchPlacesCubit.close();
     super.dispose();
@@ -70,6 +74,7 @@ class _HomePageState extends State<HomePage> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _recommendationsCubit),
+        BlocProvider.value(value: _hotPlacesCubit),
         BlocProvider.value(value: _searchPlacesCubit),
       ],
       child: Scaffold(

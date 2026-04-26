@@ -58,6 +58,9 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
   CollectionReference<Map<String, dynamic>> get _plannedTripsCollection =>
       _userDoc.collection('planned_trips');
 
+  CollectionReference<Map<String, dynamic>> get _hotAtlasLikesCollection =>
+      _firestore.collection('hot_atlas_likes');
+
   CollectionReference<Map<String, dynamic>> _placeReviewsCollection(
     String placeId,
   ) => _firestore.collection('places').doc(placeId).collection('reviews');
@@ -211,6 +214,16 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
       );
 
       await doc.set(model.toJson(), SetOptions(merge: true));
+      await _hotAtlasLikesCollection.doc('${_currentUser.uid}_${doc.id}').set({
+        'placeId': doc.id,
+        'likedByUserId': _currentUser.uid,
+        'likedAt': model.savedAt,
+        'name': model.name,
+        'location': model.location,
+        'city': model.city,
+        'country': model.country,
+        'photoReference': model.photoReference,
+      }, SetOptions(merge: true));
       await _userDoc.set({
         'likedPlaces': FieldValue.arrayUnion([doc.id]),
       }, SetOptions(merge: true));
@@ -227,6 +240,7 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
   Future<void> deleteFavoritePlace(String id) async {
     try {
       await _favoritePlacesCollection.doc(id).delete();
+      await _hotAtlasLikesCollection.doc('${_currentUser.uid}_$id').delete();
       await _userDoc.set({
         'likedPlaces': FieldValue.arrayRemove([id]),
       }, SetOptions(merge: true));

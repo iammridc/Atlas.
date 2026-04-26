@@ -7,6 +7,10 @@ abstract class RecommendationsRepository {
     List<String> categoryTypes,
   );
 
+  Future<void> syncCurrentUserFavoritesToHotPlaces();
+
+  Future<Either<AppException, List<RecommendationEntity>>> getHotPlaces();
+
   Future<Either<AppException, List<RecommendationEntity>>> searchPlaces(
     String query,
   );

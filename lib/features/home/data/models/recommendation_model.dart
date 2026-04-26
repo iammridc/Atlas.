@@ -40,4 +40,27 @@ class RecommendationModel extends RecommendationEntity {
           : null,
     );
   }
+
+  factory RecommendationModel.fromFavoriteJson(
+    String id,
+    Map<String, dynamic> json,
+  ) {
+    return RecommendationModel(
+      id: id,
+      name: (json['name'] as String?)?.trim() ?? '',
+      city: (json['city'] as String?)?.trim() ?? '',
+      country: (json['country'] as String?)?.trim() ?? '',
+      photoReference: (json['photoReference'] as String?)?.trim(),
+    );
+  }
+
+  factory RecommendationModel.fromHotLikeJson(Map<String, dynamic> json) {
+    return RecommendationModel(
+      id: (json['placeId'] as String?)?.trim() ?? '',
+      name: (json['name'] as String?)?.trim() ?? '',
+      city: (json['city'] as String?)?.trim() ?? '',
+      country: (json['country'] as String?)?.trim() ?? '',
+      photoReference: (json['photoReference'] as String?)?.trim(),
+    );
+  }
 }

@@ -18,7 +18,10 @@ import 'package:atlas/features/preferences/presentation/bloc/preferences_cubit.d
 import 'package:atlas/features/home/data/datasources/recommendations_remote_datasource.dart';
 import 'package:atlas/features/home/data/repo_impls/recommendations_repository_impl.dart';
 import 'package:atlas/features/home/domain/repositories/recommendations_repository.dart';
+import 'package:atlas/features/home/domain/usecases/get_hot_places_usecase.dart';
 import 'package:atlas/features/home/domain/usecases/get_recommendations_usecase.dart';
+import 'package:atlas/features/home/domain/usecases/sync_hot_places_usecase.dart';
+import 'package:atlas/features/home/presentation/bloc/hot_places_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
 import 'package:atlas/features/home/domain/usecases/search_places_usecase.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
@@ -116,7 +119,11 @@ Future<void> configureDependencies() async {
   );
 
   getIt.registerLazySingleton<RecommendationsRemoteDatasource>(
-    () => RecommendationsRemoteDatasourceImpl(dio: getIt<Dio>()),
+    () => RecommendationsRemoteDatasourceImpl(
+      dio: getIt<Dio>(),
+      firestore: getIt<FirebaseFirestore>(),
+      firebaseAuth: getIt<FirebaseAuth>(),
+    ),
   );
   getIt.registerLazySingleton<RecommendationsRepository>(
     () =>
@@ -126,7 +133,19 @@ Future<void> configureDependencies() async {
     () => GetRecommendationsUseCase(getIt<RecommendationsRepository>()),
   );
   getIt.registerLazySingleton(
+    () => GetHotPlacesUseCase(getIt<RecommendationsRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => SyncHotPlacesUseCase(getIt<RecommendationsRepository>()),
+  );
+  getIt.registerLazySingleton(
     () => SearchPlacesUseCase(getIt<RecommendationsRepository>()),
+  );
+  getIt.registerFactory<HotPlacesCubit>(
+    () => HotPlacesCubit(
+      getHotPlaces: getIt<GetHotPlacesUseCase>(),
+      syncHotPlaces: getIt<SyncHotPlacesUseCase>(),
+    ),
   );
   getIt.registerFactory<RecommendationsCubit>(
     () => RecommendationsCubit(

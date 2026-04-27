@@ -1,9 +1,11 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:atlas/features/travel_planner/presentation/bloc/travel_planner_cubit.dart';
 import 'package:atlas/features/travel_planner/presentation/bloc/travel_planner_state.dart';
 import 'package:atlas/features/travel_planner/presentation/widgets/travel_planner_formatters.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -327,20 +329,33 @@ class _SelectedStopsBlock extends StatelessWidget {
         ...stops.map(
           (stop) => Padding(
             padding: const EdgeInsets.only(bottom: 7),
-            child: Row(
-              children: [
-                const Icon(CupertinoIcons.check_mark_circled_solid, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    stop.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => context.router.push(
+                PlaceDetailsRoute(
+                  placeId: stop.id,
+                  placeName: stop.name,
+                  city: '',
+                  country: '',
+                  photoReference: stop.photoReference,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.check_mark_circled_solid, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      stop.name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const Icon(CupertinoIcons.chevron_right, size: 15),
+                ],
+              ),
             ),
           ),
         ),

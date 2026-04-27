@@ -169,10 +169,6 @@ class _ProfileViewState extends State<_ProfileView> {
                       onSubmitted: (_) => _usernameFocusNode.unfocus(),
                       decoration: InputDecoration(
                         hintText: 'Username',
-                        filled: true,
-                        fillColor: isDark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : Colors.black.withValues(alpha: 0.05),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 18,
                           vertical: 16,

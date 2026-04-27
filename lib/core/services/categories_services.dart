@@ -25,8 +25,6 @@ class CategoriesService {
           'updatedAt': DateTime.now().toIso8601String(),
         });
         debugPrint('Categories seeded successfully!');
-      } else {
-        debugPrint('Categories already up to date.');
       }
     } catch (e) {
       debugPrint('Seed error: $e');

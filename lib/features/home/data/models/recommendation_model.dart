@@ -7,11 +7,14 @@ class RecommendationModel extends RecommendationEntity {
     required super.city,
     required super.country,
     super.photoReference,
+    super.latitude,
+    super.longitude,
   });
 
   factory RecommendationModel.fromJson(Map<String, dynamic> json) {
     final photos = json['photos'] as List?;
     final addressComponents = json['addressComponents'] as List<dynamic>? ?? [];
+    final location = json['location'] as Map<String, dynamic>? ?? {};
 
     String city = '';
     String country = '';
@@ -38,6 +41,8 @@ class RecommendationModel extends RecommendationEntity {
       photoReference: photos != null && photos.isNotEmpty
           ? photos.first['name'] as String?
           : null,
+      latitude: _toDoubleOrNull(location['latitude']),
+      longitude: _toDoubleOrNull(location['longitude']),
     );
   }
 
@@ -51,6 +56,8 @@ class RecommendationModel extends RecommendationEntity {
       city: (json['city'] as String?)?.trim() ?? '',
       country: (json['country'] as String?)?.trim() ?? '',
       photoReference: (json['photoReference'] as String?)?.trim(),
+      latitude: _toDoubleOrNull(json['latitude']),
+      longitude: _toDoubleOrNull(json['longitude']),
     );
   }
 
@@ -61,6 +68,14 @@ class RecommendationModel extends RecommendationEntity {
       city: (json['city'] as String?)?.trim() ?? '',
       country: (json['country'] as String?)?.trim() ?? '',
       photoReference: (json['photoReference'] as String?)?.trim(),
+      latitude: _toDoubleOrNull(json['latitude']),
+      longitude: _toDoubleOrNull(json['longitude']),
     );
+  }
+
+  static double? _toDoubleOrNull(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 }

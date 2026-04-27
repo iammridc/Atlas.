@@ -11,6 +11,22 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [HomeMapPage]
+class HomeMapRoute extends PageRouteInfo<void> {
+  const HomeMapRoute({List<PageRouteInfo>? children})
+    : super(HomeMapRoute.name, initialChildren: children);
+
+  static const String name = 'HomeMapRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const HomeMapPage();
+    },
+  );
+}
+
+/// generated route for
 /// [HomePage]
 class HomeRoute extends PageRouteInfo<HomeRouteArgs> {
   HomeRoute({

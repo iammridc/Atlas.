@@ -1,4 +1,5 @@
 import 'package:atlas/core/theme/cubit/theme_cubit.dart';
+import 'package:atlas/core/services/location_service.dart';
 import 'package:atlas/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:atlas/features/auth/data/repo_impls/AuthRepositoryImpl.dart';
 import 'package:atlas/features/auth/domain/repositories/auth_repository.dart';
@@ -15,13 +16,18 @@ import 'package:atlas/features/preferences/domain/usecases/get_categories_usecas
 import 'package:atlas/features/preferences/domain/usecases/has_preferences.dart';
 import 'package:atlas/features/preferences/domain/usecases/save_preferences_usecase.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_cubit.dart';
+import 'package:atlas/features/home/data/datasources/home_map_remote_datasource.dart';
 import 'package:atlas/features/home/data/datasources/recommendations_remote_datasource.dart';
+import 'package:atlas/features/home/data/repo_impls/home_map_repository_impl.dart';
 import 'package:atlas/features/home/data/repo_impls/recommendations_repository_impl.dart';
+import 'package:atlas/features/home/domain/repositories/home_map_repository.dart';
 import 'package:atlas/features/home/domain/repositories/recommendations_repository.dart';
+import 'package:atlas/features/home/domain/usecases/get_nearby_map_places_usecase.dart';
 import 'package:atlas/features/home/domain/usecases/get_hot_places_usecase.dart';
 import 'package:atlas/features/home/domain/usecases/get_recommendations_usecase.dart';
 import 'package:atlas/features/home/domain/usecases/sync_hot_places_usecase.dart';
 import 'package:atlas/features/home/presentation/bloc/hot_places_cubit.dart';
+import 'package:atlas/features/home/presentation/bloc/home_map_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
 import 'package:atlas/features/home/domain/usecases/search_places_usecase.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
@@ -61,6 +67,10 @@ Future<void> configureDependencies() async {
   );
 
   getIt.registerLazySingleton<Dio>(() => Dio());
+
+  getIt.registerLazySingleton<LocationService>(
+    () => GeolocatorLocationService(),
+  );
 
   getIt.registerLazySingleton<AppRouter>(() => AppRouter());
 
@@ -141,6 +151,21 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(
     () => SearchPlacesUseCase(getIt<RecommendationsRepository>()),
   );
+  getIt.registerLazySingleton<HomeMapRemoteDatasource>(
+    () => HomeMapRemoteDatasourceImpl(dio: getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<HomeMapRepository>(
+    () => HomeMapRepositoryImpl(getIt<HomeMapRemoteDatasource>()),
+  );
+  getIt.registerLazySingleton(
+    () => GetNearbyMapPlacesUseCase(getIt<HomeMapRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => FindNearestMapPlaceUseCase(getIt<HomeMapRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => ResolveHomeMapLocationUseCase(getIt<HomeMapRepository>()),
+  );
   getIt.registerFactory<HotPlacesCubit>(
     () => HotPlacesCubit(
       getHotPlaces: getIt<GetHotPlacesUseCase>(),
@@ -156,6 +181,14 @@ Future<void> configureDependencies() async {
     () => SearchPlacesCubit(
       searchPlaces: getIt<SearchPlacesUseCase>(),
       firebaseAuth: getIt<FirebaseAuth>(),
+    ),
+  );
+  getIt.registerFactory<HomeMapCubit>(
+    () => HomeMapCubit(
+      getNearbyPlaces: getIt<GetNearbyMapPlacesUseCase>(),
+      findNearestPlace: getIt<FindNearestMapPlaceUseCase>(),
+      resolveLocation: getIt<ResolveHomeMapLocationUseCase>(),
+      locationService: getIt<LocationService>(),
     ),
   );
 

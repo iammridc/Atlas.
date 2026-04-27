@@ -26,7 +26,7 @@ class HotPlacesSection extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Text(
-                'Hot in Atlas.',
+                "Today's hot picks",
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ),

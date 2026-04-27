@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -31,6 +33,17 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        val dotenv = Properties()
+        val dotenvFile = rootProject.file("../.env")
+        if (dotenvFile.exists()) {
+            dotenvFile.inputStream().use { dotenv.load(it) }
+        }
+        val googleMapsApiKey = dotenv.getProperty("GOOGLE_API_KEY")
+            ?: project.findProperty("GOOGLE_API_KEY")?.toString()
+            ?: System.getenv("GOOGLE_API_KEY")
+            ?: ""
+        manifestPlaceholders["googleMapsApiKey"] = googleMapsApiKey
     }
 
     buildTypes {

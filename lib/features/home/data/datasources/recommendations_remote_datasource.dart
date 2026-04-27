@@ -33,7 +33,8 @@ class RecommendationsRemoteDatasourceImpl
       'places.id,'
       'places.displayName,'
       'places.addressComponents,'
-      'places.photos';
+      'places.photos,'
+      'places.location';
 
   static const _queryPrefixes = [
     'world famous',
@@ -115,6 +116,8 @@ class RecommendationsRemoteDatasourceImpl
           'city': (json['city'] as String?)?.trim() ?? '',
           'country': (json['country'] as String?)?.trim() ?? '',
           'photoReference': (json['photoReference'] as String?)?.trim(),
+          'latitude': json['latitude'],
+          'longitude': json['longitude'],
         }, SetOptions(merge: true));
       }
 

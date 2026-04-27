@@ -10,6 +10,7 @@ import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart'
 import 'package:atlas/features/home/presentation/bloc/recommendations_state.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/hot_places_cubit.dart';
+import 'package:atlas/features/home/presentation/bloc/home_map_cubit.dart';
 import 'package:atlas/features/home/presentation/widgets/home_bottom_nav_bar.dart';
 import 'package:atlas/features/home/presentation/widgets/hot_places_section.dart';
 import 'package:atlas/features/home/presentation/widgets/map_section.dart';
@@ -39,6 +40,7 @@ class _HomePageState extends State<HomePage> {
   late final RecommendationsCubit _recommendationsCubit;
   late final HotPlacesCubit _hotPlacesCubit;
   late final SearchPlacesCubit _searchPlacesCubit;
+  late final HomeMapCubit _homeMapCubit;
   late List<String> _categoryTypes;
   int _selectedIndex = 0;
 
@@ -50,6 +52,7 @@ class _HomePageState extends State<HomePage> {
     _recommendationsCubit = getIt<RecommendationsCubit>()
       ..loadRecommendations(_categoryTypes);
     _searchPlacesCubit = getIt<SearchPlacesCubit>()..initialize();
+    _homeMapCubit = getIt<HomeMapCubit>();
   }
 
   @override
@@ -57,6 +60,7 @@ class _HomePageState extends State<HomePage> {
     _hotPlacesCubit.close();
     _recommendationsCubit.close();
     _searchPlacesCubit.close();
+    _homeMapCubit.close();
     super.dispose();
   }
 
@@ -76,6 +80,7 @@ class _HomePageState extends State<HomePage> {
         BlocProvider.value(value: _recommendationsCubit),
         BlocProvider.value(value: _hotPlacesCubit),
         BlocProvider.value(value: _searchPlacesCubit),
+        BlocProvider.value(value: _homeMapCubit),
       ],
       child: Scaffold(
         extendBody: true,
@@ -160,6 +165,8 @@ class _HomePageState extends State<HomePage> {
 class _RecommendationsView extends StatelessWidget {
   const _RecommendationsView();
 
+  static const double _bottomNavClearance = 76;
+
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
@@ -197,7 +204,7 @@ class _RecommendationsView extends StatelessWidget {
           ),
         ),
         const SliverToBoxAdapter(child: MapSection()),
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        const SliverToBoxAdapter(child: SizedBox(height: _bottomNavClearance)),
       ],
     );
   }
@@ -211,6 +218,7 @@ class _SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<_SettingsView> {
+  static const double _bottomNavClearance = 76;
   static const _useFavoritesKey = 'settings_use_favorites_for_recommendations';
   static const _useReviewsKey = 'settings_use_reviews_for_recommendations';
   static const _recommendationNotificationsKey =
@@ -308,7 +316,12 @@ class _SettingsViewState extends State<_SettingsView> {
               final user = state is AuthAuthenticated ? state.user : null;
 
               return ListView(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  24,
+                  24,
+                  _bottomNavClearance,
+                ),
                 children: [
                   Text(
                     'Settings',
@@ -336,10 +349,22 @@ class _SettingsViewState extends State<_SettingsView> {
                         BlocBuilder<ThemeCubit, AppThemeMode>(
                           bloc: getIt<ThemeCubit>(),
                           builder: (context, themeMode) {
-                            return _ThemeModeSetting(
-                              value: themeMode,
-                              onChanged: (value) => getIt<ThemeCubit>()
-                                  .setTheme(value, userId: user?.id),
+                            return _SettingsValueTile(
+                              icon: CupertinoIcons.moon_stars,
+                              title: 'Theme',
+                              value: _themeModeLabel(themeMode),
+                              onTap: () => _chooseValue<AppThemeMode>(
+                                title: 'Theme',
+                                values: AppThemeMode.values,
+                                labels: const {
+                                  AppThemeMode.light: 'Light',
+                                  AppThemeMode.dark: 'Dark',
+                                  AppThemeMode.system: 'System',
+                                },
+                                current: themeMode,
+                                onSelected: (value) => getIt<ThemeCubit>()
+                                    .setTheme(value, userId: user?.id),
+                              ),
                             );
                           },
                         ),
@@ -401,13 +426,6 @@ class _SettingsViewState extends State<_SettingsView> {
                           subtitle: 'Remove recent searches on this device',
                           onTap: _clearLocalHistory,
                         ),
-                        _SettingsActionTile(
-                          icon: CupertinoIcons.delete_simple,
-                          title: 'Delete account',
-                          subtitle: 'Permanently remove your Atlas account',
-                          isDestructive: true,
-                          onTap: isLoading ? null : _confirmDeleteAccount,
-                        ),
                       ],
                     ),
                     _SettingsSection(
@@ -415,11 +433,12 @@ class _SettingsViewState extends State<_SettingsView> {
                       children: [
                         _SettingsValueTile(
                           icon: CupertinoIcons.location,
-                          title: 'Distance units',
-                          value: _distanceUnit,
+                          title: 'Distance Unit',
+                          value: _distanceUnitLabel(_distanceUnit),
                           onTap: () => _chooseValue(
-                            title: 'Distance units',
+                            title: 'Distance Unit',
                             values: const ['km', 'mi'],
+                            labels: const {'km': 'Kilometers', 'mi': 'Miles'},
                             current: _distanceUnit,
                             onSelected: (value) => _setString(
                               _distanceUnitKey,
@@ -501,6 +520,13 @@ class _SettingsViewState extends State<_SettingsView> {
                               ? null
                               : () => context.read<AuthCubit>().signOut(),
                         ),
+                        _SettingsActionTile(
+                          icon: CupertinoIcons.delete_simple,
+                          title: 'Delete account',
+                          subtitle: 'Permanently remove your Atlas account',
+                          isDestructive: true,
+                          onTap: isLoading ? null : _confirmDeleteAccount,
+                        ),
                       ],
                     ),
                   ],
@@ -552,14 +578,29 @@ class _SettingsViewState extends State<_SettingsView> {
     );
   }
 
-  Future<void> _chooseValue({
+  String _distanceUnitLabel(String value) {
+    return switch (value) {
+      'mi' => 'Miles',
+      _ => 'Kilometers',
+    };
+  }
+
+  String _themeModeLabel(AppThemeMode value) {
+    return switch (value) {
+      AppThemeMode.light => 'Light',
+      AppThemeMode.dark => 'Dark',
+      AppThemeMode.system => 'System',
+    };
+  }
+
+  Future<void> _chooseValue<T>({
     required String title,
-    required List<String> values,
-    Map<String, String> labels = const {},
-    required String current,
-    required ValueChanged<String> onSelected,
+    required List<T> values,
+    Map<T, String> labels = const {},
+    required T current,
+    required ValueChanged<T> onSelected,
   }) async {
-    final selected = await showModalBottomSheet<String>(
+    final selected = await showModalBottomSheet<T>(
       context: context,
       builder: (context) {
         return SafeArea(
@@ -581,7 +622,7 @@ class _SettingsViewState extends State<_SettingsView> {
               ),
               for (final value in values)
                 ListTile(
-                  title: Text(labels[value] ?? value),
+                  title: Text(labels[value] ?? value.toString()),
                   trailing: value == current
                       ? const Icon(CupertinoIcons.checkmark)
                       : null,
@@ -684,15 +725,7 @@ class _SettingsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.07)
-                  : Colors.black.withValues(alpha: 0.04),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Column(children: children),
-          ),
+          Column(children: children),
         ],
       ),
     );
@@ -804,46 +837,6 @@ class _SettingsInfoTile extends StatelessWidget {
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
       subtitle: Text(value),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    );
-  }
-}
-
-class _ThemeModeSetting extends StatelessWidget {
-  final AppThemeMode value;
-  final ValueChanged<AppThemeMode> onChanged;
-
-  const _ThemeModeSetting({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(CupertinoIcons.moon_stars),
-              SizedBox(width: 16),
-              Text(
-                'Theme',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SegmentedButton<AppThemeMode>(
-            segments: const [
-              ButtonSegment(value: AppThemeMode.light, label: Text('Light')),
-              ButtonSegment(value: AppThemeMode.dark, label: Text('Dark')),
-              ButtonSegment(value: AppThemeMode.system, label: Text('System')),
-            ],
-            selected: {value},
-            onSelectionChanged: (selected) => onChanged(selected.first),
-            showSelectedIcon: false,
-          ),
-        ],
-      ),
     );
   }
 }

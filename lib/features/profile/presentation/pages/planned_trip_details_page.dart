@@ -1,9 +1,11 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:atlas/features/travel_planner/presentation/widgets/travel_planner_formatters.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -399,80 +401,93 @@ class _SavedStopCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      width: 190,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
-          width: 2,
+    return GestureDetector(
+      onTap: () => context.router.push(
+        PlaceDetailsRoute(
+          placeId: stop.id,
+          placeName: stop.name,
+          city: '',
+          country: '',
+          photoReference: stop.photoReference,
         ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (stop.photoReference != null)
-              Image.network(
-                buildGooglePlacePhotoUrl(stop.photoReference!),
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const _PhotoPlaceholder(),
-              )
-            else
-              const _PhotoPlaceholder(),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.02),
-                      Colors.black.withValues(alpha: 0.42),
-                      Colors.black.withValues(alpha: 0.78),
-                    ],
+      child: Container(
+        width: 190,
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark
+                ? AppColors.appPrimaryWhite
+                : AppColors.appPrimaryBlack,
+            width: 2,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (stop.photoReference != null)
+                Image.network(
+                  buildGooglePlacePhotoUrl(stop.photoReference!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const _PhotoPlaceholder(),
+                )
+              else
+                const _PhotoPlaceholder(),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.02),
+                        Colors.black.withValues(alpha: 0.42),
+                        Colors.black.withValues(alpha: 0.78),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    stop.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      height: 1,
-                      fontWeight: FontWeight.w800,
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      stop.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        height: 1,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    stop.rating == null
-                        ? stop.category
-                        : '${stop.category} · ${stop.rating!.toStringAsFixed(1)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 4),
+                    Text(
+                      stop.rating == null
+                          ? stop.category
+                          : '${stop.category} · ${stop.rating!.toStringAsFixed(1)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

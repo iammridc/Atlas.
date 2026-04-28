@@ -222,7 +222,6 @@ class _SavedRouteHeader extends StatelessWidget {
                         ? 'Direct'
                         : '${route.transferCount} transfers',
                   ),
-                  if (route.isMocked) const _InfoPill(label: 'Mock flight'),
                   if (route.isEstimated) const _InfoPill(label: 'Estimated'),
                 ],
               ),

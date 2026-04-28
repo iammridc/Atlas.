@@ -26,6 +26,13 @@ class PlaceReviewsPage extends StatelessWidget {
           allowPlaceNameEditing: false,
           initialRating: existingReview?.rating.round() ?? 4,
           initialText: existingReview?.text ?? '',
+          placeSubtitle: [
+            state.place.city,
+            state.place.country,
+          ].where((part) => part.trim().isNotEmpty).join(', '),
+          photoReference: state.place.photoNames.isEmpty
+              ? null
+              : state.place.photoNames.first,
         ),
       ),
     );
@@ -153,14 +160,20 @@ class _HeaderIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isDark
-        ? AppColors.appPrimaryWhite
-        : AppColors.appPrimaryBlack;
-
-    return SizedBox(
+    return Container(
       width: 44,
       height: 44,
-      child: Center(child: Icon(icon, color: iconColor, size: 32)),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Icon(
+        icon,
+        color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
+        size: 22,
+      ),
     );
   }
 }

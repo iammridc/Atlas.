@@ -62,30 +62,13 @@ class TravelRouteDetailsPage extends StatelessWidget {
                     ? null
                     : () =>
                           context.read<TravelPlannerCubit>().saveSelectedTrip(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark
-                      ? AppColors.appPrimaryWhite
-                      : AppColors.appPrimaryBlack,
-                  foregroundColor: isDark
-                      ? AppColors.appPrimaryBlack
-                      : AppColors.appPrimaryWhite,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
                 child: state.actionStatus == TravelPlannerActionStatus.saving
                     ? const SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text(
-                        'Add to Planned Trips',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                    : const Text('Add to Planned Trips'),
               ),
             ),
           ),
@@ -126,8 +109,6 @@ class TravelRouteDetailsPage extends StatelessWidget {
                                   ? 'Direct'
                                   : '${route.transferCount} transfers',
                             ),
-                            if (route.isMocked)
-                              const _InfoPill(label: 'Mock flight'),
                             if (route.isEstimated)
                               const _InfoPill(label: 'Estimated'),
                           ],

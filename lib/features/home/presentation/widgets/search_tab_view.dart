@@ -249,16 +249,15 @@ class _TopIconButton extends StatelessWidget {
         height: 44,
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
-          ),
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, size: 22),
+        child: Icon(
+          icon,
+          size: 22,
+          color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
+        ),
       ),
     );
   }
@@ -609,19 +608,7 @@ class _StateMessageCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: onActionTap,
-            style: FilledButton.styleFrom(
-              backgroundColor: titleColor,
-              foregroundColor:
-                  ThemeData.estimateBrightnessForColor(titleColor) ==
-                      Brightness.dark
-                  ? Colors.white
-                  : Colors.black,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            ),
-            child: Text(actionLabel),
-          ),
+          FilledButton(onPressed: onActionTap, child: Text(actionLabel)),
         ],
       ),
     );

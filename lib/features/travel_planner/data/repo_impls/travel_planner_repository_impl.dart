@@ -35,7 +35,7 @@ class TravelPlannerRepositoryImpl implements TravelPlannerRepository {
         TravelRoutePlanEntity(
           origin: origin,
           destination: destination,
-          routes: combinedRoutes.take(8).toList(),
+          routes: _limitRoutesPerTransport(combinedRoutes),
           pointsOfInterest: pointsOfInterest,
           hotels: hotels,
         ),
@@ -97,5 +97,22 @@ class TravelPlannerRepositoryImpl implements TravelPlannerRepository {
     } catch (_) {
       return const [];
     }
+  }
+
+  List<TravelRouteEntity> _limitRoutesPerTransport(
+    List<TravelRouteEntity> routes,
+  ) {
+    final counts = <TravelTransportType, int>{};
+    final limitedRoutes = <TravelRouteEntity>[];
+
+    for (final route in routes) {
+      final count = counts[route.transportType] ?? 0;
+      if (count >= 2) continue;
+
+      counts[route.transportType] = count + 1;
+      limitedRoutes.add(route);
+    }
+
+    return limitedRoutes;
   }
 }

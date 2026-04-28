@@ -208,21 +208,6 @@ class _InterestsView extends StatelessWidget {
                       : () => context.read<PreferencesCubit>().savePreferences(
                           uid,
                         ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark
-                        ? AppColors.appPrimaryWhite
-                        : AppColors.appPrimaryBlack,
-                    foregroundColor: isDark
-                        ? AppColors.appPrimaryBlack
-                        : AppColors.appPrimaryWhite,
-                    disabledBackgroundColor: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.08),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(26),
-                    ),
-                    elevation: 0,
-                  ),
                   child: isSaving
                       ? SizedBox(
                           width: 20,

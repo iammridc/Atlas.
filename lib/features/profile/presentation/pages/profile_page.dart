@@ -427,6 +427,7 @@ class _ProfileEditButton extends StatelessWidget {
         foregroundColor: isDark ? Colors.white : Colors.black87,
         disabledForegroundColor: isDark ? Colors.white38 : Colors.black38,
         fixedSize: const Size(44, 44),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       icon: isSaving
           ? const SizedBox(

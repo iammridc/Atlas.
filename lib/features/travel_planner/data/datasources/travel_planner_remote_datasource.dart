@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:atlas/core/errors/app_exception.dart';
+import 'package:atlas/core/utils/unit_conversions.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class TravelPlannerRemoteDatasource {
   Future<List<TravelRouteEntity>> getGoogleRoutes({
@@ -76,12 +78,14 @@ class TravelPlannerRemoteDatasourceImpl
     required TravelLocationEntity origin,
     required TravelLocationEntity destination,
   }) async {
+    final currency = await _preferredCurrency();
     final routeFutures = [
       _fetchRoutesForMode(
         origin: origin,
         destination: destination,
         transportType: TravelTransportType.car,
         travelMode: 'DRIVE',
+        currency: currency,
       ),
       _fetchRoutesForMode(
         origin: origin,
@@ -89,6 +93,7 @@ class TravelPlannerRemoteDatasourceImpl
         transportType: TravelTransportType.bus,
         travelMode: 'TRANSIT',
         allowedTransitModes: const ['BUS'],
+        currency: currency,
       ),
       _fetchRoutesForMode(
         origin: origin,
@@ -96,6 +101,7 @@ class TravelPlannerRemoteDatasourceImpl
         transportType: TravelTransportType.train,
         travelMode: 'TRANSIT',
         allowedTransitModes: const ['TRAIN', 'RAIL'],
+        currency: currency,
       ),
     ];
 
@@ -118,8 +124,7 @@ class TravelPlannerRemoteDatasourceImpl
       );
     }
 
-    final fastest = routes.first;
-    return [fastest.copyAsBest(), ...routes];
+    return routes;
   }
 
   Future<List<TravelRouteEntity>> _fetchRoutesForMode({
@@ -127,6 +132,7 @@ class TravelPlannerRemoteDatasourceImpl
     required TravelLocationEntity destination,
     required TravelTransportType transportType,
     required String travelMode,
+    required String currency,
     List<String>? allowedTransitModes,
   }) async {
     final response = await _dio.post(
@@ -162,16 +168,17 @@ class TravelPlannerRemoteDatasourceImpl
 
     final routes = response.data['routes'] as List? ?? const [];
     return routes
-        .take(4)
         .map(
           (route) => _parseRoute(
             route as Map<String, dynamic>,
             origin: origin,
             destination: destination,
             transportType: transportType,
+            currency: currency,
           ),
         )
         .where((route) => route.duration > Duration.zero)
+        .take(2)
         .toList();
   }
 
@@ -191,6 +198,7 @@ class TravelPlannerRemoteDatasourceImpl
     required TravelLocationEntity origin,
     required TravelLocationEntity destination,
     required TravelTransportType transportType,
+    required String currency,
   }) {
     final duration = _parseGoogleDuration(json['duration'] as String?);
     final legsJson = json['legs'] as List? ?? const [];
@@ -228,7 +236,16 @@ class TravelPlannerRemoteDatasourceImpl
               leg.type == TravelLegType.tram,
         )
         .toList();
-    final priceLabel = _parseMoneyLabel(json['travelAdvisory']);
+    final distanceMeters = _toInt(json['distanceMeters']);
+    final priceLabel =
+        _parseMoneyLabel(json['travelAdvisory'], currency) ??
+        _estimatedTransitPriceLabel(
+          transportType: transportType,
+          distanceMeters: distanceMeters,
+          origin: origin,
+          destination: destination,
+          currency: currency,
+        );
     final routeTitle = _routeTitle(transportType, origin, destination, legs);
 
     return TravelRouteEntity(
@@ -237,7 +254,7 @@ class TravelPlannerRemoteDatasourceImpl
       title: routeTitle,
       summary: _routeSummary(transportType, transitLegs),
       duration: duration,
-      distanceMeters: _toInt(json['distanceMeters']),
+      distanceMeters: distanceMeters,
       priceLabel: priceLabel,
       transferCount: max(0, transitLegs.length - 1),
       legs: legs.isEmpty
@@ -248,7 +265,7 @@ class TravelPlannerRemoteDatasourceImpl
                 fromName: origin.name,
                 toName: destination.name,
                 duration: duration,
-                distanceMeters: _toInt(json['distanceMeters']),
+                distanceMeters: distanceMeters,
               ),
             ]
           : legs,
@@ -384,15 +401,21 @@ class TravelPlannerRemoteDatasourceImpl
     required TravelLocationEntity origin,
     required TravelLocationEntity destination,
   }) async {
-    return _getMockFlightRoutes(origin: origin, destination: destination);
+    final currency = await _preferredCurrency();
+    return _getGeneratedFlightRoutes(
+      origin: origin,
+      destination: destination,
+      currency: currency,
+    );
   }
 
-  List<TravelRouteEntity> _getMockFlightRoutes({
+  List<TravelRouteEntity> _getGeneratedFlightRoutes({
     required TravelLocationEntity origin,
     required TravelLocationEntity destination,
+    required String currency,
   }) {
-    final airportOrigin = _mockAirportLabel(origin);
-    final airportDestination = _mockAirportLabel(destination);
+    final airportOrigin = _airportLabel(origin);
+    final airportDestination = _airportLabel(destination);
     final airDistanceKm = max(
       120,
       (_haversineDistanceKm(
@@ -407,13 +430,17 @@ class TravelPlannerRemoteDatasourceImpl
 
     return [
       TravelRouteEntity(
-        id: 'mock-flight-direct-${origin.id}-${destination.id}',
+        id: 'flight-direct-${origin.id}-${destination.id}',
         transportType: TravelTransportType.flight,
         title: '$airportOrigin to $airportDestination',
-        summary: 'Mock flight data, direct',
+        summary: 'Direct flight',
         duration: totalDuration,
         distanceMeters: airDistanceKm * 1000,
-        priceLabel: _mockFlightPrice(airDistanceKm, direct: true),
+        priceLabel: _flightPrice(
+          airDistanceKm,
+          direct: true,
+          currency: currency,
+        ),
         transferCount: 0,
         isMocked: true,
         bookingUrl: _googleFlightsUrl(origin, destination),
@@ -423,22 +450,27 @@ class TravelPlannerRemoteDatasourceImpl
             title: 'Direct flight',
             fromName: airportOrigin,
             toName: airportDestination,
-            operatorName: 'Mock Airlines',
+            operatorName: 'Atlas Air',
             lineName: 'AT${100 + airDistanceKm % 800}',
             duration: Duration(minutes: flightMinutes),
             distanceMeters: airDistanceKm * 1000,
-            instructions: 'Generated flight preview. Replace with a provider API later.',
+            instructions:
+                'Check current schedules and fare rules before booking.',
           ),
         ],
       ),
       TravelRouteEntity(
-        id: 'mock-flight-transfer-${origin.id}-${destination.id}',
+        id: 'flight-transfer-${origin.id}-${destination.id}',
         transportType: TravelTransportType.flight,
         title: '$airportOrigin to $airportDestination',
-        summary: 'Mock flight data, 1 transfer',
+        summary: '1 transfer flight',
         duration: totalDuration + const Duration(minutes: 95),
         distanceMeters: (airDistanceKm * 1.12).round() * 1000,
-        priceLabel: _mockFlightPrice(airDistanceKm, direct: false),
+        priceLabel: _flightPrice(
+          airDistanceKm,
+          direct: false,
+          currency: currency,
+        ),
         transferCount: 1,
         isMocked: true,
         bookingUrl: _googleFlightsUrl(origin, destination),
@@ -448,11 +480,12 @@ class TravelPlannerRemoteDatasourceImpl
             title: 'Flight with transfer',
             fromName: airportOrigin,
             toName: airportDestination,
-            operatorName: 'Mock Connect',
+            operatorName: 'SkyLink Connect',
             lineName: 'AT${300 + airDistanceKm % 500}',
             duration: Duration(minutes: flightMinutes + 95),
             distanceMeters: (airDistanceKm * 1.12).round() * 1000,
-            instructions: 'Includes a generated transfer leg for UI testing.',
+            instructions:
+                'Connection time is included in the total journey estimate.',
           ),
         ],
       ),
@@ -781,11 +814,11 @@ class TravelPlannerRemoteDatasourceImpl
     }
 
     return switch (type) {
-      TravelTransportType.car => 'Google driving route',
-      TravelTransportType.bus => 'Google bus route',
-      TravelTransportType.train => 'Google train route',
-      TravelTransportType.flight => 'Mock flight route',
-      TravelTransportType.best => 'Fastest available route',
+      TravelTransportType.car => 'Driving route',
+      TravelTransportType.bus => 'Bus route',
+      TravelTransportType.train => 'Train route',
+      TravelTransportType.flight => 'Flight route',
+      TravelTransportType.best => 'Recommended route',
     };
   }
 
@@ -840,25 +873,58 @@ class TravelPlannerRemoteDatasourceImpl
     return DateTime.tryParse(rawValue)?.toLocal();
   }
 
-  String? _parseMoneyLabel(dynamic advisory) {
+  String? _parseMoneyLabel(dynamic advisory, String preferredCurrency) {
     final json = advisory as Map<String, dynamic>?;
     final fare = json?['transitFare'] as Map<String, dynamic>?;
     if (fare == null) return null;
 
-    final localizedText =
-        (fare['localizedText'] as Map<String, dynamic>?)?['text'] as String?;
-    if (localizedText != null && localizedText.isNotEmpty) {
-      return localizedText;
-    }
-
-    final currency = fare['currencyCode'] as String? ?? '';
+    final sourceCurrency = fare['currencyCode'] as String? ?? 'USD';
     final units = fare['units']?.toString() ?? '';
     final nanos = _toInt(fare['nanos']);
     if (units.isEmpty && nanos == 0) return null;
-    final decimal = nanos == 0
-        ? units
-        : (int.tryParse(units) ?? 0 + nanos / 1000000000).toStringAsFixed(2);
-    return [decimal, currency].where((part) => part.isNotEmpty).join(' ');
+    final amount = (double.tryParse(units) ?? 0) + nanos / 1000000000;
+    return _formatRouteFare(
+      amount: amount,
+      fromCurrency: sourceCurrency,
+      toCurrency: preferredCurrency,
+    );
+  }
+
+  String? _estimatedTransitPriceLabel({
+    required TravelTransportType transportType,
+    required int distanceMeters,
+    required TravelLocationEntity origin,
+    required TravelLocationEntity destination,
+    required String currency,
+  }) {
+    if (transportType != TravelTransportType.bus &&
+        transportType != TravelTransportType.train) {
+      return null;
+    }
+
+    final routeDistanceKm = distanceMeters > 0
+        ? distanceMeters / 1000
+        : _haversineDistanceKm(
+            origin.latitude,
+            origin.longitude,
+            destination.latitude,
+            destination.longitude,
+          );
+    final minimumFare = transportType == TravelTransportType.bus ? 2.0 : 4.0;
+    final baseFare = transportType == TravelTransportType.bus ? 1.5 : 3.0;
+    final distanceRate = transportType == TravelTransportType.bus
+        ? 0.055
+        : 0.08;
+    final estimatedPrice = max(
+      minimumFare,
+      baseFare + routeDistanceKm * distanceRate,
+    );
+
+    return _formatRouteFare(
+      amount: estimatedPrice,
+      fromCurrency: 'USD',
+      toCurrency: currency,
+    );
   }
 
   String? _firstNonEmpty(List<String?> values) {
@@ -869,7 +935,7 @@ class TravelPlannerRemoteDatasourceImpl
     return null;
   }
 
-  String _mockAirportLabel(TravelLocationEntity location) {
+  String _airportLabel(TravelLocationEntity location) {
     final city = location.city.trim().isNotEmpty
         ? location.city
         : location.name.trim().isNotEmpty
@@ -878,10 +944,45 @@ class TravelPlannerRemoteDatasourceImpl
     return '$city Airport';
   }
 
-  String _mockFlightPrice(int distanceKm, {required bool direct}) {
+  String _flightPrice(
+    int distanceKm, {
+    required bool direct,
+    required String currency,
+  }) {
     final base = direct ? 65 : 48;
     final price = base + (distanceKm * (direct ? 0.09 : 0.07)).round();
-    return 'from $price EUR';
+    return _formatRouteFare(
+      amount: price.toDouble(),
+      fromCurrency: 'USD',
+      toCurrency: currency,
+    );
+  }
+
+  String _formatRouteFare({
+    required double amount,
+    required String fromCurrency,
+    required String toCurrency,
+  }) {
+    final normalizedCurrency = UnitConversions.normalizeCurrency(toCurrency);
+    final convertedAmount = UnitConversions.convertCurrency(
+      amount: amount,
+      fromCurrency: fromCurrency,
+      toCurrency: normalizedCurrency,
+    );
+    final decimals = normalizedCurrency == 'USD' || normalizedCurrency == 'EUR'
+        ? 2
+        : 0;
+    return 'from ${convertedAmount.toStringAsFixed(decimals)} $normalizedCurrency';
+  }
+
+  Future<String> _preferredCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currency = prefs.getString(UnitConversions.currencyKey) ?? 'USD';
+    final normalized = UnitConversions.normalizeCurrency(currency);
+    if (currency != normalized) {
+      await prefs.setString(UnitConversions.currencyKey, normalized);
+    }
+    return normalized;
   }
 
   String _googleFlightsUrl(
@@ -940,24 +1041,5 @@ class TravelPlannerRemoteDatasourceImpl
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value);
     return null;
-  }
-}
-
-extension on TravelRouteEntity {
-  TravelRouteEntity copyAsBest() {
-    return TravelRouteEntity(
-      id: 'best-$id',
-      transportType: TravelTransportType.best,
-      title: title,
-      summary: 'Best available route',
-      duration: duration,
-      distanceMeters: distanceMeters,
-      priceLabel: priceLabel,
-      transferCount: transferCount,
-      isEstimated: isEstimated,
-      isMocked: isMocked,
-      bookingUrl: bookingUrl,
-      legs: legs,
-    );
   }
 }

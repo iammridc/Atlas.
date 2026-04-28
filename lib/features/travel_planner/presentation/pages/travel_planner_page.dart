@@ -347,21 +347,6 @@ class _StartJourneyButton extends StatelessWidget {
           onPressed: state.selectedRoute == null || isSaving
               ? null
               : () => context.read<TravelPlannerCubit>().saveSelectedTrip(),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isDark
-                ? AppColors.appPrimaryWhite
-                : AppColors.appPrimaryBlack,
-            foregroundColor: isDark
-                ? AppColors.appPrimaryBlack
-                : AppColors.appPrimaryWhite,
-            disabledBackgroundColor: isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : Colors.black.withValues(alpha: 0.08),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(26),
-            ),
-            elevation: 0,
-          ),
           child: isSaving
               ? SizedBox(
                   width: 18,
@@ -373,10 +358,7 @@ class _StartJourneyButton extends StatelessWidget {
                         : AppColors.appPrimaryWhite,
                   ),
                 )
-              : const Text(
-                  'Start a Journey!',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                ),
+              : const Text('Start a Journey!'),
         ),
       ),
     );
@@ -538,12 +520,11 @@ class _RouteCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (route.priceLabel != null || route.isMocked) ...[
+                  if (route.priceLabel != null || route.isEstimated) ...[
                     const SizedBox(height: 7),
                     Text(
                       [
                         if (route.priceLabel != null) route.priceLabel!,
-                        if (route.isMocked) 'mock flight',
                         if (route.isEstimated) 'estimated',
                       ].join(' · '),
                       style: TextStyle(

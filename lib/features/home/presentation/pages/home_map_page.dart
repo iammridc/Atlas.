@@ -562,13 +562,27 @@ class _MapButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _MapSurface(
-      isDark: isDark,
-      padding: EdgeInsets.zero,
-      child: IconButton(
-        onPressed: onPressed,
-        tooltip: tooltip,
-        icon: Icon(icon, size: 20),
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: IconButton(
+          onPressed: onPressed,
+          tooltip: tooltip,
+          icon: Icon(
+            icon,
+            size: 20,
+            color: isDark
+                ? AppColors.appPrimaryWhite
+                : AppColors.appPrimaryBlack,
+          ),
+        ),
       ),
     );
   }

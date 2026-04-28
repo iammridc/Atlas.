@@ -78,6 +78,10 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
           allowPlaceNameEditing: true,
           initialRating: review?.rating.round() ?? 4,
           initialText: review?.text ?? '',
+          placeSubtitle: [
+            review?.placeCity ?? '',
+            review?.placeCountry ?? '',
+          ].where((part) => part.trim().isNotEmpty).join(', '),
         ),
       ),
     );

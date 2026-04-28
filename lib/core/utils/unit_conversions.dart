@@ -39,6 +39,18 @@ class UnitConversions {
     return amountUsd * (usdRates[normalized] ?? 1);
   }
 
+  static double convertCurrency({
+    required double amount,
+    required String fromCurrency,
+    required String toCurrency,
+  }) {
+    final normalizedFrom = normalizeCurrency(fromCurrency);
+    final normalizedTo = normalizeCurrency(toCurrency);
+    final fromRate = usdRates[normalizedFrom] ?? 1;
+    final amountUsd = amount / fromRate;
+    return convertUsd(amountUsd, normalizedTo);
+  }
+
   static String formatCurrency(double amountUsd, String currency) {
     final normalized = normalizeCurrency(currency);
     final converted = convertUsd(amountUsd, normalized);

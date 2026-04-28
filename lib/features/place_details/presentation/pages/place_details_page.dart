@@ -1,6 +1,7 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/features/place_details/domain/entities/place_details_entity.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
@@ -237,20 +238,19 @@ class _HeroIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isDark
-        ? AppColors.backgroundDark
-        : AppColors.backgroundLight;
 
-    return Icon(
-      icon,
-      color: iconColor,
-      size: 32,
-      shadows: [
-        Shadow(color: iconColor, offset: const Offset(0.6, 0)),
-        Shadow(color: iconColor, offset: const Offset(-0.6, 0)),
-        Shadow(color: iconColor, offset: const Offset(0, 0.6)),
-        Shadow(color: iconColor, offset: const Offset(0, -0.6)),
-      ],
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Icon(
+        icon,
+        color: isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite,
+        size: 22,
+      ),
     );
   }
 }
@@ -312,22 +312,8 @@ class _DetailsSheet extends StatelessWidget {
             height: 54,
             child: ElevatedButton(
               onPressed: onStartJourneyTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDark
-                    ? AppColors.appPrimaryWhite
-                    : AppColors.appPrimaryBlack,
-                foregroundColor: isDark
-                    ? AppColors.appPrimaryBlack
-                    : AppColors.appPrimaryWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(26),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Start a Journey!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
+              style: _invertedPlaceButtonStyle(isDark),
+              child: const Text('Start a Journey!'),
             ),
           ),
         ],
@@ -557,6 +543,29 @@ class _PlaceTagData {
     : this._(label, true, icon);
 }
 
+ButtonStyle _invertedPlaceButtonStyle(bool isDark) {
+  final globalStyle = isDark
+      ? AppTheme.dark.elevatedButtonTheme.style
+      : AppTheme.light.elevatedButtonTheme.style;
+
+  return ElevatedButton.styleFrom(
+    backgroundColor: isDark
+        ? AppColors.appPrimaryWhite
+        : AppColors.appPrimaryBlack,
+    foregroundColor: isDark
+        ? AppColors.appPrimaryBlack
+        : AppColors.appPrimaryWhite,
+    disabledBackgroundColor: isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.08),
+    disabledForegroundColor: isDark ? Colors.white38 : Colors.black38,
+    elevation: 0,
+    minimumSize: const Size.fromHeight(54),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+    textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+  ).merge(globalStyle);
+}
+
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
@@ -579,13 +588,16 @@ class _ErrorView extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05),
+                    ? AppColors.appPrimaryWhite
+                    : AppColors.appPrimaryBlack,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 CupertinoIcons.back,
-                color: isDark ? Colors.white : Colors.black,
+                color: isDark
+                    ? AppColors.appPrimaryBlack
+                    : AppColors.appPrimaryWhite,
+                size: 22,
               ),
             ),
           ),
@@ -609,21 +621,8 @@ class _ErrorView extends StatelessWidget {
             height: 54,
             child: ElevatedButton(
               onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDark
-                    ? AppColors.appPrimaryWhite
-                    : AppColors.appPrimaryBlack,
-                foregroundColor: isDark
-                    ? AppColors.appPrimaryBlack
-                    : AppColors.appPrimaryWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
-                ),
-              ),
-              child: const Text(
-                'Try again',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
+              style: _invertedPlaceButtonStyle(isDark),
+              child: const Text('Try again'),
             ),
           ),
         ],

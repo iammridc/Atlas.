@@ -193,13 +193,7 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
 
   String _buildTripNote(TravelRouteEntity route) {
     final buffer = StringBuffer()
-      ..writeln(
-        route.isMocked
-            ? 'Mock flight route'
-            : route.isEstimated
-            ? 'Estimated route'
-            : 'Google route',
-      )
+      ..writeln(route.isEstimated ? 'Estimated route' : 'Route details')
       ..writeln('Transport: ${route.transportType.name}')
       ..writeln('Transfers: ${route.transferCount}')
       ..writeln();

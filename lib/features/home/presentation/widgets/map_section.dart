@@ -84,6 +84,12 @@ class _CurrentPlaceText extends StatelessWidget {
         : state.isLoading
         ? '...'
         : 'your selected area';
+    final titleStyle = TextStyle(
+      fontSize: 28,
+      height: 1,
+      fontWeight: FontWeight.bold,
+      color: isDark ? Colors.white : Colors.black,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,21 +98,13 @@ class _CurrentPlaceText extends StatelessWidget {
           "You're currently in",
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
+          style: titleStyle,
         ),
         Text(
           locationLabel,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
+          style: titleStyle,
         ),
       ],
     );

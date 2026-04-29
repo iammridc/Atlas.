@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:atlas/core/consts/app_colors.dart';
@@ -11,11 +12,13 @@ class ReviewEditorResult {
   final String placeName;
   final int rating;
   final String text;
+  final List<String> photoDataUrls;
 
   const ReviewEditorResult({
     required this.placeName,
     required this.rating,
     required this.text,
+    this.photoDataUrls = const [],
   });
 }
 
@@ -25,6 +28,7 @@ class ReviewEditorPage extends StatefulWidget {
   final bool allowPlaceNameEditing;
   final int initialRating;
   final String initialText;
+  final List<String> initialPhotoDataUrls;
   final String? placeSubtitle;
   final String? photoReference;
 
@@ -35,6 +39,7 @@ class ReviewEditorPage extends StatefulWidget {
     required this.allowPlaceNameEditing,
     required this.initialRating,
     required this.initialText,
+    this.initialPhotoDataUrls = const [],
     this.placeSubtitle,
     this.photoReference,
   });
@@ -46,22 +51,10 @@ class ReviewEditorPage extends StatefulWidget {
 class _ReviewEditorPageState extends State<ReviewEditorPage> {
   static const _maxReviewLength = 500;
   static const _maxPhotos = 5;
-  static const _chips = [
-    'Food',
-    'Service',
-    'Atmosphere',
-    'Views',
-    'Comfort',
-    'Safety',
-    'Culture',
-    'Quiet',
-    'Activities',
-  ];
 
   late final TextEditingController _placeNameController;
   late final TextEditingController _textController;
   final _imagePicker = ImagePicker();
-  final _selectedChips = <String>{};
   final _photos = <Uint8List>[];
   late int _rating;
 
@@ -72,6 +65,9 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
     _textController = TextEditingController(text: widget.initialText)
       ..addListener(_handleTextChanged);
     _rating = widget.initialRating.clamp(1, 5);
+    _photos.addAll(
+      widget.initialPhotoDataUrls.map(_decodePhotoDataUrl).nonNulls,
+    );
   }
 
   @override
@@ -90,7 +86,10 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
     if (_photos.length >= _maxPhotos) return;
 
     try {
-      final pickedFiles = await _imagePicker.pickMultiImage(imageQuality: 85);
+      final pickedFiles = await _imagePicker.pickMultiImage(
+        maxWidth: 900,
+        imageQuality: 76,
+      );
       if (pickedFiles.isEmpty || !mounted) return;
 
       final remainingSlots = _maxPhotos - _photos.length;
@@ -138,8 +137,31 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
     }
 
     Navigator.of(context).pop(
-      ReviewEditorResult(placeName: placeName, rating: _rating, text: text),
+      ReviewEditorResult(
+        placeName: placeName,
+        rating: _rating,
+        text: text,
+        photoDataUrls: _photos.map(_encodePhotoDataUrl).toList(),
+      ),
     );
+  }
+
+  String _encodePhotoDataUrl(Uint8List bytes) {
+    return 'data:image/jpeg;base64,${base64Encode(bytes)}';
+  }
+
+  Uint8List? _decodePhotoDataUrl(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) return null;
+    final payload = normalized.startsWith('data:image')
+        ? normalized.split(',').last
+        : normalized;
+
+    try {
+      return base64Decode(payload);
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -157,7 +179,7 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
         right: false,
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: 18),
           children: [
             _ReviewHero(
               placeName: _placeNameController.text.trim().isEmpty
@@ -178,21 +200,8 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
                     onChanged: (value) => setState(() => _rating = value),
                   ),
                   const SizedBox(height: 26),
-                  _ChipBlock(
-                    selected: _selectedChips,
-                    onToggle: (chip) {
-                      setState(() {
-                        if (!_selectedChips.add(chip)) {
-                          _selectedChips.remove(chip);
-                        }
-                      });
-                    },
-                    chips: _chips,
-                  ),
-                  const SizedBox(height: 26),
-                  _ReviewTextField(controller: _textController),
-                  const SizedBox(height: 24),
-                  _PhotoPickerBlock(
+                  _ReviewTextField(
+                    controller: _textController,
                     photos: _photos,
                     onAdd: _pickPhotos,
                     onRemove: _removePhoto,
@@ -301,20 +310,24 @@ class _ReviewHero extends StatelessWidget {
               height: 44,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: IconButton.filled(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(CupertinoIcons.chevron_left, size: 20),
-                  style: IconButton.styleFrom(
-                    backgroundColor: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.06),
-                    foregroundColor: isDark
-                        ? AppColors.appPrimaryWhite
-                        : AppColors.appPrimaryBlack,
-                    shape: RoundedRectangleBorder(
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).maybePop(),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.appPrimaryBlack
+                          : AppColors.appPrimaryWhite,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    fixedSize: const Size(42, 42),
+                    child: Icon(
+                      CupertinoIcons.back,
+                      color: isDark
+                          ? AppColors.appPrimaryWhite
+                          : AppColors.appPrimaryBlack,
+                      size: 22,
+                    ),
                   ),
                 ),
               ),
@@ -556,136 +569,15 @@ class _StarRatingField extends StatelessWidget {
   }
 }
 
-class _ChipBlock extends StatelessWidget {
-  final Set<String> selected;
-  final ValueChanged<String> onToggle;
-  final List<String> chips;
-
-  const _ChipBlock({
-    required this.selected,
-    required this.onToggle,
-    required this.chips,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _FieldGroup(
-      title: 'What did you like the most?',
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: chips.map((chip) {
-          final isSelected = selected.contains(chip);
-          return _ChoiceChipButton(
-            label: chip,
-            selected: isSelected,
-            onTap: () => onToggle(chip),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class _ChoiceChipButton extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _ChoiceChipButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = selected
-        ? (isDark
-              ? Colors.white.withValues(alpha: 0.18)
-              : Colors.black.withValues(alpha: 0.12))
-        : (isDark
-              ? Colors.white.withValues(alpha: 0.12)
-              : Colors.black.withValues(alpha: 0.08));
-    final foregroundColor = isDark ? Colors.white : Colors.black87;
-
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(999)),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: foregroundColor,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _ReviewTextField extends StatelessWidget {
   final TextEditingController controller;
-
-  const _ReviewTextField({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final count = controller.text.characters.length;
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.18)
-        : Colors.black12;
-
-    return _FieldGroup(
-      title: 'Write your review',
-      child: TextField(
-        controller: controller,
-        minLines: 5,
-        maxLines: 7,
-        maxLength: _ReviewEditorPageState._maxReviewLength,
-        textInputAction: TextInputAction.newline,
-        decoration: InputDecoration(
-          hintText: 'Add details about your experience...',
-          counterText: '$count/${_ReviewEditorPageState._maxReviewLength}',
-          alignLabelWithHint: true,
-          filled: true,
-          fillColor: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.025),
-          contentPadding: const EdgeInsets.all(14),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: borderColor),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: isDark ? Colors.white54 : Colors.black54,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PhotoPickerBlock extends StatelessWidget {
   final List<Uint8List> photos;
   final VoidCallback onAdd;
   final ValueChanged<int> onRemove;
   final int maxPhotos;
 
-  const _PhotoPickerBlock({
+  const _ReviewTextField({
+    required this.controller,
     required this.photos,
     required this.onAdd,
     required this.onRemove,
@@ -694,25 +586,89 @@ class _PhotoPickerBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _FieldGroup(
-      title: 'Add photos',
-      subtitle: 'Optional',
-      child: SizedBox(
-        height: 74,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: photos.length < maxPhotos ? photos.length + 1 : maxPhotos,
-          separatorBuilder: (context, index) => const SizedBox(width: 8),
-          itemBuilder: (context, index) {
-            if (index >= photos.length) {
-              return _AddPhotoTile(onTap: onAdd);
-            }
-            return _PhotoTile(
-              bytes: photos[index],
-              onRemove: () => onRemove(index),
-            );
-          },
-        ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final count = controller.text.characters.length;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.black12;
+    const controlsHeight = 42.0;
+    const controlsGap = 14.0;
+    const photosHeight = 74.0;
+    final hasPhotos = photos.isNotEmpty;
+    final fieldHeight = hasPhotos ? 308.0 : 220.0;
+    final textBottomInset =
+        controlsHeight + controlsGap + (hasPhotos ? photosHeight + 14 : 0);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      height: fieldHeight,
+      padding: const EdgeInsets.fromLTRB(14, 14, 10, 10),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.025),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            bottom: textBottomInset,
+            child: TextField(
+              controller: controller,
+              expands: true,
+              minLines: null,
+              maxLines: null,
+              maxLength: _ReviewEditorPageState._maxReviewLength,
+              textInputAction: TextInputAction.newline,
+              decoration: const InputDecoration(
+                hintText: 'Add details about your experience...',
+                border: InputBorder.none,
+                counterText: '',
+                isCollapsed: true,
+              ),
+            ),
+          ),
+          if (hasPhotos)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: controlsHeight + controlsGap,
+              height: 74,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: photos.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  return _PhotoTile(
+                    bytes: photos[index],
+                    onRemove: () => onRemove(index),
+                  );
+                },
+              ),
+            ),
+          Positioned(
+            left: 0,
+            bottom: 0,
+            child: Text(
+              '$count/${_ReviewEditorPageState._maxReviewLength}',
+              style: TextStyle(
+                color: isDark ? Colors.white54 : Colors.black45,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: _InlineAddPhotoButton(
+              onTap: onAdd,
+              isDisabled: photos.length >= maxPhotos,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -754,71 +710,34 @@ class _PhotoTile extends StatelessWidget {
   }
 }
 
-class _AddPhotoTile extends StatelessWidget {
+class _InlineAddPhotoButton extends StatelessWidget {
   final VoidCallback onTap;
+  final bool isDisabled;
 
-  const _AddPhotoTile({required this.onTap});
+  const _InlineAddPhotoButton({required this.onTap, required this.isDisabled});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 74,
-        height: 74,
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
-        ),
-        child: Icon(
-          CupertinoIcons.plus,
-          color: isDark ? Colors.white70 : Colors.black54,
-        ),
+    final foregroundColor = isDark
+        ? AppColors.appPrimaryWhite
+        : AppColors.appPrimaryBlack;
+
+    return IconButton(
+      tooltip: isDisabled ? 'Maximum photos added' : 'Add photo',
+      onPressed: isDisabled ? null : onTap,
+      icon: const Icon(Icons.add_photo_alternate_outlined, size: 22),
+      style: IconButton.styleFrom(
+        fixedSize: const Size(42, 42),
+        minimumSize: const Size(42, 42),
+        padding: EdgeInsets.zero,
+        backgroundColor: isDark
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.black.withValues(alpha: 0.07),
+        foregroundColor: foregroundColor,
+        disabledForegroundColor: isDark ? Colors.white24 : Colors.black26,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-    );
-  }
-}
-
-class _FieldGroup extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final Widget child;
-
-  const _FieldGroup({required this.title, required this.child, this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black,
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 2),
-          Text(
-            subtitle!,
-            style: TextStyle(
-              color: isDark ? Colors.white54 : Colors.black45,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        const SizedBox(height: 10),
-        child,
-      ],
     );
   }
 }

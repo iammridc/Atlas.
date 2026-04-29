@@ -78,6 +78,7 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
           allowPlaceNameEditing: true,
           initialRating: review?.rating.round() ?? 4,
           initialText: review?.text ?? '',
+          initialPhotoDataUrls: review?.photoDataUrls ?? const [],
           placeSubtitle: [
             review?.placeCity ?? '',
             review?.placeCountry ?? '',
@@ -97,6 +98,7 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
         placeCountry: review?.placeCountry ?? '',
         rating: result.rating.toDouble(),
         text: result.text,
+        photoDataUrls: result.photoDataUrls,
         createdAt: review?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       ),
@@ -208,6 +210,7 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
                     title: review.placeName,
                     subtitle: _buildRatingLabel(review.rating),
                     body: review.text,
+                    photoDataUrls: review.photoDataUrls,
                     trailing: formatRelativeTime(review.createdAt),
                     onTap: () => _showReviewForm(review: review),
                     onDelete: () => _deleteReview(review),

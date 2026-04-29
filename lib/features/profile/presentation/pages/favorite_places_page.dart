@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
@@ -8,7 +11,6 @@ import 'package:atlas/features/profile/domain/services/favorite_places_sync_serv
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 
 class FavoritePlacesPage extends StatefulWidget {
   const FavoritePlacesPage({super.key});
@@ -247,6 +249,7 @@ class ProfileManagementCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String? body;
+  final List<String> photoDataUrls;
   final String trailing;
   final VoidCallback onTap;
   final VoidCallback onDelete;
@@ -259,6 +262,7 @@ class ProfileManagementCard extends StatelessWidget {
     required this.onTap,
     required this.onDelete,
     this.body,
+    this.photoDataUrls = const [],
   });
 
   @override
@@ -308,6 +312,10 @@ class ProfileManagementCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (photoDataUrls.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _ReviewPhotoStrip(photoDataUrls: photoDataUrls),
+                    ],
                     const SizedBox(height: 12),
                     Text(
                       trailing,
@@ -336,6 +344,51 @@ class ProfileManagementCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ReviewPhotoStrip extends StatelessWidget {
+  final List<String> photoDataUrls;
+
+  const _ReviewPhotoStrip({required this.photoDataUrls});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 76,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: photoDataUrls.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final image = _memoryImage(photoDataUrls[index]);
+          if (image == null) return const SizedBox.shrink();
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image(
+              image: image,
+              width: 76,
+              height: 76,
+              fit: BoxFit.cover,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  MemoryImage? _memoryImage(String value) {
+    final payload = value.trim().startsWith('data:image')
+        ? value.trim().split(',').last
+        : value.trim();
+    if (payload.isEmpty) return null;
+
+    try {
+      return MemoryImage(base64Decode(payload));
+    } catch (_) {
+      return null;
+    }
   }
 }
 

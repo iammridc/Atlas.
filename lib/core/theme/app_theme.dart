@@ -53,13 +53,13 @@ class AppTheme {
                 ? Colors.white.withValues(alpha: 0.08)
                 : Colors.black.withValues(alpha: 0.08);
           }
-          return isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite;
+          return isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack;
         }),
         foregroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
             return isDark ? Colors.white38 : Colors.black38;
           }
-          return isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack;
+          return isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite;
         }),
         side: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
@@ -87,13 +87,13 @@ class AppTheme {
                 ? Colors.white.withValues(alpha: 0.08)
                 : Colors.black.withValues(alpha: 0.08);
           }
-          return isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite;
+          return isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack;
         }),
         foregroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
             return isDark ? Colors.white38 : Colors.black38;
           }
-          return isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack;
+          return isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite;
         }),
         side: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {

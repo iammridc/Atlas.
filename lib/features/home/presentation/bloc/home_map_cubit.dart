@@ -12,6 +12,14 @@ import 'package:get_it/get_it.dart';
 
 class HomeMapCubit extends Cubit<HomeMapState> {
   static const double _mapPickSearchRadiusMeters = 30;
+  static const _defaultMapLocation = HomeMapCoordinateEntity(
+    latitude: 52.2297,
+    longitude: 21.0122,
+  );
+  static const _defaultMapPlace = HomeMapLocationEntity(
+    city: 'Warszawa',
+    country: 'Poland',
+  );
 
   final GetNearbyMapPlacesUseCase _getNearbyPlaces;
   final FindNearestMapPlaceUseCase _findNearestPlace;
@@ -71,11 +79,9 @@ class HomeMapCubit extends Cubit<HomeMapState> {
     if (isClosed || requestId != _activeRequestId) return;
 
     if (currentLocation == null) {
-      emit(
-        state.copyWith(
-          status: HomeMapStatus.error,
-          errorMessage: 'Enable location access to show your map.',
-        ),
+      await _useDefaultLocation(
+        includeNearbyPlaces: includeNearbyPlaces,
+        requestId: requestId,
       );
       return;
     }
@@ -100,6 +106,27 @@ class HomeMapCubit extends Cubit<HomeMapState> {
 
     if (includeNearbyPlaces) {
       await loadNearbyPlaces(center: coordinate, requestId: requestId);
+    }
+  }
+
+  Future<void> _useDefaultLocation({
+    required bool includeNearbyPlaces,
+    required int requestId,
+  }) async {
+    emit(
+      state.copyWith(
+        currentLocation: _defaultMapLocation,
+        currentPlace: _defaultMapPlace,
+        status: includeNearbyPlaces
+            ? HomeMapStatus.loadingNearby
+            : HomeMapStatus.ready,
+        clearError: true,
+        clearSelectedPlace: true,
+      ),
+    );
+
+    if (includeNearbyPlaces) {
+      await loadNearbyPlaces(center: _defaultMapLocation, requestId: requestId);
     }
   }
 

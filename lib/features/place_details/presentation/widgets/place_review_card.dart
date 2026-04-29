@@ -110,9 +110,66 @@ class PlaceReviewCard extends StatelessWidget {
             maxLines: compact ? 3 : null,
             overflow: compact ? TextOverflow.ellipsis : TextOverflow.visible,
           ),
+          if (review.photoDataUrls.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ReviewPhotoStrip(
+              photoDataUrls: review.photoDataUrls,
+              compact: compact,
+            ),
+          ],
         ],
       ),
     );
+  }
+}
+
+class _ReviewPhotoStrip extends StatelessWidget {
+  final List<String> photoDataUrls;
+  final bool compact;
+
+  const _ReviewPhotoStrip({required this.photoDataUrls, required this.compact});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = compact ? 64.0 : 78.0;
+
+    return SizedBox(
+      height: size,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: photoDataUrls.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final image = _buildImageProvider(photoDataUrls[index]);
+          if (image == null) return const SizedBox.shrink();
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image(
+              image: image,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  ImageProvider<Object>? _buildImageProvider(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) return null;
+
+    final payload = normalized.startsWith('data:image')
+        ? normalized.split(',').last
+        : normalized;
+
+    try {
+      return MemoryImage(base64Decode(payload));
+    } catch (_) {
+      return null;
+    }
   }
 }
 

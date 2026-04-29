@@ -338,28 +338,25 @@ class _StartJourneyButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSaving = state.actionStatus == TravelPlannerActionStatus.saving;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: ElevatedButton(
-          onPressed: state.selectedRoute == null || isSaving
-              ? null
-              : () => context.read<TravelPlannerCubit>().saveSelectedTrip(),
-          child: isSaving
-              ? SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: isDark
-                        ? AppColors.appPrimaryBlack
-                        : AppColors.appPrimaryWhite,
-                  ),
-                )
-              : const Text('Start a Journey!'),
-        ),
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        onPressed: state.selectedRoute == null || isSaving
+            ? null
+            : () => context.read<TravelPlannerCubit>().saveSelectedTrip(),
+        child: isSaving
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: isDark
+                      ? AppColors.appPrimaryBlack
+                      : AppColors.appPrimaryWhite,
+                ),
+              )
+            : const Text('Start a Journey!'),
       ),
     );
   }

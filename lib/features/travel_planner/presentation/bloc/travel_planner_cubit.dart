@@ -1,3 +1,4 @@
+import 'package:atlas/core/services/location_service.dart';
 import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:atlas/features/profile/domain/services/planned_trips_sync_service.dart';
@@ -7,24 +8,36 @@ import 'package:atlas/features/travel_planner/domain/usecases/build_travel_plan_
 import 'package:atlas/features/travel_planner/domain/usecases/search_travel_locations_usecase.dart';
 import 'package:atlas/features/travel_planner/presentation/bloc/travel_planner_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
 
 class TravelPlannerCubit extends Cubit<TravelPlannerState> {
+  static const _defaultOrigin = TravelLocationEntity(
+    id: 'default-origin-warsaw',
+    name: 'Warszawa',
+    address: 'Warszawa, Poland',
+    city: 'Warszawa',
+    country: 'Poland',
+    latitude: 52.2297,
+    longitude: 21.0122,
+  );
+
   final BuildTravelPlanUseCase _buildTravelPlan;
   final SearchTravelLocationsUseCase _searchLocations;
   final ProfileRepository _profileRepository;
   final PlannedTripsSyncService _plannedTripsSyncService;
+  final LocationService _locationService;
 
   TravelPlannerCubit({
     required BuildTravelPlanUseCase buildTravelPlan,
     required SearchTravelLocationsUseCase searchLocations,
     required ProfileRepository profileRepository,
     required PlannedTripsSyncService plannedTripsSyncService,
+    required LocationService locationService,
     required TravelLocationEntity destination,
   }) : _buildTravelPlan = buildTravelPlan,
        _searchLocations = searchLocations,
        _profileRepository = profileRepository,
        _plannedTripsSyncService = plannedTripsSyncService,
+       _locationService = locationService,
        super(TravelPlannerState(destination: destination));
 
   Future<void> initialize() async {
@@ -37,16 +50,7 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
       ),
     );
 
-    final origin = await _resolveCurrentLocation();
-    if (origin == null) {
-      emit(
-        state.copyWith(
-          isResolvingLocation: false,
-          errorMessage: 'Choose a start point to build routes.',
-        ),
-      );
-      return;
-    }
+    final origin = await _resolveCurrentLocation() ?? _defaultOrigin;
 
     emit(state.copyWith(origin: origin, isResolvingLocation: false));
     await buildPlan();
@@ -234,24 +238,8 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
 
   Future<TravelLocationEntity?> _resolveCurrentLocation() async {
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return null;
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return null;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
-      );
+      final position = await _locationService.getCurrentLocation();
+      if (position == null) return null;
 
       final reverseGeocodeResult = await _searchLocations.reverseGeocode(
         latitude: position.latitude,

@@ -1,7 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
-import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/features/place_details/domain/entities/place_details_entity.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
@@ -243,12 +242,12 @@ class _HeroIcon extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
+        color: isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(
         icon,
-        color: isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite,
+        color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
         size: 22,
       ),
     );
@@ -312,7 +311,7 @@ class _DetailsSheet extends StatelessWidget {
             height: 54,
             child: ElevatedButton(
               onPressed: onStartJourneyTap,
-              style: _invertedPlaceButtonStyle(isDark),
+              style: _placeButtonStyle(isDark),
               child: const Text('Start a Journey!'),
             ),
           ),
@@ -543,11 +542,7 @@ class _PlaceTagData {
     : this._(label, true, icon);
 }
 
-ButtonStyle _invertedPlaceButtonStyle(bool isDark) {
-  final globalStyle = isDark
-      ? AppTheme.dark.elevatedButtonTheme.style
-      : AppTheme.light.elevatedButtonTheme.style;
-
+ButtonStyle _placeButtonStyle(bool isDark) {
   return ElevatedButton.styleFrom(
     backgroundColor: isDark
         ? AppColors.appPrimaryWhite
@@ -561,9 +556,10 @@ ButtonStyle _invertedPlaceButtonStyle(bool isDark) {
     disabledForegroundColor: isDark ? Colors.white38 : Colors.black38,
     elevation: 0,
     minimumSize: const Size.fromHeight(54),
+    side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
     textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-  ).merge(globalStyle);
+  );
 }
 
 class _ErrorView extends StatelessWidget {
@@ -588,15 +584,18 @@ class _ErrorView extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: isDark
-                    ? AppColors.appPrimaryWhite
-                    : AppColors.appPrimaryBlack,
+                    ? AppColors.appPrimaryBlack
+                    : AppColors.appPrimaryWhite,
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black26,
+                ),
               ),
               child: Icon(
                 CupertinoIcons.back,
                 color: isDark
-                    ? AppColors.appPrimaryBlack
-                    : AppColors.appPrimaryWhite,
+                    ? AppColors.appPrimaryWhite
+                    : AppColors.appPrimaryBlack,
                 size: 22,
               ),
             ),
@@ -621,7 +620,7 @@ class _ErrorView extends StatelessWidget {
             height: 54,
             child: ElevatedButton(
               onPressed: onRetry,
-              style: _invertedPlaceButtonStyle(isDark),
+              style: _placeButtonStyle(isDark),
               child: const Text('Try again'),
             ),
           ),

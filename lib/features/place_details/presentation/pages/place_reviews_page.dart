@@ -26,6 +26,7 @@ class PlaceReviewsPage extends StatelessWidget {
           allowPlaceNameEditing: false,
           initialRating: existingReview?.rating.round() ?? 4,
           initialText: existingReview?.text ?? '',
+          initialPhotoDataUrls: existingReview?.photoDataUrls ?? const [],
           placeSubtitle: [
             state.place.city,
             state.place.country,
@@ -42,6 +43,7 @@ class PlaceReviewsPage extends StatelessWidget {
     final error = await cubit.saveCurrentUserReview(
       rating: result.rating.toDouble(),
       text: result.text,
+      photoDataUrls: result.photoDataUrls,
     );
     if (!context.mounted) return;
 

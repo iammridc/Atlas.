@@ -10,6 +10,8 @@ class ProfileReviewModel extends ProfileReviewEntity {
     super.placeCountry,
     required super.rating,
     required super.text,
+    super.likedTags,
+    super.photoDataUrls,
     required super.createdAt,
     required super.updatedAt,
   });
@@ -38,6 +40,8 @@ class ProfileReviewModel extends ProfileReviewEntity {
       placeCountry: (json['placeCountry'] as String?)?.trim() ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       text: (json['text'] as String?)?.trim() ?? '',
+      likedTags: _stringList(json['likedTags']),
+      photoDataUrls: _stringList(json['photoDataUrls']),
       createdAt: _parseDate(json['createdAt'] ?? json['updatedAt']),
       updatedAt: _parseDate(json['updatedAt']),
     );
@@ -51,9 +55,26 @@ class ProfileReviewModel extends ProfileReviewEntity {
       'placeCountry': placeCountry.trim(),
       'rating': rating,
       'text': text.trim(),
+      'likedTags': likedTags
+          .map((tag) => tag.trim())
+          .where((tag) => tag.isNotEmpty)
+          .toList(),
+      'photoDataUrls': photoDataUrls
+          .map((photo) => photo.trim())
+          .where((photo) => photo.isNotEmpty)
+          .toList(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
+  }
+
+  static List<String> _stringList(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<String>()
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   static DateTime _parseDate(dynamic value) {

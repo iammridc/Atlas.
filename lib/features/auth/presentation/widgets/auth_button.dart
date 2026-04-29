@@ -39,11 +39,11 @@ class AuthButton extends StatelessWidget {
               onPressed: isLoading ? null : onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark
-                    ? AppColors.appPrimaryBlack
-                    : AppColors.appPrimaryWhite,
-                foregroundColor: isDark
                     ? AppColors.appPrimaryWhite
                     : AppColors.appPrimaryBlack,
+                foregroundColor: isDark
+                    ? AppColors.appPrimaryBlack
+                    : AppColors.appPrimaryWhite,
                 side: BorderSide(
                   color: isDark ? Colors.white24 : Colors.black26,
                 ),
@@ -65,8 +65,8 @@ class AuthButton extends StatelessWidget {
             child: CircularProgressIndicator(
               strokeWidth: 2,
               color: isDark
-                  ? AppColors.appPrimaryWhite
-                  : AppColors.appPrimaryBlack,
+                  ? AppColors.appPrimaryBlack
+                  : AppColors.appPrimaryWhite,
             ),
           )
         : Text(

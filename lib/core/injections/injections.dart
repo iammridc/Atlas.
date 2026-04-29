@@ -244,6 +244,7 @@ Future<void> configureDependencies() async {
       searchLocations: getIt<SearchTravelLocationsUseCase>(),
       profileRepository: getIt<ProfileRepository>(),
       plannedTripsSyncService: getIt<PlannedTripsSyncService>(),
+      locationService: getIt<LocationService>(),
       destination: destination,
     ),
   );

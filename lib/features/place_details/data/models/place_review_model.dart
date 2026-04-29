@@ -11,6 +11,8 @@ class PlaceReviewModel extends PlaceReviewEntity {
     super.relativeTimeDescription,
     super.publishedAt,
     super.profilePhotoUrl,
+    super.likedTags,
+    super.photoDataUrls,
   });
 
   factory PlaceReviewModel.fromGoogleJson(Map<String, dynamic> json) {
@@ -56,8 +58,19 @@ class PlaceReviewModel extends PlaceReviewEntity {
       publishedAt: _parseDateTime(json['createdAt'] ?? json['publishedAt']),
       profilePhotoUrl:
           json['profilePhotoUrl'] as String? ?? json['avatarUrl'] as String?,
+      likedTags: _stringList(json['likedTags']),
+      photoDataUrls: _stringList(json['photoDataUrls']),
       source: PlaceReviewSource.community,
     );
+  }
+
+  static List<String> _stringList(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<String>()
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   static double _toDouble(dynamic value, {double fallback = 0}) {

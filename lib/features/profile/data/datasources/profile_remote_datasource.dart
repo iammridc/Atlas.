@@ -315,6 +315,14 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
         placeCountry: review.placeCountry.trim(),
         rating: review.rating,
         text: trimmedText,
+        likedTags: review.likedTags
+            .map((tag) => tag.trim())
+            .where((tag) => tag.isNotEmpty)
+            .toList(),
+        photoDataUrls: review.photoDataUrls
+            .map((photo) => photo.trim())
+            .where((photo) => photo.isNotEmpty)
+            .toList(),
         createdAt: existingReview?.createdAt ?? review.createdAt,
         updatedAt: now,
       );
@@ -399,6 +407,8 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
       'authorSubtitle': FieldValue.delete(),
       'text': review.text.trim(),
       'rating': review.rating,
+      'likedTags': review.likedTags,
+      'photoDataUrls': review.photoDataUrls,
       'createdAt': review.createdAt,
       'updatedAt': review.updatedAt,
       'profilePhotoUrl': avatarUrl,

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 IconData iconForTransport(TravelTransportType type) {
   return switch (type) {
     TravelTransportType.best => CupertinoIcons.arrow_turn_up_right,
-    TravelTransportType.car => CupertinoIcons.car_detailed,
+    TravelTransportType.car => CupertinoIcons.car,
     TravelTransportType.bus => CupertinoIcons.bus,
     TravelTransportType.train => CupertinoIcons.tram_fill,
     TravelTransportType.flight => CupertinoIcons.airplane,
@@ -14,7 +14,7 @@ IconData iconForTransport(TravelTransportType type) {
 
 IconData iconForLeg(TravelLegType type) {
   return switch (type) {
-    TravelLegType.car => CupertinoIcons.car_detailed,
+    TravelLegType.car => CupertinoIcons.car,
     TravelLegType.bus => CupertinoIcons.bus,
     TravelLegType.train => CupertinoIcons.tram_fill,
     TravelLegType.subway => CupertinoIcons.tram_fill,

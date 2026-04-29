@@ -57,6 +57,7 @@ class TravelPlannerRemoteDatasourceImpl
       'routes.legs.steps.localizedValues,'
       'routes.legs.steps.navigationInstruction,'
       'routes.legs.steps.transitDetails';
+  static const _minimumFlightDistanceKm = 120;
 
   static const _nearbyFieldMask =
       'places.id,'
@@ -401,11 +402,26 @@ class TravelPlannerRemoteDatasourceImpl
     required TravelLocationEntity origin,
     required TravelLocationEntity destination,
   }) async {
+    final airDistanceKm = _haversineDistanceKm(
+      origin.latitude,
+      origin.longitude,
+      destination.latitude,
+      destination.longitude,
+    );
+    if (!_shouldCreateFlightRoutes(
+      origin: origin,
+      destination: destination,
+      airDistanceKm: airDistanceKm,
+    )) {
+      return const [];
+    }
+
     final currency = await _preferredCurrency();
     return _getGeneratedFlightRoutes(
       origin: origin,
       destination: destination,
       currency: currency,
+      airDistanceKm: airDistanceKm.round(),
     );
   }
 
@@ -413,18 +429,10 @@ class TravelPlannerRemoteDatasourceImpl
     required TravelLocationEntity origin,
     required TravelLocationEntity destination,
     required String currency,
+    required int airDistanceKm,
   }) {
     final airportOrigin = _airportLabel(origin);
     final airportDestination = _airportLabel(destination);
-    final airDistanceKm = max(
-      120,
-      (_haversineDistanceKm(
-        origin.latitude,
-        origin.longitude,
-        destination.latitude,
-        destination.longitude,
-      )).round(),
-    );
     final flightMinutes = max(55, (airDistanceKm / 760 * 60).round());
     final totalDuration = Duration(minutes: flightMinutes + 105);
 
@@ -490,6 +498,33 @@ class TravelPlannerRemoteDatasourceImpl
         ],
       ),
     ];
+  }
+
+  bool _shouldCreateFlightRoutes({
+    required TravelLocationEntity origin,
+    required TravelLocationEntity destination,
+    required double airDistanceKm,
+  }) {
+    if (origin.id.isNotEmpty &&
+        destination.id.isNotEmpty &&
+        origin.id == destination.id) {
+      return false;
+    }
+
+    final originCity = _normalizedLocationPart(origin.city);
+    final destinationCity = _normalizedLocationPart(destination.city);
+    final originCountry = _normalizedLocationPart(origin.country);
+    final destinationCountry = _normalizedLocationPart(destination.country);
+    final hasSameKnownCity =
+        originCity.isNotEmpty &&
+        destinationCity.isNotEmpty &&
+        originCity == destinationCity &&
+        (originCountry.isEmpty ||
+            destinationCountry.isEmpty ||
+            originCountry == destinationCountry);
+
+    if (hasSameKnownCity) return false;
+    return airDistanceKm >= _minimumFlightDistanceKm;
   }
 
   @override
@@ -772,6 +807,14 @@ class TravelPlannerRemoteDatasourceImpl
         .split(',')
         .map((part) => part.trim())
         .firstWhere((part) => part.isNotEmpty, orElse: () => '');
+  }
+
+  String _normalizedLocationPart(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .replaceAll(RegExp(r'[-_.,;:()]+'), '');
   }
 
   String _routeTitle(

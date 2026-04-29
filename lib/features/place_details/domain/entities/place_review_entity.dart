@@ -9,6 +9,8 @@ class PlaceReviewEntity {
   final DateTime? publishedAt;
   final String? profilePhotoUrl;
   final PlaceReviewSource source;
+  final List<String> likedTags;
+  final List<String> photoDataUrls;
 
   const PlaceReviewEntity({
     required this.authorName,
@@ -19,5 +21,7 @@ class PlaceReviewEntity {
     this.relativeTimeDescription,
     this.publishedAt,
     this.profilePhotoUrl,
+    this.likedTags = const [],
+    this.photoDataUrls = const [],
   });
 }

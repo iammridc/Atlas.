@@ -166,6 +166,7 @@ class PlaceDetailsCubit extends Cubit<PlaceDetailsState> {
   Future<String?> saveCurrentUserReview({
     required double rating,
     required String text,
+    List<String> photoDataUrls = const [],
   }) async {
     final current = state;
     if (current is! PlaceDetailsLoaded) {
@@ -185,6 +186,7 @@ class PlaceDetailsCubit extends Cubit<PlaceDetailsState> {
         placeCountry: place.country,
         rating: rating.clamp(1, 5).toDouble(),
         text: text,
+        photoDataUrls: photoDataUrls,
         createdAt: current.currentUserReview?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       ),

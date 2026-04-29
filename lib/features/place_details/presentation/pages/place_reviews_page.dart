@@ -80,7 +80,7 @@ class PlaceReviewsPage extends StatelessWidget {
             final reviews = state.allReviews;
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
               children: [
                 _Header(
                   onActionTap: () => _showReviewSheet(context, state),

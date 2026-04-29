@@ -144,10 +144,7 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _errorMessage != null
-            ? ProfileCollectionErrorState(
-                message: _errorMessage!,
-                onRetry: _loadTrips,
-              )
+            ? ProfileCollectionErrorState(message: _errorMessage!)
             : _trips.isEmpty
             ? const ProfileCollectionEmptyState(
                 title: 'No trips planned yet',
@@ -155,7 +152,7 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
                     'Save a route from the planner so it is ready when you need it.',
               )
             : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
                 itemCount: _trips.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {

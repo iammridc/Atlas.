@@ -6,8 +6,13 @@ import 'package:flutter/material.dart';
 
 class RecommendationCard extends StatelessWidget {
   final RecommendationEntity recommendation;
+  final double? width;
 
-  const RecommendationCard({super.key, required this.recommendation});
+  const RecommendationCard({
+    super.key,
+    required this.recommendation,
+    this.width,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +29,7 @@ class RecommendationCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(26),
         child: SizedBox(
-          width: 360,
+          width: width ?? 360,
           height: 250,
           child: Stack(
             fit: StackFit.expand,

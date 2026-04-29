@@ -190,10 +190,7 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _errorMessage != null
-            ? ProfileCollectionErrorState(
-                message: _errorMessage!,
-                onRetry: _loadReviews,
-              )
+            ? ProfileCollectionErrorState(message: _errorMessage!)
             : _reviews.isEmpty
             ? const ProfileCollectionEmptyState(
                 title: 'No reviews yet',
@@ -201,7 +198,7 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
                     'Create and edit your own saved reviews here whenever you want.',
               )
             : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
                 itemCount: _reviews.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {

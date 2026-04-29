@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:atlas/core/errors/app_exception.dart';
 import 'package:atlas/core/services/categories_services.dart';
 import 'package:atlas/features/home/data/models/recommendation_model.dart';
+import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,7 +19,10 @@ abstract class RecommendationsRemoteDatasource {
 
   Future<List<RecommendationModel>> getHotPlaces();
 
-  Future<List<RecommendationModel>> searchPlaces(String query);
+  Future<List<RecommendationModel>> searchPlaces(
+    String query, {
+    SearchPlacesFilterEntity filters = SearchPlacesFilterEntity.empty,
+  });
 }
 
 class RecommendationsRemoteDatasourceImpl
@@ -214,13 +218,20 @@ class RecommendationsRemoteDatasourceImpl
   }
 
   @override
-  Future<List<RecommendationModel>> searchPlaces(String query) async {
+  Future<List<RecommendationModel>> searchPlaces(
+    String query, {
+    SearchPlacesFilterEntity filters = SearchPlacesFilterEntity.empty,
+  }) async {
     final normalizedQuery = _normalizeText(query);
     if (normalizedQuery.isEmpty) return const [];
 
     DioException? typedSearchError;
 
     try {
+      if (filters.hasCategories) {
+        return await _searchFilteredPlaces(query, filters.categoryIds);
+      }
+
       final searchIntent = _detectCategoryIntent(query);
       if (searchIntent != null) {
         try {
@@ -276,6 +287,38 @@ class RecommendationsRemoteDatasourceImpl
     }
 
     return collectedPlaces.values.toList();
+  }
+
+  Future<List<RecommendationModel>> _searchFilteredPlaces(
+    String query,
+    List<String> categoryIds,
+  ) async {
+    final collectedPlaces = <String, RecommendationModel>{};
+    DioException? firstError;
+
+    for (final categoryId in categoryIds) {
+      try {
+        final results = await _searchText(
+          textQuery: query,
+          pageSize: 20,
+          includedType: categoryId,
+          strictTypeFiltering: true,
+          maxPages: 2,
+        );
+
+        for (final place in results) {
+          collectedPlaces.putIfAbsent(place.id, () => place);
+        }
+      } on DioException catch (error) {
+        firstError ??= error;
+      }
+    }
+
+    if (collectedPlaces.isEmpty && firstError != null) {
+      throw firstError;
+    }
+
+    return collectedPlaces.values.take(60).toList();
   }
 
   Future<_TextSearchResponse> _searchTextPage({

@@ -1,4 +1,5 @@
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
+import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 
 class SearchPlacesState {
   final String query;
@@ -7,6 +8,7 @@ class SearchPlacesState {
   final String errorMessage;
   final List<RecommendationEntity> results;
   final List<String> recentQueries;
+  final SearchPlacesFilterEntity filters;
 
   const SearchPlacesState({
     this.query = '',
@@ -15,6 +17,7 @@ class SearchPlacesState {
     this.errorMessage = '',
     this.results = const [],
     this.recentQueries = const [],
+    this.filters = SearchPlacesFilterEntity.empty,
   });
 
   bool get hasQuery => query.trim().isNotEmpty;
@@ -27,6 +30,7 @@ class SearchPlacesState {
     String? errorMessage,
     List<RecommendationEntity>? results,
     List<String>? recentQueries,
+    SearchPlacesFilterEntity? filters,
   }) {
     return SearchPlacesState(
       query: query ?? this.query,
@@ -35,6 +39,7 @@ class SearchPlacesState {
       errorMessage: errorMessage ?? this.errorMessage,
       results: results ?? this.results,
       recentQueries: recentQueries ?? this.recentQueries,
+      filters: filters ?? this.filters,
     );
   }
 }

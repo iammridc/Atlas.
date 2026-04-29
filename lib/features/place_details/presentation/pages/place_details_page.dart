@@ -2,6 +2,7 @@ import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/place_details/domain/entities/place_details_entity.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
 import 'package:atlas/features/place_details/presentation/bloc/place_details_cubit.dart';
@@ -75,6 +76,13 @@ class _PlaceDetailsView extends StatelessWidget {
         ? AppColors.backgroundDark
         : AppColors.backgroundLight;
     final topInset = MediaQuery.of(context).padding.top;
+    Future<void> reloadPlace() => context.read<PlaceDetailsCubit>().loadPlace(
+      placeId: placeId,
+      placeName: placeName,
+      city: city,
+      country: country,
+      photoReference: photoReference,
+    );
 
     return Scaffold(
       backgroundColor: pageColor,
@@ -86,15 +94,9 @@ class _PlaceDetailsView extends StatelessWidget {
 
           if (state is PlaceDetailsError) {
             return SafeArea(
-              child: _ErrorView(
-                message: state.message,
-                onRetry: () => context.read<PlaceDetailsCubit>().loadPlace(
-                  placeId: placeId,
-                  placeName: placeName,
-                  city: city,
-                  country: country,
-                  photoReference: photoReference,
-                ),
+              child: RefreshIndicator(
+                onRefresh: reloadPlace,
+                child: _ErrorView(message: state.message),
               ),
             );
           }
@@ -106,64 +108,69 @@ class _PlaceDetailsView extends StatelessWidget {
             loadedState.communityReviews,
           );
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: _HeroSection(
-                  photoNames: place.photoNames,
-                  topInset: topInset,
-                  onBackPressed: () => context.router.maybePop(),
-                  isFavorite: loadedState.isFavorite,
-                  isSavingFavorite: loadedState.isSavingFavorite,
-                  onFavoritePressed: () async {
-                    final result = await context
-                        .read<PlaceDetailsCubit>()
-                        .toggleFavoritePlace();
-                    if (!context.mounted ||
-                        result.status != PlaceFavoriteActionStatus.failed) {
-                      return;
-                    }
-
-                    AppSnackbar.show(
-                      context,
-                      message: result.message,
-                      type: SnackbarType.error,
-                    );
-                  },
-                ),
+          return RefreshIndicator(
+            onRefresh: reloadPlace,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _DetailsSheet(
-                  place: place,
-                  previewReviews: previewReviews,
-                  totalReviewCount: loadedState.totalReviewCount,
-                  onReviewsTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider.value(
-                        value: context.read<PlaceDetailsCubit>(),
-                        child: PlaceReviewsPage(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _HeroSection(
+                    photoNames: place.photoNames,
+                    topInset: topInset,
+                    onBackPressed: () => context.router.maybePop(),
+                    isFavorite: loadedState.isFavorite,
+                    isSavingFavorite: loadedState.isSavingFavorite,
+                    onFavoritePressed: () async {
+                      final result = await context
+                          .read<PlaceDetailsCubit>()
+                          .toggleFavoritePlace();
+                      if (!context.mounted ||
+                          result.status != PlaceFavoriteActionStatus.failed) {
+                        return;
+                      }
+
+                      AppSnackbar.show(
+                        context,
+                        message: result.message,
+                        type: SnackbarType.error,
+                      );
+                    },
+                  ),
+                ),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _DetailsSheet(
+                    place: place,
+                    previewReviews: previewReviews,
+                    totalReviewCount: loadedState.totalReviewCount,
+                    onReviewsTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<PlaceDetailsCubit>(),
+                          child: PlaceReviewsPage(),
+                        ),
+                      ),
+                    ),
+                    onStartJourneyTap: () => context.router.push(
+                      TravelPlannerRoute(
+                        placeId: place.id,
+                        placeName: place.name,
+                        address: place.formattedAddress,
+                        city: place.city,
+                        country: place.country,
+                        latitude: place.latitude,
+                        longitude: place.longitude,
+                        photoReference: place.photoNames.isEmpty
+                            ? null
+                            : place.photoNames.first,
                       ),
                     ),
                   ),
-                  onStartJourneyTap: () => context.router.push(
-                    TravelPlannerRoute(
-                      placeId: place.id,
-                      placeName: place.name,
-                      address: place.formattedAddress,
-                      city: place.city,
-                      country: place.country,
-                      latitude: place.latitude,
-                      longitude: place.longitude,
-                      photoReference: place.photoNames.isEmpty
-                          ? null
-                          : place.photoNames.first,
-                    ),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -279,7 +286,7 @@ class _DetailsSheet extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(12, 12, 12, 22),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, 22),
       decoration: BoxDecoration(
         color: sheetColor,
         boxShadow: [
@@ -564,64 +571,56 @@ ButtonStyle _placeButtonStyle(bool isDark) {
 
 class _ErrorView extends StatelessWidget {
   final String message;
-  final VoidCallback onRetry;
 
-  const _ErrorView({required this.message, required this.onRetry});
+  const _ErrorView({required this.message});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         children: [
-          GestureDetector(
-            onTap: () => context.router.maybePop(),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.appPrimaryBlack
-                    : AppColors.appPrimaryWhite,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isDark ? Colors.white24 : Colors.black26,
-                ),
-              ),
-              child: Icon(
-                CupertinoIcons.back,
-                color: isDark
-                    ? AppColors.appPrimaryWhite
-                    : AppColors.appPrimaryBlack,
-                size: 22,
-              ),
-            ),
-          ),
-          const Spacer(),
-          Text(
-            'Place unavailable',
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            message,
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.5,
-              color: isDark ? Colors.white70 : Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 22),
           SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: onRetry,
-              style: _placeButtonStyle(isDark),
-              child: const Text('Try again'),
+            height: constraints.maxHeight,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 20,
+                  left: 20,
+                  child: GestureDetector(
+                    onTap: () => context.router.maybePop(),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.appPrimaryBlack
+                            : AppColors.appPrimaryWhite,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? Colors.white24 : Colors.black26,
+                        ),
+                      ),
+                      child: Icon(
+                        CupertinoIcons.back,
+                        color: isDark
+                            ? AppColors.appPrimaryWhite
+                            : AppColors.appPrimaryBlack,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+                TransientErrorPlaceholder(
+                  icon: Icons.wrong_location_outlined,
+                  title: 'Place unavailable',
+                  message: message,
+                ),
+              ],
             ),
           ),
         ],

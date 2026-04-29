@@ -5,6 +5,7 @@ import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
+import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/profile/domain/entities/favorite_place_entity.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:atlas/features/profile/domain/services/favorite_places_sync_service.dart';
@@ -79,10 +80,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _errorMessage != null
-            ? ProfileCollectionErrorState(
-                message: _errorMessage!,
-                onRetry: _loadPlaces,
-              )
+            ? ProfileCollectionErrorState(message: _errorMessage!)
             : _places.isEmpty
             ? const ProfileCollectionEmptyState(
                 title: 'No favourite places yet',
@@ -90,7 +88,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
                     'Save places you love from the place page, then revisit them here.',
               )
             : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
                 itemCount: _places.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {
@@ -407,7 +405,7 @@ class ProfileCollectionEmptyState extends StatelessWidget {
     return ListView(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(28, 120, 28, 28),
+          padding: const EdgeInsets.fromLTRB(24, 120, 24, 28),
           child: Column(
             children: [
               const Icon(Icons.inbox_outlined, size: 52),
@@ -440,39 +438,15 @@ class ProfileCollectionEmptyState extends StatelessWidget {
 
 class ProfileCollectionErrorState extends StatelessWidget {
   final String message;
-  final VoidCallback onRetry;
 
-  const ProfileCollectionErrorState({
-    super.key,
-    required this.message,
-    required this.onRetry,
-  });
+  const ProfileCollectionErrorState({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(28, 120, 28, 28),
-          child: Column(
-            children: [
-              const Icon(Icons.error_outline_rounded, size: 52),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white70
-                      : Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(onPressed: onRetry, child: const Text('Try again')),
-            ],
-          ),
-        ),
-      ],
+    return ScrollableTransientErrorPlaceholder(
+      icon: Icons.cloud_off_outlined,
+      title: 'Couldn’t load this list',
+      message: message,
     );
   }
 }

@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 380),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: HomeBottomNavBar(
                         selectedIndex: _selectedIndex,
                         onSelected: (index) =>
@@ -169,43 +169,56 @@ class _RecommendationsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      key: const PageStorageKey('recommendations-tab-scroll'),
-      slivers: [
-        SliverToBoxAdapter(
-          child: SizedBox(height: MediaQuery.of(context).padding.top),
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.wait([
+          context.read<HotPlacesCubit>().reload(),
+          context.read<RecommendationsCubit>().reload(),
+        ]);
+      },
+      child: CustomScrollView(
+        key: const PageStorageKey('recommendations-tab-scroll'),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
-        const SliverToBoxAdapter(child: HotPlacesSection()),
-        SliverToBoxAdapter(
-          child: BlocBuilder<RecommendationsCubit, RecommendationsState>(
-            builder: (context, state) {
-              return switch (state) {
-                RecommendationsLoading() => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 48),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                RecommendationsLoaded(
-                  recommendations: final places,
-                  isLoadingMore: final isLoadingMore,
-                ) =>
-                  RecommendationsSection(
-                    recommendations: places,
-                    isLoadingMore: isLoadingMore,
-                  ),
-                RecommendationsError(isReloading: final isReloading) =>
-                  RecommendationsSection(
-                    recommendations: [],
-                    hasError: true,
-                    isReloading: isReloading,
-                  ),
-                _ => const SizedBox.shrink(),
-              };
-            },
+        slivers: [
+          SliverToBoxAdapter(
+            child: SizedBox(height: MediaQuery.of(context).padding.top),
           ),
-        ),
-        const SliverToBoxAdapter(child: MapSection()),
-        const SliverToBoxAdapter(child: SizedBox(height: _bottomNavClearance)),
-      ],
+          const SliverToBoxAdapter(child: HotPlacesSection()),
+          SliverToBoxAdapter(
+            child: BlocBuilder<RecommendationsCubit, RecommendationsState>(
+              builder: (context, state) {
+                return switch (state) {
+                  RecommendationsLoading() => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  RecommendationsLoaded(
+                    recommendations: final places,
+                    isLoadingMore: final isLoadingMore,
+                  ) =>
+                    RecommendationsSection(
+                      recommendations: places,
+                      isLoadingMore: isLoadingMore,
+                    ),
+                  RecommendationsError(isReloading: final isReloading) =>
+                    RecommendationsSection(
+                      recommendations: [],
+                      hasError: true,
+                      isReloading: isReloading,
+                    ),
+                  _ => const SizedBox.shrink(),
+                };
+              },
+            ),
+          ),
+          const SliverToBoxAdapter(child: MapSection()),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: _bottomNavClearance),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -621,12 +634,28 @@ class _SettingsViewState extends State<_SettingsView> {
                 ),
               ),
               for (final value in values)
-                ListTile(
-                  title: Text(labels[value] ?? value.toString()),
-                  trailing: value == current
-                      ? const Icon(CupertinoIcons.checkmark)
-                      : null,
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => Navigator.of(context).pop(value),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(labels[value] ?? value.toString()),
+                        ),
+                        SizedBox(
+                          width: 24,
+                          child: value == current
+                              ? const Icon(CupertinoIcons.checkmark)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -749,13 +778,33 @@ class _SettingsSwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile.adaptive(
-      secondary: Icon(icon),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(subtitle),
-      value: value,
-      onChanged: onChanged,
-      contentPadding: const EdgeInsets.fromLTRB(16, 2, 12, 2),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onChanged(!value),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
+        child: Row(
+          children: [
+            Icon(icon),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(subtitle),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Switch.adaptive(value: value, onChanged: onChanged),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -779,16 +828,14 @@ class _SettingsActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isDestructive ? Colors.redAccent : null;
 
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: TextStyle(fontWeight: FontWeight.w700, color: color),
-      ),
-      subtitle: Text(subtitle),
+    return _SettingsPlainTile(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      titleColor: color,
+      iconColor: color,
       trailing: const Icon(CupertinoIcons.chevron_right, size: 18),
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
@@ -808,13 +855,12 @@ class _SettingsValueTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(value),
+    return _SettingsPlainTile(
+      icon: icon,
+      title: title,
+      subtitle: value,
       trailing: const Icon(CupertinoIcons.chevron_right, size: 18),
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
@@ -832,11 +878,64 @@ class _SettingsInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(value),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return _SettingsPlainTile(icon: icon, title: title, subtitle: value);
+  }
+}
+
+class _SettingsPlainTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color? titleColor;
+  final Color? iconColor;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  const _SettingsPlainTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.titleColor,
+    this.iconColor,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: titleColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(subtitle),
+              ],
+            ),
+          ),
+          if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: content,
     );
   }
 }

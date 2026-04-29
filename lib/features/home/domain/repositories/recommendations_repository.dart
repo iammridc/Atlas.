@@ -1,5 +1,6 @@
 import 'package:atlas/core/errors/app_exception.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
+import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:dartz/dartz.dart';
 
 abstract class RecommendationsRepository {
@@ -12,6 +13,7 @@ abstract class RecommendationsRepository {
   Future<Either<AppException, List<RecommendationEntity>>> getHotPlaces();
 
   Future<Either<AppException, List<RecommendationEntity>>> searchPlaces(
-    String query,
-  );
+    String query, {
+    SearchPlacesFilterEntity filters = SearchPlacesFilterEntity.empty,
+  });
 }

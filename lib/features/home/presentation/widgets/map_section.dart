@@ -38,11 +38,11 @@ class _MapSectionState extends State<MapSection> {
           builder: (context, constraints) {
             final width = math.min(
               360.0,
-              math.max(0.0, constraints.maxWidth - 32),
+              math.max(0.0, constraints.maxWidth - 48),
             );
 
             return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

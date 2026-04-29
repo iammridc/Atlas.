@@ -2,6 +2,7 @@ import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/preferences/domain/entities/category_entity.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_cubit.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_state.dart';
@@ -37,6 +38,7 @@ class PreferencesPage extends StatelessWidget {
         replaceStackOnSave: replaceStackOnSave,
         showSkipAction: showSkipAction,
         allowEmptySelection: allowEmptySelection,
+        initialSelectedCategoryIds: initialSelectedCategoryIds,
       ),
     );
   }
@@ -47,12 +49,14 @@ class _InterestsView extends StatelessWidget {
   final bool replaceStackOnSave;
   final bool showSkipAction;
   final bool allowEmptySelection;
+  final List<String> initialSelectedCategoryIds;
 
   const _InterestsView({
     required this.uid,
     required this.replaceStackOnSave,
     required this.showSkipAction,
     required this.allowEmptySelection,
+    required this.initialSelectedCategoryIds,
   });
 
   @override
@@ -146,12 +150,16 @@ class _InterestsView extends StatelessWidget {
                     }
 
                     if (state is InterestsError) {
-                      return Center(
-                        child: Text(
-                          state.message,
-                          style: TextStyle(
-                            color: isDark ? Colors.white54 : Colors.black45,
-                          ),
+                      return RefreshIndicator(
+                        onRefresh: () =>
+                            context.read<PreferencesCubit>().loadCategories(
+                              initiallySelected: initialSelectedCategoryIds
+                                  .toSet(),
+                            ),
+                        child: ScrollableTransientErrorPlaceholder(
+                          icon: Icons.tune_rounded,
+                          title: 'Preferences unavailable',
+                          message: state.message,
                         ),
                       );
                     }

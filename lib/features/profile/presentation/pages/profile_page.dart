@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/preferences/presentation/pages/preferences_page.dart';
 import 'package:atlas/features/profile/domain/entities/profile_summary_entity.dart';
 import 'package:atlas/features/profile/domain/services/favorite_places_sync_service.dart';
@@ -122,9 +123,12 @@ class _ProfileViewState extends State<_ProfileView> {
               }
 
               if (state.status == ProfileStatus.error && profile == null) {
-                return _ProfileErrorState(
-                  message: state.errorMessage ?? 'Failed to load your profile.',
-                  onRetry: () => context.read<ProfileCubit>().loadProfile(),
+                return RefreshIndicator(
+                  onRefresh: () => context.read<ProfileCubit>().loadProfile(),
+                  child: _ProfileErrorState(
+                    message:
+                        state.errorMessage ?? 'Failed to load your profile.',
+                  ),
                 );
               }
 
@@ -444,34 +448,15 @@ class _ProfileEditButton extends StatelessWidget {
 
 class _ProfileErrorState extends StatelessWidget {
   final String message;
-  final VoidCallback onRetry;
 
-  const _ProfileErrorState({required this.message, required this.onRetry});
+  const _ProfileErrorState({required this.message});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.person_off_outlined, size: 48),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white70
-                    : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Try again')),
-          ],
-        ),
-      ),
+    return ScrollableTransientErrorPlaceholder(
+      icon: Icons.person_off_outlined,
+      title: 'Profile unavailable',
+      message: message,
     );
   }
 }

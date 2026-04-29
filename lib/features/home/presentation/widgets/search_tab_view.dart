@@ -1,6 +1,9 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/widgets/transient_error_placeholder.dart';
+import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_state.dart';
+import 'package:atlas/features/home/presentation/pages/search_filters_page.dart';
 import 'package:atlas/features/home/presentation/widgets/search_result_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +66,21 @@ class _SearchTabViewState extends State<SearchTabView> {
     _focusNode.requestFocus();
   }
 
+  Future<void> _openFiltersPage() async {
+    FocusScope.of(context).unfocus();
+
+    final result = await Navigator.of(context).push<SearchPlacesFilterEntity>(
+      MaterialPageRoute(
+        builder: (_) => SearchFiltersPage(
+          initialFilters: context.read<SearchPlacesCubit>().state.filters,
+        ),
+      ),
+    );
+
+    if (!mounted || result == null) return;
+    await context.read<SearchPlacesCubit>().updateFilters(result);
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<SearchPlacesCubit>().state;
@@ -91,7 +109,7 @@ class _SearchTabViewState extends State<SearchTabView> {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 108),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 108),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -164,25 +182,36 @@ class _SearchTabViewState extends State<SearchTabView> {
                   ),
                   const SizedBox(width: 12),
                   _TopIconButton(
-                    icon: state.hasQuery
+                    icon: state.hasQuery && _focusNode.hasFocus
                         ? CupertinoIcons.xmark
                         : _focusNode.hasFocus
                         ? CupertinoIcons.keyboard_chevron_compact_down
                         : CupertinoIcons.slider_horizontal_3,
-                    onTap: state.hasQuery
+                    onTap: state.hasQuery && _focusNode.hasFocus
                         ? _clearQuery
                         : () {
                             if (_focusNode.hasFocus) {
                               FocusScope.of(context).unfocus();
                             } else {
-                              _focusNode.requestFocus();
+                              _openFiltersPage();
                             }
                           },
                     isDark: isDark,
+                    isActive: state.filters.hasActiveFilters,
                   ),
                 ],
               ),
-              const SizedBox(height: 26),
+              if (state.filters.hasActiveFilters) ...[
+                const SizedBox(height: 12),
+                _ActiveSearchFilterBar(
+                  label: state.filters.summaryLabel,
+                  isDark: isDark,
+                  onClear: () =>
+                      context.read<SearchPlacesCubit>().clearFilters(),
+                ),
+                const SizedBox(height: 18),
+              ] else
+                const SizedBox(height: 26),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
@@ -196,7 +225,7 @@ class _SearchTabViewState extends State<SearchTabView> {
                           secondaryTextColor: secondaryTextColor,
                           surfaceColor: surfaceColor,
                           borderColor: borderColor,
-                          onRetry: () =>
+                          onRefresh: () =>
                               context.read<SearchPlacesCubit>().retry(),
                           onResultTap: () => context
                               .read<SearchPlacesCubit>()
@@ -233,32 +262,98 @@ class _TopIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool isDark;
+  final bool isActive;
 
   const _TopIconButton({
     required this.icon,
     required this.onTap,
     required this.isDark,
+    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          icon,
-          size: 22,
-          color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
-        ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              icon,
+              size: 22,
+              color: isDark
+                  ? AppColors.appPrimaryWhite
+                  : AppColors.appPrimaryBlack,
+            ),
+          ),
+          if (isActive)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: AppColors.errorColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
       ),
+    );
+  }
+}
+
+class _ActiveSearchFilterBar extends StatelessWidget {
+  final String label;
+  final bool isDark;
+  final VoidCallback onClear;
+
+  const _ActiveSearchFilterBar({
+    required this.label,
+    required this.isDark,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final titleColor = isDark ? Colors.white : AppColors.appPrimaryBlack;
+    final secondaryColor = isDark
+        ? Colors.white.withValues(alpha: 0.66)
+        : Colors.black.withValues(alpha: 0.52);
+
+    return Row(
+      children: [
+        Icon(CupertinoIcons.slider_horizontal_3, size: 18, color: titleColor),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: titleColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: onClear,
+          icon: Icon(CupertinoIcons.xmark, size: 18, color: secondaryColor),
+          tooltip: 'Clear filter',
+        ),
+      ],
     );
   }
 }
@@ -332,11 +427,9 @@ class _RecentRequestsView extends StatelessWidget {
         else
           ...state.recentQueries.map(
             (query) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 4),
               child: _RecentQueryTile(
                 query: query,
-                surfaceColor: surfaceColor,
-                borderColor: borderColor,
                 titleColor: titleColor,
                 secondaryTextColor: secondaryTextColor,
                 onTap: () => onQueryTap(query),
@@ -355,7 +448,7 @@ class _SearchResultsView extends StatelessWidget {
   final Color secondaryTextColor;
   final Color surfaceColor;
   final Color borderColor;
-  final VoidCallback onRetry;
+  final Future<void> Function() onRefresh;
   final VoidCallback onResultTap;
 
   const _SearchResultsView({
@@ -365,77 +458,74 @@ class _SearchResultsView extends StatelessWidget {
     required this.secondaryTextColor,
     required this.surfaceColor,
     required this.borderColor,
-    required this.onRetry,
+    required this.onRefresh,
     required this.onResultTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      key: const PageStorageKey('search-results-list'),
-      physics: const BouncingScrollPhysics(),
-      children: [
-        Text(
-          state.isLoading
-              ? 'Searching...'
-              : 'Found ${state.results.length} ${state.results.length == 1 ? 'Result' : 'Results'}',
-          style: TextStyle(
-            color: titleColor,
-            fontSize: 29,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.7,
-          ),
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        key: const PageStorageKey('search-results-list'),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
-        const SizedBox(height: 16),
-        if (state.isLoading)
-          Padding(
-            padding: const EdgeInsets.only(top: 24),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: titleColor,
-                strokeWidth: 2.6,
+        children: [
+          Text(
+            state.isLoading
+                ? 'Searching...'
+                : 'Found ${state.results.length} ${state.results.length == 1 ? 'Result' : 'Results'}',
+            style: TextStyle(
+              color: titleColor,
+              fontSize: 29,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.7,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (state.isLoading)
+            Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: titleColor,
+                  strokeWidth: 2.6,
+                ),
+              ),
+            )
+          else if (state.hasError)
+            TransientErrorPlaceholder(
+              icon: Icons.wifi_off_rounded,
+              title: 'Couldn’t load search results',
+              message: state.errorMessage,
+            )
+          else if (state.hasSearched && state.results.isEmpty)
+            _EmptyStateCard(
+              icon: CupertinoIcons.search,
+              title: 'No matches found',
+              subtitle:
+                  'Try a place name, city, or landmark with a little more detail.',
+              surfaceColor: surfaceColor,
+              borderColor: borderColor,
+              titleColor: titleColor,
+              secondaryTextColor: secondaryTextColor,
+            )
+          else
+            ...state.results.map(
+              (place) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: SearchResultCard(place: place, onTap: onResultTap),
               ),
             ),
-          )
-        else if (state.hasError)
-          _StateMessageCard(
-            icon: CupertinoIcons.exclamationmark_triangle,
-            title: 'Couldn’t load search results',
-            subtitle: state.errorMessage,
-            actionLabel: 'Try Again',
-            onActionTap: onRetry,
-            surfaceColor: surfaceColor,
-            borderColor: borderColor,
-            titleColor: titleColor,
-            secondaryTextColor: secondaryTextColor,
-          )
-        else if (state.hasSearched && state.results.isEmpty)
-          _EmptyStateCard(
-            icon: CupertinoIcons.search,
-            title: 'No matches found',
-            subtitle:
-                'Try a place name, city, or landmark with a little more detail.',
-            surfaceColor: surfaceColor,
-            borderColor: borderColor,
-            titleColor: titleColor,
-            secondaryTextColor: secondaryTextColor,
-          )
-        else
-          ...state.results.map(
-            (place) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: SearchResultCard(place: place, onTap: onResultTap),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
 
 class _RecentQueryTile extends StatelessWidget {
   final String query;
-  final Color surfaceColor;
-  final Color borderColor;
   final Color titleColor;
   final Color secondaryTextColor;
   final VoidCallback onTap;
@@ -443,8 +533,6 @@ class _RecentQueryTile extends StatelessWidget {
 
   const _RecentQueryTile({
     required this.query,
-    required this.surfaceColor,
-    required this.borderColor,
     required this.titleColor,
     required this.secondaryTextColor,
     required this.onTap,
@@ -453,44 +541,31 @@ class _RecentQueryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return ListTile(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          children: [
-            Icon(CupertinoIcons.time, size: 18, color: secondaryTextColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                query,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: titleColor,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onRemove,
-              child: Icon(
-                CupertinoIcons.xmark,
-                size: 18,
-                color: secondaryTextColor,
-              ),
-            ),
-          ],
+      leading: Icon(CupertinoIcons.time, size: 24, color: titleColor),
+      title: Text(
+        query,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: titleColor,
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
         ),
       ),
+      subtitle: Text(
+        'Recent request',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: secondaryTextColor),
+      ),
+      trailing: IconButton(
+        onPressed: onRemove,
+        icon: Icon(CupertinoIcons.xmark, size: 20, color: secondaryTextColor),
+        tooltip: 'Remove',
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
@@ -546,69 +621,6 @@ class _EmptyStateCard extends StatelessWidget {
               height: 1.45,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StateMessageCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String actionLabel;
-  final VoidCallback onActionTap;
-  final Color surfaceColor;
-  final Color borderColor;
-  final Color titleColor;
-  final Color secondaryTextColor;
-
-  const _StateMessageCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.actionLabel,
-    required this.onActionTap,
-    required this.surfaceColor,
-    required this.borderColor,
-    required this.titleColor,
-    required this.secondaryTextColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 28, color: AppColors.errorColor),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: titleColor,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: secondaryTextColor,
-              fontSize: 15,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: onActionTap, child: Text(actionLabel)),
         ],
       ),
     );

@@ -33,7 +33,7 @@ class PlannedTripDetailsPage extends StatelessWidget {
         backgroundColor: backgroundColor,
       ),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        minimum: const EdgeInsets.fromLTRB(24, 10, 24, 18),
         child: SizedBox(
           height: 54,
           child: FilledButton(
@@ -69,7 +69,7 @@ class _RouteSnapshotView extends StatelessWidget {
     final route = trip.route!;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
         _FixedLocationFields(
           origin: trip.origin!,
@@ -518,7 +518,7 @@ class _TextOnlyTripView extends StatelessWidget {
     final secondary = isDark ? Colors.white60 : Colors.black54;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       children: [
         Text(
           trip.title,

@@ -5,6 +5,7 @@ import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
+import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/home/domain/entity/home_map_entity.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
 import 'package:atlas/features/home/presentation/bloc/home_map_cubit.dart';
@@ -77,11 +78,13 @@ class _HomeMapViewState extends State<_HomeMapView> {
           final currentLocation = state.currentLocation;
 
           if (currentLocation == null) {
-            return _LocationGate(
-              isLoading: state.isLoading,
-              message: state.errorMessage,
-              onRetry: () => context.read<HomeMapCubit>().loadCurrentLocation(
+            return RefreshIndicator(
+              onRefresh: () => context.read<HomeMapCubit>().loadCurrentLocation(
                 includeNearbyPlaces: true,
+              ),
+              child: _LocationGate(
+                isLoading: state.isLoading,
+                message: state.errorMessage,
               ),
             );
           }
@@ -109,6 +112,7 @@ class _HomeMapViewState extends State<_HomeMapView> {
                   _bearing = position.bearing;
                   setState(() => _zoom = position.zoom);
                 },
+                onCameraIdle: _resolveCameraCenter,
                 onTap: (position) => _inspectMapPoint(context, position),
                 markers: const {},
                 myLocationEnabled: true,
@@ -127,33 +131,33 @@ class _HomeMapViewState extends State<_HomeMapView> {
               ),
               Positioned(
                 top: topInset + 12,
-                left: 12,
-                right: 12,
-                child: _MapTopBar(
+                left: 24,
+                child: _MapButton(
                   isDark: isDark,
-                  isLoading: state.isLoading,
-                  onBack: () => context.router.maybePop(),
-                  onLocate: () => _focusCurrentLocation(currentLocation),
-                  onRefresh: () =>
-                      context.read<HomeMapCubit>().loadNearbyPlaces(),
+                  icon: CupertinoIcons.chevron_left,
+                  onPressed: () => context.router.maybePop(),
+                  tooltip: 'Back',
                 ),
               ),
               Positioned(
-                top: topInset + 78,
-                right: 12,
-                child: _ZoomControls(
+                top: topInset + 12,
+                left: 78,
+                right: 78,
+                child: _MapLocationPill(
                   isDark: isDark,
-                  onZoomIn: _zoomIn,
-                  onZoomOut: _zoomOut,
+                  label: state.cameraPlace?.label ?? 'Map location',
                 ),
               ),
               Positioned(
-                top: topInset + 190,
-                right: 12,
-                child: _MapModeSwitch(
+                top: topInset + 12,
+                right: 24,
+                child: _MapControlColumn(
                   isDark: isDark,
                   is3dMode: _is3dMode,
-                  onChanged: _setMapMode,
+                  onLocate: () => _focusCurrentLocation(currentLocation),
+                  onZoomIn: _zoomIn,
+                  onZoomOut: _zoomOut,
+                  onToggleMode: () => _setMapMode(!_is3dMode),
                 ),
               ),
               if (state.status == HomeMapStatus.inspectingPlace)
@@ -256,6 +260,18 @@ class _HomeMapViewState extends State<_HomeMapView> {
     );
   }
 
+  void _resolveCameraCenter() {
+    final target = _cameraTarget;
+    if (target == null) return;
+
+    context.read<HomeMapCubit>().resolveCameraLocation(
+      HomeMapCoordinateEntity(
+        latitude: target.latitude,
+        longitude: target.longitude,
+      ),
+    );
+  }
+
   void _openPlaceDetails(BuildContext context, RecommendationEntity place) {
     context.router.push(
       PlaceDetailsRoute(
@@ -269,89 +285,21 @@ class _HomeMapViewState extends State<_HomeMapView> {
   }
 }
 
-class _MapTopBar extends StatelessWidget {
+class _MapControlColumn extends StatelessWidget {
   final bool isDark;
-  final bool isLoading;
-  final VoidCallback onBack;
+  final bool is3dMode;
   final VoidCallback onLocate;
-  final VoidCallback onRefresh;
-
-  const _MapTopBar({
-    required this.isDark,
-    required this.isLoading,
-    required this.onBack,
-    required this.onLocate,
-    required this.onRefresh,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _MapButton(
-          isDark: isDark,
-          icon: CupertinoIcons.chevron_left,
-          onPressed: onBack,
-          tooltip: 'Back',
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _MapSurface(
-            isDark: isDark,
-            child: Row(
-              children: [
-                Icon(
-                  CupertinoIcons.location_fill,
-                  size: 17,
-                  color: isDark ? Colors.white : AppColors.appPrimaryBlack,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Nearby map',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                if (isLoading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        _MapButton(
-          isDark: isDark,
-          icon: CupertinoIcons.location,
-          onPressed: onLocate,
-          tooltip: 'Locate me',
-        ),
-        const SizedBox(width: 10),
-        _MapButton(
-          isDark: isDark,
-          icon: CupertinoIcons.arrow_clockwise,
-          onPressed: onRefresh,
-          tooltip: 'Refresh',
-        ),
-      ],
-    );
-  }
-}
-
-class _ZoomControls extends StatelessWidget {
-  final bool isDark;
   final VoidCallback onZoomIn;
   final VoidCallback onZoomOut;
+  final VoidCallback onToggleMode;
 
-  const _ZoomControls({
+  const _MapControlColumn({
     required this.isDark,
+    required this.is3dMode,
+    required this.onLocate,
     required this.onZoomIn,
     required this.onZoomOut,
+    required this.onToggleMode,
   });
 
   @override
@@ -360,86 +308,106 @@ class _ZoomControls extends StatelessWidget {
       children: [
         _MapButton(
           isDark: isDark,
+          icon: CupertinoIcons.location,
+          onPressed: onLocate,
+          tooltip: 'Current position',
+        ),
+        const SizedBox(height: 10),
+        _MapButton(
+          isDark: isDark,
           icon: CupertinoIcons.plus,
           onPressed: onZoomIn,
-          tooltip: 'Zoom in',
+          tooltip: 'Closer',
         ),
         const SizedBox(height: 10),
         _MapButton(
           isDark: isDark,
           icon: CupertinoIcons.minus,
           onPressed: onZoomOut,
-          tooltip: 'Zoom out',
+          tooltip: 'Farther',
+        ),
+        const SizedBox(height: 10),
+        _MapModeButton(
+          isDark: isDark,
+          label: is3dMode ? '2D' : '3D',
+          onPressed: onToggleMode,
         ),
       ],
     );
   }
 }
 
-class _MapModeSwitch extends StatelessWidget {
+class _MapModeButton extends StatelessWidget {
   final bool isDark;
-  final bool is3dMode;
-  final ValueChanged<bool> onChanged;
+  final String label;
+  final VoidCallback onPressed;
 
-  const _MapModeSwitch({
+  const _MapModeButton({
     required this.isDark,
-    required this.is3dMode,
-    required this.onChanged,
+    required this.label,
+    required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _MapSurface(
-      isDark: isDark,
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _MapModeSegment(
-            label: '2D',
-            isSelected: !is3dMode,
-            onTap: () => onChanged(false),
+    final foregroundColor = isDark
+        ? AppColors.appPrimaryWhite
+        : AppColors.appPrimaryBlack;
+
+    return Tooltip(
+      message: 'Switch to $label',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.appPrimaryBlack
+                : AppColors.appPrimaryWhite,
+            borderRadius: BorderRadius.circular(14),
           ),
-          _MapModeSegment(
-            label: '3D',
-            isSelected: is3dMode,
-            onTap: () => onChanged(true),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: foregroundColor,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _MapModeSegment extends StatelessWidget {
+class _MapLocationPill extends StatelessWidget {
+  final bool isDark;
   final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
 
-  const _MapModeSegment({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _MapLocationPill({required this.isDark, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1A73E8) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : null,
-            fontWeight: FontWeight.w900,
-          ),
+    return Container(
+      height: 44,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.appPrimaryBlack : AppColors.appPrimaryWhite,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
+          fontSize: 15,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -562,22 +530,23 @@ class _MapButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: IconButton(
-          onPressed: onPressed,
-          tooltip: tooltip,
-          icon: Icon(
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.appPrimaryBlack
+                : AppColors.appPrimaryWhite,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
             icon,
-            size: 20,
+            size: 22,
             color: isDark
                 ? AppColors.appPrimaryWhite
                 : AppColors.appPrimaryBlack,
@@ -623,17 +592,18 @@ class _MapSurface extends StatelessWidget {
 class _LocationGate extends StatelessWidget {
   final bool isLoading;
   final String? message;
-  final VoidCallback onRetry;
 
-  const _LocationGate({
-    required this.isLoading,
-    required this.message,
-    required this.onRetry,
-  });
+  const _LocationGate({required this.isLoading, required this.message});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (!isLoading) {
+      return ScrollableTransientErrorPlaceholder(
+        icon: CupertinoIcons.location_slash,
+        title: 'Location unavailable',
+        message: message ?? 'Pull down from the top to try again.',
+      );
+    }
 
     return SafeArea(
       child: Center(
@@ -642,27 +612,13 @@ class _LocationGate extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isLoading)
-                const CircularProgressIndicator()
-              else
-                Icon(
-                  CupertinoIcons.location_slash,
-                  size: 54,
-                  color: isDark ? Colors.white54 : Colors.black45,
-                ),
+              const CircularProgressIndicator(),
               const SizedBox(height: 16),
-              Text(
-                isLoading
-                    ? 'Finding your current location...'
-                    : message ?? 'Location is unavailable.',
+              const Text(
+                'Finding your current location...',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
-              const SizedBox(height: 16),
-              TextButton(onPressed: onRetry, child: const Text('Try again')),
             ],
           ),
         ),

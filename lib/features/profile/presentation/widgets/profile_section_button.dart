@@ -17,27 +17,21 @@ class ProfileSectionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderRadius = BorderRadius.circular(28);
 
     return Material(
-      color: Colors.transparent,
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.08)
+          : const Color(0xFFF0F0F0),
+      borderRadius: borderRadius,
+      clipBehavior: Clip.antiAlias,
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: isDark ? 0.16 : 0.08),
       child: InkWell(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: borderRadius,
         onTap: onTap,
-        child: Ink(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : const Color(0xFFF0F0F0),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
           child: Row(
             children: [
               Container(

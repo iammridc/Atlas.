@@ -27,6 +27,7 @@ class HomeMapCubit extends Cubit<HomeMapState> {
   final LocationService _locationService;
   int _activeRequestId = 0;
   int _activeInspectionRequestId = 0;
+  int _activeCameraLocationRequestId = 0;
 
   HomeMapCubit({
     GetNearbyMapPlacesUseCase? getNearbyPlaces,
@@ -71,6 +72,7 @@ class HomeMapCubit extends Cubit<HomeMapState> {
         status: HomeMapStatus.locating,
         clearError: true,
         clearCurrentPlace: true,
+        clearCameraPlace: true,
         clearSelectedPlace: true,
       ),
     );
@@ -99,10 +101,12 @@ class HomeMapCubit extends Cubit<HomeMapState> {
             : HomeMapStatus.ready,
         clearError: true,
         clearCurrentPlace: true,
+        clearCameraPlace: true,
       ),
     );
 
     unawaited(_resolveCurrentLocationName(coordinate, requestId));
+    unawaited(resolveCameraLocation(coordinate));
 
     if (includeNearbyPlaces) {
       await loadNearbyPlaces(center: coordinate, requestId: requestId);
@@ -117,6 +121,7 @@ class HomeMapCubit extends Cubit<HomeMapState> {
       state.copyWith(
         currentLocation: _defaultMapLocation,
         currentPlace: _defaultMapPlace,
+        cameraPlace: _defaultMapPlace,
         status: includeNearbyPlaces
             ? HomeMapStatus.loadingNearby
             : HomeMapStatus.ready,
@@ -139,7 +144,24 @@ class HomeMapCubit extends Cubit<HomeMapState> {
 
     result.fold((_) {}, (location) {
       if (location == null || !location.hasLocationLabel) return;
-      emit(state.copyWith(currentPlace: location, clearError: true));
+      emit(
+        state.copyWith(
+          currentPlace: location,
+          cameraPlace: state.cameraPlace ?? location,
+          clearError: true,
+        ),
+      );
+    });
+  }
+
+  Future<void> resolveCameraLocation(HomeMapCoordinateEntity center) async {
+    final requestId = ++_activeCameraLocationRequestId;
+    final result = await _resolveLocation(center: center);
+    if (isClosed || requestId != _activeCameraLocationRequestId) return;
+
+    result.fold((_) {}, (location) {
+      if (location == null || !location.hasLocationLabel) return;
+      emit(state.copyWith(cameraPlace: location, clearError: true));
     });
   }
 

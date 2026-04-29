@@ -1,6 +1,7 @@
 import 'package:atlas/core/errors/app_exception.dart';
 import 'package:atlas/features/home/data/datasources/recommendations_remote_datasource.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
+import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:atlas/features/home/domain/repositories/recommendations_repository.dart';
 import 'package:dartz/dartz.dart';
 
@@ -45,10 +46,11 @@ class RecommendationsRepositoryImpl implements RecommendationsRepository {
 
   @override
   Future<Either<AppException, List<RecommendationEntity>>> searchPlaces(
-    String query,
-  ) async {
+    String query, {
+    SearchPlacesFilterEntity filters = SearchPlacesFilterEntity.empty,
+  }) async {
     try {
-      final places = await _datasource.searchPlaces(query);
+      final places = await _datasource.searchPlaces(query, filters: filters);
       return Right(places);
     } on AppException catch (e) {
       return Left(e);

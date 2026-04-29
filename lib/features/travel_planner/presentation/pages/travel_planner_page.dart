@@ -4,6 +4,7 @@ import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
+import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:atlas/features/travel_planner/presentation/bloc/travel_planner_cubit.dart';
@@ -99,7 +100,7 @@ class _TravelPlannerView extends StatelessWidget {
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
                 children: [
                   const _PlannerHeader(),
                   _LocationFields(state: state),
@@ -121,11 +122,7 @@ class _TravelPlannerView extends StatelessWidget {
                   else if (state.isLoadingPlan)
                     const _InlineLoading(label: 'Building routes...')
                   else if (state.errorMessage.isNotEmpty)
-                    _InlineError(
-                      message: state.errorMessage,
-                      onRetry: () =>
-                          context.read<TravelPlannerCubit>().buildPlan(),
-                    )
+                    _InlineError(message: state.errorMessage)
                   else ...[
                     _RoutesSection(state: state),
                     if (state.pointsOfInterest.isNotEmpty) ...[
@@ -412,7 +409,7 @@ class _RoutesEmptyPlaceholder extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.08)
@@ -730,24 +727,18 @@ class _InlineLoading extends StatelessWidget {
 
 class _InlineError extends StatelessWidget {
   final String message;
-  final VoidCallback onRetry;
 
-  const _InlineError({required this.message, required this.onRetry});
+  const _InlineError({required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 28),
-      child: Column(
-        children: [
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: onRetry, child: const Text('Try again')),
-        ],
+      child: TransientErrorPlaceholder(
+        icon: CupertinoIcons.map,
+        title: 'Couldn’t build routes',
+        message: message,
+        iconSize: 48,
       ),
     );
   }

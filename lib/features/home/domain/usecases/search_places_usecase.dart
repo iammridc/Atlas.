@@ -1,5 +1,6 @@
 import 'package:atlas/core/errors/app_exception.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
+import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:atlas/features/home/domain/repositories/recommendations_repository.dart';
 import 'package:dartz/dartz.dart';
 
@@ -8,7 +9,10 @@ class SearchPlacesUseCase {
 
   SearchPlacesUseCase(this._repository);
 
-  Future<Either<AppException, List<RecommendationEntity>>> call(String query) {
-    return _repository.searchPlaces(query);
+  Future<Either<AppException, List<RecommendationEntity>>> call(
+    String query, {
+    SearchPlacesFilterEntity filters = SearchPlacesFilterEntity.empty,
+  }) {
+    return _repository.searchPlaces(query, filters: filters);
   }
 }

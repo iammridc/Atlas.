@@ -191,7 +191,7 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
               placeNameController: _placeNameController,
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 22, 18, 0),
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

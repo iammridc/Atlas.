@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:atlas/features/home/domain/usecases/search_places_usecase.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -93,6 +94,17 @@ class SearchPlacesCubit extends Cubit<SearchPlacesState> {
     await _performSearch(trimmedQuery);
   }
 
+  Future<void> updateFilters(SearchPlacesFilterEntity filters) async {
+    emit(state.copyWith(filters: filters, errorMessage: ''));
+
+    final trimmedQuery = state.query.trim();
+    if (trimmedQuery.isNotEmpty) {
+      await _performSearch(trimmedQuery);
+    }
+  }
+
+  Future<void> clearFilters() => updateFilters(SearchPlacesFilterEntity.empty);
+
   Future<void> saveCurrentQuery() async {
     await _saveRecentQuery(state.query);
   }
@@ -122,7 +134,7 @@ class SearchPlacesCubit extends Cubit<SearchPlacesState> {
       ),
     );
 
-    final result = await _searchPlaces(query);
+    final result = await _searchPlaces(query, filters: state.filters);
 
     if (requestId != _activeRequestId) return;
 

@@ -53,7 +53,7 @@ class TravelRouteDetailsPage extends StatelessWidget {
             backgroundColor: backgroundColor,
           ),
           bottomNavigationBar: SafeArea(
-            minimum: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+            minimum: const EdgeInsets.fromLTRB(24, 10, 24, 18),
             child: SizedBox(
               height: 54,
               child: ElevatedButton(
@@ -73,7 +73,7 @@ class TravelRouteDetailsPage extends StatelessWidget {
             ),
           ),
           body: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,

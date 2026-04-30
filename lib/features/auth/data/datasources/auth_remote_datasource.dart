@@ -178,9 +178,14 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         batch.delete(doc.reference);
       }
 
-      batch.delete(userDoc);
-      await batch.commit();
       await user.delete();
+      try {
+        batch.delete(userDoc);
+        await batch.commit();
+      } catch (_) {
+        // The auth account is already gone, so the app should continue to
+        // logout even if best-effort profile cleanup is denied by rules.
+      }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
         throw AuthException(

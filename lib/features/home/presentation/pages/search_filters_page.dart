@@ -97,27 +97,19 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: Text(
-                          'Search Filters',
-                          style: TextStyle(
-                            color: titleColor,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Search Filters',
+                            maxLines: 1,
+                            softWrap: false,
+                            style: TextStyle(
+                              color: titleColor,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _filters.hasActiveFilters
-                            ? () => setState(() {
-                                _filters = SearchPlacesFilterEntity.empty;
-                              })
-                            : null,
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.errorColor,
-                        ),
-                        child: const Text(
-                          'Reset',
-                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ],

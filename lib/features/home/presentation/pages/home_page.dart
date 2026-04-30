@@ -303,30 +303,32 @@ class _SettingsViewState extends State<_SettingsView> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = getIt<FirebaseAuth>().currentUser;
 
-    return BlocProvider.value(
-      value: getIt<AuthCubit>(),
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthUnauthenticated) {
-            context.router.replaceAll([const SplashRoute()]);
-            return;
-          }
+    return SafeArea(
+      bottom: false,
+      child: BlocProvider.value(
+        value: getIt<AuthCubit>(),
+        child: BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state is AuthUnauthenticated) {
+              context.router.replaceAll([const SplashRoute()]);
+              return;
+            }
 
-          if (state is AuthError) {
-            AppSnackbar.show(
-              context,
-              message: state.message,
-              type: SnackbarType.error,
-            );
-          }
-        },
-        child: SafeArea(
-          bottom: false,
+            if (state is AuthError) {
+              AppSnackbar.show(
+                context,
+                message: state.message,
+                type: SnackbarType.error,
+              );
+            }
+          },
           child: BlocBuilder<AuthCubit, AuthState>(
+            buildWhen: (previous, current) =>
+                previous is AuthLoading || current is AuthLoading,
             builder: (context, state) {
               final isLoading = state is AuthLoading;
-              final user = state is AuthAuthenticated ? state.user : null;
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(
@@ -376,7 +378,7 @@ class _SettingsViewState extends State<_SettingsView> {
                                 },
                                 current: themeMode,
                                 onSelected: (value) => getIt<ThemeCubit>()
-                                    .setTheme(value, userId: user?.id),
+                                    .setTheme(value, userId: user?.uid),
                               ),
                             );
                           },
@@ -531,7 +533,7 @@ class _SettingsViewState extends State<_SettingsView> {
                           subtitle: user?.email ?? 'Return to sign in',
                           onTap: isLoading
                               ? null
-                              : () => context.read<AuthCubit>().signOut(),
+                              : () => getIt<AuthCubit>().signOut(),
                         ),
                         _SettingsActionTile(
                           icon: CupertinoIcons.delete_simple,
@@ -688,45 +690,38 @@ class _SettingsViewState extends State<_SettingsView> {
   }
 
   Future<void> _confirmDeleteAccount() async {
-    final controller = TextEditingController();
     final shouldDelete = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete account?'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'This removes your profile, favorites, reviews, and trips. Type DELETE to confirm.',
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(hintText: 'DELETE'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim() == 'DELETE'),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => const _DeleteAccountDialog(),
     );
-    controller.dispose();
 
     if (shouldDelete == true && mounted) {
-      context.read<AuthCubit>().deleteAccount();
+      getIt<AuthCubit>().deleteAccount();
     }
+  }
+}
+
+class _DeleteAccountDialog extends StatelessWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete account?'),
+      content: const Text(
+        'This removes your profile, favorites, reviews, and trips.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Delete'),
+        ),
+      ],
+    );
   }
 }
 

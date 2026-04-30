@@ -85,13 +85,14 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> deleteAccount() async {
-    emit(AuthLoading());
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('last_logged_in_uid');
+    getIt<ThemeCubit>().resetTheme();
+    emit(AuthUnauthenticated());
+
     final result = await _deleteAccountUseCase();
-    result.fold((error) => emit(AuthError(error)), (_) async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('last_logged_in_uid');
-      getIt<ThemeCubit>().resetTheme();
-      emit(AuthUnauthenticated());
-    });
+    if (result.isLeft()) {
+      await _signOutUseCase();
+    }
   }
 }

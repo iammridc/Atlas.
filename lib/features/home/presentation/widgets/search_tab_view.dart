@@ -413,18 +413,7 @@ class _RecentRequestsView extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        if (state.recentQueries.isEmpty)
-          _EmptyStateCard(
-            icon: CupertinoIcons.time,
-            title: 'No recent searches yet',
-            subtitle:
-                'Start typing to instantly explore places and save your latest requests here.',
-            surfaceColor: surfaceColor,
-            borderColor: borderColor,
-            titleColor: titleColor,
-            secondaryTextColor: secondaryTextColor,
-          )
-        else
+        if (state.recentQueries.isNotEmpty)
           ...state.recentQueries.map(
             (query) => Padding(
               padding: const EdgeInsets.only(bottom: 4),

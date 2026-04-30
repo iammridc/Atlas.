@@ -192,7 +192,7 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
     TravelLocationEntity destination,
   ) {
     final price = route.priceLabel == null ? '' : ' · ${route.priceLabel}';
-    return '${origin.name} -> ${destination.name} · ${route.durationLabel}$price';
+    return '${origin.name} to ${destination.name} · ${route.durationLabel}$price';
   }
 
   String _buildTripNote(TravelRouteEntity route) {
@@ -204,7 +204,7 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
 
     for (final leg in route.legs) {
       buffer.writeln(
-        '- ${leg.title}: ${leg.fromName} -> ${leg.toName} (${_formatDuration(leg.duration)})',
+        '- ${leg.title}: ${leg.fromName} to ${leg.toName} (${_formatDuration(leg.duration)})',
       );
     }
 

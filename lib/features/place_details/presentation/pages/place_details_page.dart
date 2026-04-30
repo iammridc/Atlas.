@@ -10,6 +10,7 @@ import 'package:atlas/features/place_details/presentation/bloc/place_details_sta
 import 'package:atlas/features/place_details/presentation/pages/place_reviews_page.dart';
 import 'package:atlas/features/place_details/presentation/widgets/place_photo_gallery.dart';
 import 'package:atlas/features/place_details/presentation/widgets/place_reviews_preview_block.dart';
+import 'package:atlas/features/profile/presentation/pages/review_editor_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,8 @@ class PlaceDetailsPage extends StatelessWidget {
   final String city;
   final String country;
   final String? photoReference;
+  final bool openReviewsOnLoad;
+  final bool openUserReviewOnLoad;
 
   const PlaceDetailsPage({
     super.key,
@@ -30,6 +33,8 @@ class PlaceDetailsPage extends StatelessWidget {
     required this.city,
     required this.country,
     this.photoReference,
+    this.openReviewsOnLoad = false,
+    this.openUserReviewOnLoad = false,
   });
 
   @override
@@ -49,17 +54,21 @@ class PlaceDetailsPage extends StatelessWidget {
         city: city,
         country: country,
         photoReference: photoReference,
+        openReviewsOnLoad: openReviewsOnLoad,
+        openUserReviewOnLoad: openUserReviewOnLoad,
       ),
     );
   }
 }
 
-class _PlaceDetailsView extends StatelessWidget {
+class _PlaceDetailsView extends StatefulWidget {
   final String placeId;
   final String placeName;
   final String city;
   final String country;
   final String? photoReference;
+  final bool openReviewsOnLoad;
+  final bool openUserReviewOnLoad;
 
   const _PlaceDetailsView({
     required this.placeId,
@@ -67,7 +76,17 @@ class _PlaceDetailsView extends StatelessWidget {
     required this.city,
     required this.country,
     this.photoReference,
+    required this.openReviewsOnLoad,
+    required this.openUserReviewOnLoad,
   });
+
+  @override
+  State<_PlaceDetailsView> createState() => _PlaceDetailsViewState();
+}
+
+class _PlaceDetailsViewState extends State<_PlaceDetailsView> {
+  bool _didOpenReviews = false;
+  bool _didOpenUserReview = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +96,11 @@ class _PlaceDetailsView extends StatelessWidget {
         : AppColors.backgroundLight;
     final topInset = MediaQuery.of(context).padding.top;
     Future<void> reloadPlace() => context.read<PlaceDetailsCubit>().loadPlace(
-      placeId: placeId,
-      placeName: placeName,
-      city: city,
-      country: country,
-      photoReference: photoReference,
+      placeId: widget.placeId,
+      placeName: widget.placeName,
+      city: widget.city,
+      country: widget.country,
+      photoReference: widget.photoReference,
     );
 
     return Scaffold(
@@ -107,6 +126,8 @@ class _PlaceDetailsView extends StatelessWidget {
             place.googleReviews,
             loadedState.communityReviews,
           );
+          _openUserReviewAfterFirstLoadIfNeeded(loadedState);
+          _openReviewsAfterFirstLoadIfNeeded();
 
           return RefreshIndicator(
             onRefresh: reloadPlace,
@@ -188,6 +209,84 @@ class _PlaceDetailsView extends StatelessWidget {
       return [googleReviews.first];
     }
     return const [];
+  }
+
+  void _openReviewsAfterFirstLoadIfNeeded() {
+    if (!widget.openReviewsOnLoad ||
+        widget.openUserReviewOnLoad ||
+        _didOpenReviews) {
+      return;
+    }
+    _didOpenReviews = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: context.read<PlaceDetailsCubit>(),
+            child: PlaceReviewsPage(),
+          ),
+        ),
+      );
+    });
+  }
+
+  void _openUserReviewAfterFirstLoadIfNeeded(PlaceDetailsLoaded state) {
+    if (!widget.openUserReviewOnLoad || _didOpenUserReview) return;
+    _didOpenUserReview = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _showCurrentUserReviewEditor(state);
+    });
+  }
+
+  Future<void> _showCurrentUserReviewEditor(PlaceDetailsLoaded state) async {
+    final cubit = context.read<PlaceDetailsCubit>();
+    final existingReview = state.currentUserReview;
+    final result = await Navigator.of(context).push<ReviewEditorResult>(
+      MaterialPageRoute(
+        builder: (_) => ReviewEditorPage(
+          title: existingReview == null ? 'Add review' : 'Edit review',
+          initialPlaceName: state.place.name,
+          allowPlaceNameEditing: false,
+          initialRating: existingReview?.rating.round() ?? 4,
+          initialText: existingReview?.text ?? '',
+          initialPhotoDataUrls: existingReview?.photoDataUrls ?? const [],
+          placeSubtitle: [
+            state.place.city,
+            state.place.country,
+          ].where((part) => part.trim().isNotEmpty).join(', '),
+          photoReference: state.place.photoNames.isEmpty
+              ? null
+              : state.place.photoNames.first,
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    final error = await cubit.saveCurrentUserReview(
+      rating: result.rating.toDouble(),
+      text: result.text,
+      photoDataUrls: result.photoDataUrls,
+    );
+    if (!mounted) return;
+
+    if (error != null) {
+      AppSnackbar.show(context, message: error, type: SnackbarType.error);
+      return;
+    }
+
+    await cubit.refreshReviews();
+    if (!mounted) return;
+
+    AppSnackbar.show(
+      context,
+      message: existingReview == null ? 'Review added.' : 'Review updated.',
+      type: SnackbarType.success,
+    );
   }
 }
 

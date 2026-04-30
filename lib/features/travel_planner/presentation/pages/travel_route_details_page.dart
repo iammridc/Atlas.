@@ -211,7 +211,7 @@ class _RouteLegTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${leg.fromName} -> ${leg.toName}',
+                  '${leg.fromName} to ${leg.toName}',
                   style: TextStyle(
                     color: secondary,
                     fontSize: 14,

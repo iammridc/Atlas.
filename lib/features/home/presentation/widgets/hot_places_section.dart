@@ -1,13 +1,36 @@
+import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/home/presentation/bloc/hot_places_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/hot_places_state.dart';
 import 'package:atlas/features/home/presentation/widgets/recommendation_card.dart';
+import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class HotPlacesSection extends StatelessWidget {
+class HotPlacesSection extends StatefulWidget {
   const HotPlacesSection({super.key});
+
+  @override
+  State<HotPlacesSection> createState() => _HotPlacesSectionState();
+}
+
+class _HotPlacesSectionState extends State<HotPlacesSection> {
+  late final Future<String?> _usernameFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameFuture = _loadUsername();
+  }
+
+  Future<String?> _loadUsername() async {
+    final result = await getIt<ProfileRepository>().getProfileSummary();
+    return result.fold((_) => null, (profile) {
+      final username = profile.username.trim();
+      return username.isEmpty ? null : username;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +46,31 @@ class HotPlacesSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            FutureBuilder<String?>(
+              future: _usernameFuture,
+              builder: (context, snapshot) {
+                final username = snapshot.data?.trim();
+                if (username == null || username.isEmpty) {
+                  return const SizedBox(height: 16);
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 2),
+                  child: Text(
+                    'Welcome, $username!',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                );
+              },
+            ),
             const Padding(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, 4),
+              padding: EdgeInsets.fromLTRB(24, 0, 24, 4),
               child: Text(
-                "Today's hot picks",
+                'Trending today in Atlas',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ),

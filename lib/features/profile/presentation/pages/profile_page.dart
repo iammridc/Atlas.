@@ -6,10 +6,12 @@ import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/preferences/presentation/pages/preferences_page.dart';
+import 'package:atlas/features/profile/domain/entities/profile_gamification_entity.dart';
 import 'package:atlas/features/profile/domain/entities/profile_summary_entity.dart';
 import 'package:atlas/features/profile/domain/services/favorite_places_sync_service.dart';
 import 'package:atlas/features/profile/domain/services/planned_trips_sync_service.dart';
 import 'package:atlas/features/profile/domain/services/profile_reviews_sync_service.dart';
+import 'package:atlas/features/profile/presentation/pages/achievements_page.dart';
 import 'package:atlas/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:atlas/features/profile/presentation/bloc/profile_state.dart';
 import 'package:atlas/features/profile/presentation/pages/favorite_places_page.dart';
@@ -140,30 +142,36 @@ class _ProfileViewState extends State<_ProfileView> {
                 onRefresh: () =>
                     context.read<ProfileCubit>().loadProfile(showLoader: false),
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 120),
+                  padding: const EdgeInsets.fromLTRB(24, 14, 24, 94),
                   children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _ProfileEditButton(
-                        isEditing: _isEditingProfile,
-                        isSaving:
-                            state.isSavingAvatar || state.isSavingUsername,
-                        onPressed: () => _toggleEditMode(profile),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
                     Center(
-                      child: ProfileAvatar(
-                        avatarUrl: _isEditingProfile
-                            ? _draftAvatarUrl
-                            : profile.avatarUrl,
-                        size: 124,
-                        isLoading: state.isSavingAvatar,
-                        canEdit: _isEditingProfile,
-                        onTap: _handleAvatarTap,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          ProfileAvatar(
+                            avatarUrl: _isEditingProfile
+                                ? _draftAvatarUrl
+                                : profile.avatarUrl,
+                            size: 122,
+                            isLoading: state.isSavingAvatar,
+                            canEdit: _isEditingProfile,
+                            onTap: _handleAvatarTap,
+                          ),
+                          Positioned(
+                            right: -2,
+                            bottom: -2,
+                            child: _ProfileAvatarEditButton(
+                              isEditing: _isEditingProfile,
+                              isSaving:
+                                  state.isSavingAvatar ||
+                                  state.isSavingUsername,
+                              onPressed: () => _toggleEditMode(profile),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
                     TextField(
                       controller: _usernameController,
                       focusNode: _usernameFocusNode,
@@ -172,33 +180,39 @@ class _ProfileViewState extends State<_ProfileView> {
                       readOnly: !_isEditingProfile || state.isSavingUsername,
                       onSubmitted: (_) => _usernameFocusNode.unfocus(),
                       decoration: InputDecoration(
+                        isDense: true,
                         hintText: 'Username',
+                        filled: false,
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 16,
+                          horizontal: 14,
+                          vertical: 10,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(18),
                           borderSide: BorderSide.none,
                         ),
                       ),
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize: 25,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Center(
-                      child: Text(
-                        'stats',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: isDark ? Colors.white60 : Colors.black54,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    const SizedBox(height: 8),
+                    _ProfileStatsLine(
+                      profile: profile,
+                      levelName: state.gamification?.level.title,
+                      isDark: isDark,
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 18),
+                    if (state.gamification != null) ...[
+                      ProfileSectionButton(
+                        title: 'Achievements',
+                        subtitle: _achievementsSubtitle(state.gamification!),
+                        icon: CupertinoIcons.rosette,
+                        onTap: () => _openAchievements(state.gamification!),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     ProfileSectionButton(
                       title: 'Preferences',
                       subtitle:
@@ -206,7 +220,7 @@ class _ProfileViewState extends State<_ProfileView> {
                       icon: Icons.tune_rounded,
                       onTap: () => _openPreferences(profile),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 8),
                     ProfileSectionButton(
                       title: 'Favourite Places',
                       subtitle:
@@ -215,7 +229,7 @@ class _ProfileViewState extends State<_ProfileView> {
                       onTap: () =>
                           _openManagementPage(() => FavoritePlacesPage()),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 8),
                     ProfileSectionButton(
                       title: 'Reviews',
                       subtitle:
@@ -224,7 +238,7 @@ class _ProfileViewState extends State<_ProfileView> {
                       onTap: () =>
                           _openManagementPage(() => ProfileReviewsPage()),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 8),
                     ProfileSectionButton(
                       title: 'Planned Trips',
                       subtitle:
@@ -388,6 +402,14 @@ class _ProfileViewState extends State<_ProfileView> {
     }
   }
 
+  Future<void> _openAchievements(ProfileGamificationEntity gamification) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AchievementsPage(gamification: gamification),
+      ),
+    );
+  }
+
   Future<void> _openManagementPage(Widget Function() createPage) async {
     await Navigator.of(
       context,
@@ -404,14 +426,51 @@ class _ProfileViewState extends State<_ProfileView> {
     if (lower.endsWith('.gif')) return 'image/gif';
     return 'image/jpeg';
   }
+
+  String _achievementsSubtitle(ProfileGamificationEntity gamification) {
+    final unlocked = gamification.badges
+        .where((badge) => badge.isUnlocked)
+        .length;
+    final total = gamification.badges.length;
+    return '$unlocked/$total unlocked';
+  }
 }
 
-class _ProfileEditButton extends StatelessWidget {
+class _ProfileStatsLine extends StatelessWidget {
+  final ProfileSummaryEntity profile;
+  final String? levelName;
+  final bool isDark;
+
+  const _ProfileStatsLine({
+    required this.profile,
+    required this.levelName,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final level = levelName?.trim().isNotEmpty == true
+        ? levelName!.trim()
+        : 'New Explorer';
+
+    return Text(
+      '${profile.reviewsCount} review${profile.reviewsCount == 1 ? '' : 's'} · $level',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        color: isDark ? Colors.white60 : Colors.black54,
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+class _ProfileAvatarEditButton extends StatelessWidget {
   final bool isEditing;
   final bool isSaving;
   final VoidCallback onPressed;
 
-  const _ProfileEditButton({
+  const _ProfileAvatarEditButton({
     required this.isEditing,
     required this.isSaving,
     required this.onPressed,
@@ -421,27 +480,43 @@ class _ProfileEditButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return IconButton(
-      tooltip: isEditing ? 'Apply profile changes' : 'Edit profile',
-      onPressed: isSaving ? null : onPressed,
-      style: IconButton.styleFrom(
-        backgroundColor: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.06),
-        foregroundColor: isDark ? Colors.white : Colors.black87,
-        disabledForegroundColor: isDark ? Colors.white38 : Colors.black38,
-        fixedSize: const Size(44, 44),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      icon: isSaving
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Icon(
-              isEditing ? CupertinoIcons.checkmark_circle : CupertinoIcons.gear,
+    return Tooltip(
+      message: isEditing ? 'Apply profile changes' : 'Edit profile',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: isSaving ? null : onPressed,
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isDark ? AppColors.appPrimaryBlack : Colors.white,
+            border: Border.all(
+              color: isDark ? Colors.white24 : Colors.black12,
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: isSaving
+              ? const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  isEditing ? CupertinoIcons.checkmark : CupertinoIcons.pencil,
+                  size: 17,
+                  color: isDark
+                      ? AppColors.appPrimaryWhite
+                      : AppColors.appPrimaryBlack,
+                ),
+        ),
+      ),
     );
   }
 }

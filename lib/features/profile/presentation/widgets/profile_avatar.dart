@@ -54,28 +54,6 @@ class ProfileAvatar extends StatelessWidget {
               height: size * 0.28,
               child: const CircularProgressIndicator(strokeWidth: 2.4),
             ),
-          if (canEdit)
-            Positioned(
-              right: 4,
-              bottom: 4,
-              child: Container(
-                width: size * 0.27,
-                height: size * 0.27,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Theme.of(context).colorScheme.primary,
-                  border: Border.all(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    width: 2,
-                  ),
-                ),
-                child: Icon(
-                  Icons.edit_rounded,
-                  size: size * 0.12,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ),
         ],
       ),
     );

@@ -1,14 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
-import 'package:atlas/core/utils/relative_time.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/features/place_details/presentation/pages/place_details_page.dart';
 import 'package:atlas/features/profile/domain/entities/profile_review_entity.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:atlas/features/profile/domain/services/profile_reviews_sync_service.dart';
 import 'package:atlas/features/profile/presentation/pages/favorite_places_page.dart';
 import 'package:atlas/features/profile/presentation/pages/review_editor_page.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class ProfileReviewsPage extends StatefulWidget {
@@ -122,9 +124,24 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
     );
   }
 
-  String _buildRatingLabel(double rating) {
-    final normalizedRating = rating.round().clamp(1, 5);
-    return '$normalizedRating / 5 stars';
+  Future<void> _openReviewedPlace(ProfileReviewEntity review) async {
+    if (review.placeId.trim().isEmpty) {
+      await _showReviewForm(review: review);
+      return;
+    }
+
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PlaceDetailsPage(
+          placeId: review.placeId,
+          placeName: review.placeName,
+          city: review.placeCity,
+          country: review.placeCountry,
+          openUserReviewOnLoad: true,
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteReview(ProfileReviewEntity review) async {
@@ -180,11 +197,6 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
       appBar: AppBar(title: const Text('Reviews')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showReviewForm(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add review'),
-      ),
       body: RefreshIndicator(
         onRefresh: _loadReviews,
         child: _isLoading
@@ -203,17 +215,222 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
                 separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   final review = _reviews[index];
-                  return ProfileManagementCard(
-                    title: review.placeName,
-                    subtitle: _buildRatingLabel(review.rating),
-                    body: review.text,
-                    photoDataUrls: review.photoDataUrls,
-                    trailing: formatRelativeTime(review.createdAt),
-                    onTap: () => _showReviewForm(review: review),
+                  return _ReviewedPlaceCard(
+                    review: review,
+                    onTap: () => _openReviewedPlace(review),
                     onDelete: () => _deleteReview(review),
                   );
                 },
               ),
+      ),
+    );
+  }
+}
+
+class _ReviewedPlaceCard extends StatelessWidget {
+  final ProfileReviewEntity review;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _ReviewedPlaceCard({
+    required this.review,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final imageProvider = _imageProvider(review.photoDataUrls);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: SizedBox(
+          height: 118,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (imageProvider != null)
+                Image(image: imageProvider, fit: BoxFit.cover)
+              else
+                const _ReviewedPlacePlaceholder(),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.78),
+                        Colors.black.withValues(alpha: 0.44),
+                        Colors.black.withValues(alpha: 0.12),
+                      ],
+                      stops: const [0.0, 0.45, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Row(
+                  children: [
+                    _RatingPill(rating: review.rating),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onDelete,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.38),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.white,
+                          size: 19,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                left: 16,
+                right: 18,
+                bottom: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      review.placeName.isEmpty
+                          ? 'Unnamed place'
+                          : review.placeName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        height: 1.05,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _buildLocationLabel(review),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  ImageProvider<Object>? _imageProvider(List<String> values) {
+    if (values.isEmpty) return null;
+    final dataUrl = values.first.trim();
+    final parts = dataUrl.split(',');
+    if (parts.length < 2 || !dataUrl.startsWith('data:image')) return null;
+
+    try {
+      return MemoryImage(base64Decode(parts.last));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _buildLocationLabel(ProfileReviewEntity review) {
+    final parts = [
+      review.placeCity,
+      review.placeCountry,
+    ].map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
+
+    if (parts.isNotEmpty) return parts.join(', ');
+    return review.placeId.trim().isEmpty
+        ? 'Tap to edit this review'
+        : 'Open reviews for this place';
+  }
+}
+
+class _RatingPill extends StatelessWidget {
+  final double rating;
+
+  const _RatingPill({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedRating = rating.round().clamp(1, 5);
+
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(CupertinoIcons.star_fill, color: Colors.white, size: 15),
+          const SizedBox(width: 5),
+          Text(
+            '$normalizedRating',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewedPlacePlaceholder extends StatelessWidget {
+  const _ReviewedPlacePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.08),
+            isDark
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.black.withValues(alpha: 0.03),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          CupertinoIcons.photo,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.38)
+              : Colors.black.withValues(alpha: 0.28),
+          size: 30,
+        ),
       ),
     );
   }

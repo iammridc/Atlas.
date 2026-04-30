@@ -34,9 +34,23 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     final profile = result.getOrElse(() => throw StateError('Missing profile'));
-    final favoritesResult = await _profileRepository.getFavoritePlaces();
-    final reviewsResult = await _profileRepository.getProfileReviews();
-    final tripsResult = await _profileRepository.getPlannedTrips();
+    final favoritesFuture = _profileRepository.getFavoritePlaces();
+    final reviewsFuture = _profileRepository.getProfileReviews();
+    final tripsFuture = _profileRepository.getPlannedTrips();
+
+    emit(
+      state.copyWith(
+        status: ProfileStatus.loaded,
+        profile: profile,
+        isSavingAvatar: false,
+        isSavingUsername: false,
+        clearError: true,
+      ),
+    );
+
+    final favoritesResult = await favoritesFuture;
+    final reviewsResult = await reviewsFuture;
+    final tripsResult = await tripsFuture;
 
     final favorites = favoritesResult.fold<List<FavoritePlaceEntity>>(
       (_) => const [],

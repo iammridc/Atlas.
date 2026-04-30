@@ -253,11 +253,42 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
   Future<List<ProfileReviewModel>> getProfileReviews() async {
     try {
       await _ensureUserDoc();
-      final snapshot = await _reviewsCollection
-          .orderBy('updatedAt', descending: true)
-          .get();
+      final results = await Future.wait([
+        _reviewsCollection.orderBy('updatedAt', descending: true).get(),
+        _favoritePlacesCollection.get(),
+      ]);
 
-      return snapshot.docs.map(ProfileReviewModel.fromFirestore).toList();
+      final snapshot = results[0];
+      final favoriteSnapshot = results[1];
+      final favoritePhotoReferences = {
+        for (final doc in favoriteSnapshot.docs)
+          doc.id: (doc.data()['photoReference'] as String?)?.trim(),
+      };
+
+      return snapshot.docs.map((doc) {
+        final review = ProfileReviewModel.fromFirestore(doc);
+        final fallbackPhotoReference = favoritePhotoReferences[review.placeId];
+        if (review.photoReference?.trim().isNotEmpty == true ||
+            fallbackPhotoReference == null ||
+            fallbackPhotoReference.isEmpty) {
+          return review;
+        }
+
+        return ProfileReviewModel(
+          id: review.id,
+          placeId: review.placeId,
+          placeName: review.placeName,
+          placeCity: review.placeCity,
+          placeCountry: review.placeCountry,
+          photoReference: fallbackPhotoReference,
+          rating: review.rating,
+          text: review.text,
+          likedTags: review.likedTags,
+          photoDataUrls: review.photoDataUrls,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+        );
+      }).toList();
     } on AppException {
       rethrow;
     } catch (_) {
@@ -271,7 +302,34 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
       await _ensureUserDoc();
       final snapshot = await _reviewsCollection.doc(placeId).get();
       if (!snapshot.exists) return null;
-      return ProfileReviewModel.fromDocument(snapshot);
+      final review = ProfileReviewModel.fromDocument(snapshot);
+      if (review.photoReference?.trim().isNotEmpty == true) {
+        return review;
+      }
+
+      final favoriteSnapshot = await _favoritePlacesCollection
+          .doc(placeId)
+          .get();
+      final favoritePhotoReference =
+          (favoriteSnapshot.data()?['photoReference'] as String?)?.trim();
+      if (favoritePhotoReference == null || favoritePhotoReference.isEmpty) {
+        return review;
+      }
+
+      return ProfileReviewModel(
+        id: review.id,
+        placeId: review.placeId,
+        placeName: review.placeName,
+        placeCity: review.placeCity,
+        placeCountry: review.placeCountry,
+        photoReference: favoritePhotoReference,
+        rating: review.rating,
+        text: review.text,
+        likedTags: review.likedTags,
+        photoDataUrls: review.photoDataUrls,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+      );
     } on AppException {
       rethrow;
     } catch (_) {
@@ -313,6 +371,9 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
         placeName: trimmedPlaceName,
         placeCity: review.placeCity.trim(),
         placeCountry: review.placeCountry.trim(),
+        photoReference:
+            _nullableTrimmedString(review.photoReference) ??
+            existingReview?.photoReference,
         rating: review.rating,
         text: trimmedText,
         likedTags: review.likedTags
@@ -397,9 +458,9 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
         : (user.displayName?.trim().isNotEmpty == true
               ? user.displayName!.trim()
               : fallbackName);
-    final avatarUrl = userData.containsKey('avatarUrl')
-        ? userData['avatarUrl'] as String?
-        : user.photoURL;
+    final avatarUrl =
+        _nullableTrimmedString(userData['avatarUrl'] as String?) ??
+        _nullableTrimmedString(user.photoURL);
 
     await _placeReviewsCollection(review.placeId).doc(user.uid).set({
       'userId': user.uid,
@@ -416,7 +477,14 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
       'placeName': review.placeName,
       'placeCity': review.placeCity,
       'placeCountry': review.placeCountry,
+      'photoReference': review.photoReference,
     }, SetOptions(merge: true));
+  }
+
+  String? _nullableTrimmedString(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
   }
 
   Future<void> _syncCommunityReviewAuthor(Map<String, dynamic> data) async {

@@ -95,8 +95,27 @@ class PlaceDetailsRemoteDatasourceImpl implements PlaceDetailsRemoteDatasource {
           .orderBy('createdAt', descending: true)
           .get();
 
+      final userAvatars = await _loadMissingReviewAvatars(snapshot.docs);
+
       return snapshot.docs
-          .map((doc) => PlaceReviewModel.fromCommunityJson(doc.data()))
+          .map((doc) {
+            final data = doc.data();
+            final userId = (data['userId'] as String?)?.trim();
+            final profilePhotoUrl = (data['profilePhotoUrl'] as String?)
+                ?.trim();
+            final avatarUrl = (data['avatarUrl'] as String?)?.trim();
+            final hydratedAvatarUrl =
+                profilePhotoUrl?.isNotEmpty == true ||
+                    avatarUrl?.isNotEmpty == true
+                ? null
+                : userAvatars[userId];
+
+            final reviewData = <String, dynamic>{...data};
+            if (hydratedAvatarUrl != null) {
+              reviewData['profilePhotoUrl'] = hydratedAvatarUrl;
+            }
+            return PlaceReviewModel.fromCommunityJson(reviewData);
+          })
           .where((review) => review.text.trim().isNotEmpty)
           .toList();
     } on FirebaseException {
@@ -104,6 +123,43 @@ class PlaceDetailsRemoteDatasourceImpl implements PlaceDetailsRemoteDatasource {
     } catch (e) {
       throw ServerException(message: 'Failed to load Atlas reviews.');
     }
+  }
+
+  Future<Map<String, String>> _loadMissingReviewAvatars(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    final userIds = docs
+        .map((doc) => doc.data())
+        .where((data) {
+          final profilePhotoUrl = (data['profilePhotoUrl'] as String?)?.trim();
+          final avatarUrl = (data['avatarUrl'] as String?)?.trim();
+          return profilePhotoUrl?.isNotEmpty != true &&
+              avatarUrl?.isNotEmpty != true;
+        })
+        .map((data) => (data['userId'] as String?)?.trim())
+        .whereType<String>()
+        .where((userId) => userId.isNotEmpty)
+        .toSet();
+
+    if (userIds.isEmpty) return const {};
+
+    final entries = await Future.wait(
+      userIds.map((userId) async {
+        try {
+          final snapshot = await _firestore
+              .collection('users')
+              .doc(userId)
+              .get();
+          final avatarUrl = (snapshot.data()?['avatarUrl'] as String?)?.trim();
+          if (avatarUrl == null || avatarUrl.isEmpty) return null;
+          return MapEntry(userId, avatarUrl);
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+
+    return Map.fromEntries(entries.whereType<MapEntry<String, String>>());
   }
 
   Future<List<String>> _resolvePhotoSources(Map<String, dynamic> json) async {

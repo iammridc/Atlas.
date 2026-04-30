@@ -9,6 +9,7 @@ import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/profile/domain/entities/favorite_place_entity.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
 import 'package:atlas/features/profile/domain/services/favorite_places_sync_service.dart';
+import 'package:atlas/features/profile/presentation/widgets/profile_page_header.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -74,28 +75,37 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
       backgroundColor: isDark
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
-      appBar: AppBar(title: const Text('Favourite Places')),
-      body: RefreshIndicator(
-        onRefresh: _loadPlaces,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
-            ? ProfileCollectionErrorState(message: _errorMessage!)
-            : _places.isEmpty
-            ? const ProfileCollectionEmptyState(
-                title: 'No favourite places yet',
-                message:
-                    'Save places you love from the place page, then revisit them here.',
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-                itemCount: _places.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 14),
-                itemBuilder: (context, index) {
-                  final place = _places[index];
-                  return _FavoritePlaceCard(place: place);
-                },
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const ProfilePageHeader(title: 'Favourite Places'),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadPlaces,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                    ? ProfileCollectionErrorState(message: _errorMessage!)
+                    : _places.isEmpty
+                    ? const ProfileCollectionEmptyState(
+                        title: 'No favourite places yet',
+                        message:
+                            'Save places you love from the place page, then revisit them here.',
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+                        itemCount: _places.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 14),
+                        itemBuilder: (context, index) {
+                          final place = _places[index];
+                          return _FavoritePlaceCard(place: place);
+                        },
+                      ),
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -405,7 +415,7 @@ class ProfileCollectionEmptyState extends StatelessWidget {
     return ListView(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 120, 24, 28),
+          padding: const EdgeInsets.fromLTRB(24, 72, 24, 24),
           child: Column(
             children: [
               const Icon(Icons.inbox_outlined, size: 52),

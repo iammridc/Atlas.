@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 class ProfileAvatar extends StatelessWidget {
   final String? avatarUrl;
   final double size;
-  final bool isLoading;
   final bool canEdit;
   final VoidCallback onTap;
 
@@ -13,7 +12,6 @@ class ProfileAvatar extends StatelessWidget {
     super.key,
     required this.avatarUrl,
     required this.size,
-    required this.isLoading,
     this.canEdit = true,
     required this.onTap,
   });
@@ -24,37 +22,26 @@ class ProfileAvatar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: canEdit && !isLoading ? onTap : null,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.black.withValues(alpha: 0.08),
-              image: imageProvider == null
-                  ? null
-                  : DecorationImage(image: imageProvider, fit: BoxFit.cover),
-            ),
-            child: imageProvider == null
-                ? Icon(
-                    Icons.person_rounded,
-                    size: size * 0.48,
-                    color: isDark ? Colors.white54 : Colors.black38,
-                  )
-                : null,
-          ),
-          if (isLoading)
-            SizedBox(
-              width: size * 0.28,
-              height: size * 0.28,
-              child: const CircularProgressIndicator(strokeWidth: 2.4),
-            ),
-        ],
+      onTap: canEdit ? onTap : null,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.08),
+          image: imageProvider == null
+              ? null
+              : DecorationImage(image: imageProvider, fit: BoxFit.cover),
+        ),
+        child: imageProvider == null
+            ? Icon(
+                Icons.person_rounded,
+                size: size * 0.48,
+                color: isDark ? Colors.white54 : Colors.black38,
+              )
+            : null,
       ),
     );
   }

@@ -56,6 +56,9 @@ class _HomeMapViewState extends State<_HomeMapView> {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final previewBottomOffset = bottomInset > 0
+        ? max(18.0, bottomInset - 6)
+        : 14.0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -163,7 +166,7 @@ class _HomeMapViewState extends State<_HomeMapView> {
               if (state.status == HomeMapStatus.inspectingPlace)
                 Positioned(
                   left: 12,
-                  bottom: bottomInset + 14,
+                  bottom: previewBottomOffset,
                   child: _MapSurface(
                     isDark: isDark,
                     child: const Row(
@@ -187,7 +190,7 @@ class _HomeMapViewState extends State<_HomeMapView> {
                 Positioned(
                   left: 12,
                   right: 12,
-                  bottom: bottomInset + 14,
+                  bottom: previewBottomOffset,
                   child: _PlacePreview(
                     place: place,
                     isDark: isDark,
@@ -575,7 +578,7 @@ class _MapSurface extends StatelessWidget {
         color: isDark
             ? Colors.black.withValues(alpha: 0.74)
             : Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.26 : 0.12),

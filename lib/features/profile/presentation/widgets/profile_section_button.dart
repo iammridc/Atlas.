@@ -31,7 +31,7 @@ class ProfileSectionButton extends StatelessWidget {
         borderRadius: borderRadius,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15.5),
           child: Row(
             children: [
               Container(

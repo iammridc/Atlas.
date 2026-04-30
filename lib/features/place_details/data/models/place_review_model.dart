@@ -57,11 +57,18 @@ class PlaceReviewModel extends PlaceReviewEntity {
       relativeTimeDescription: json['relativeTimeDescription'] as String?,
       publishedAt: _parseDateTime(json['createdAt'] ?? json['publishedAt']),
       profilePhotoUrl:
-          json['profilePhotoUrl'] as String? ?? json['avatarUrl'] as String?,
+          _nullableString(json['profilePhotoUrl']) ??
+          _nullableString(json['avatarUrl']),
       likedTags: _stringList(json['likedTags']),
       photoDataUrls: _stringList(json['photoDataUrls']),
       source: PlaceReviewSource.community,
     );
+  }
+
+  static String? _nullableString(dynamic value) {
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   static List<String> _stringList(dynamic value) {

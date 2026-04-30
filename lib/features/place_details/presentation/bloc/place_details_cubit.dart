@@ -184,6 +184,9 @@ class PlaceDetailsCubit extends Cubit<PlaceDetailsState> {
         placeName: place.name,
         placeCity: place.city,
         placeCountry: place.country,
+        photoReference: place.photoNames.isEmpty
+            ? null
+            : place.photoNames.first,
         rating: rating.clamp(1, 5).toDouble(),
         text: text,
         photoDataUrls: photoDataUrls,

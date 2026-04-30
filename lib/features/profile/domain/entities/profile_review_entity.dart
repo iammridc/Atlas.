@@ -4,6 +4,7 @@ class ProfileReviewEntity {
   final String placeName;
   final String placeCity;
   final String placeCountry;
+  final String? photoReference;
   final double rating;
   final String text;
   final List<String> likedTags;
@@ -17,6 +18,7 @@ class ProfileReviewEntity {
     required this.placeName,
     this.placeCity = '',
     this.placeCountry = '',
+    this.photoReference,
     required this.rating,
     required this.text,
     this.likedTags = const [],

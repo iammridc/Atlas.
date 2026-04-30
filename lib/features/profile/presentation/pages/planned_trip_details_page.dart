@@ -2,6 +2,7 @@ import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart';
+import 'package:atlas/features/profile/presentation/widgets/profile_page_header.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:atlas/features/travel_planner/presentation/widgets/travel_planner_formatters.dart';
@@ -28,10 +29,6 @@ class PlannedTripDetailsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text('Saved route'),
-        backgroundColor: backgroundColor,
-      ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 10, 24, 18),
         child: SizedBox(
@@ -42,7 +39,7 @@ class PlannedTripDetailsPage extends StatelessWidget {
               backgroundColor: AppColors.errorColor,
               foregroundColor: AppColors.appPrimaryWhite,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(26),
               ),
             ),
             child: const Text(
@@ -52,9 +49,19 @@ class PlannedTripDetailsPage extends StatelessWidget {
           ),
         ),
       ),
-      body: trip.hasRouteSnapshot
-          ? _RouteSnapshotView(trip: trip)
-          : _TextOnlyTripView(trip: trip),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const ProfilePageHeader(title: 'Saved Route'),
+            Expanded(
+              child: trip.hasRouteSnapshot
+                  ? _RouteSnapshotView(trip: trip)
+                  : _TextOnlyTripView(trip: trip),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -69,7 +76,7 @@ class _RouteSnapshotView extends StatelessWidget {
     final route = trip.route!;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
       children: [
         _FixedLocationFields(
           origin: trip.origin!,
@@ -518,7 +525,7 @@ class _TextOnlyTripView extends StatelessWidget {
     final secondary = isDark ? Colors.white60 : Colors.black54;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
       children: [
         Text(
           trip.title,

@@ -153,8 +153,10 @@ class _ProfileViewState extends State<_ProfileView> {
                                 ? _draftAvatarUrl
                                 : profile.avatarUrl,
                             size: 122,
-                            isLoading: state.isSavingAvatar,
-                            canEdit: _isEditingProfile,
+                            canEdit:
+                                _isEditingProfile &&
+                                !state.isSavingAvatar &&
+                                !state.isSavingUsername,
                             onTap: _handleAvatarTap,
                           ),
                           Positioned(
@@ -211,7 +213,7 @@ class _ProfileViewState extends State<_ProfileView> {
                         icon: CupertinoIcons.rosette,
                         onTap: () => _openAchievements(state.gamification!),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                     ],
                     ProfileSectionButton(
                       title: 'Preferences',
@@ -220,7 +222,7 @@ class _ProfileViewState extends State<_ProfileView> {
                       icon: Icons.tune_rounded,
                       onTap: () => _openPreferences(profile),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     ProfileSectionButton(
                       title: 'Favourite Places',
                       subtitle:
@@ -229,7 +231,7 @@ class _ProfileViewState extends State<_ProfileView> {
                       onTap: () =>
                           _openManagementPage(() => FavoritePlacesPage()),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     ProfileSectionButton(
                       title: 'Reviews',
                       subtitle:
@@ -238,7 +240,7 @@ class _ProfileViewState extends State<_ProfileView> {
                       onTap: () =>
                           _openManagementPage(() => ProfileReviewsPage()),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     ProfileSectionButton(
                       title: 'Planned Trips',
                       subtitle:

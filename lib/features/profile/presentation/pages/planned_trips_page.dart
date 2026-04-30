@@ -9,6 +9,7 @@ import 'package:atlas/features/profile/domain/repositories/profile_repository.da
 import 'package:atlas/features/profile/domain/services/planned_trips_sync_service.dart';
 import 'package:atlas/features/profile/presentation/pages/favorite_places_page.dart';
 import 'package:atlas/features/profile/presentation/pages/planned_trip_details_page.dart';
+import 'package:atlas/features/profile/presentation/widgets/profile_page_header.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -138,31 +139,40 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
       backgroundColor: isDark
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
-      appBar: AppBar(title: const Text('Planned Trips')),
-      body: RefreshIndicator(
-        onRefresh: _loadTrips,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
-            ? ProfileCollectionErrorState(message: _errorMessage!)
-            : _trips.isEmpty
-            ? const ProfileCollectionEmptyState(
-                title: 'No trips planned yet',
-                message:
-                    'Save a route from the planner so it is ready when you need it.',
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
-                itemCount: _trips.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 14),
-                itemBuilder: (context, index) {
-                  final trip = _trips[index];
-                  return _PlannedTripCard(
-                    trip: trip,
-                    onTap: () => _openTripDetails(trip),
-                  );
-                },
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const ProfilePageHeader(title: 'Planned Trips'),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadTrips,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                    ? ProfileCollectionErrorState(message: _errorMessage!)
+                    : _trips.isEmpty
+                    ? const ProfileCollectionEmptyState(
+                        title: 'No trips planned yet',
+                        message:
+                            'Save a route from the planner so it is ready when you need it.',
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+                        itemCount: _trips.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 14),
+                        itemBuilder: (context, index) {
+                          final trip = _trips[index];
+                          return _PlannedTripCard(
+                            trip: trip,
+                            onTap: () => _openTripDetails(trip),
+                          );
+                        },
+                      ),
               ),
+            ),
+          ],
+        ),
       ),
     );
   }

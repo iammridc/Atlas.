@@ -8,6 +8,7 @@ class ProfileReviewModel extends ProfileReviewEntity {
     required super.placeName,
     super.placeCity,
     super.placeCountry,
+    super.photoReference,
     required super.rating,
     required super.text,
     super.likedTags,
@@ -38,6 +39,7 @@ class ProfileReviewModel extends ProfileReviewEntity {
       placeName: (json['placeName'] as String?)?.trim() ?? '',
       placeCity: (json['placeCity'] as String?)?.trim() ?? '',
       placeCountry: (json['placeCountry'] as String?)?.trim() ?? '',
+      photoReference: _nullableString(json['photoReference']),
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       text: (json['text'] as String?)?.trim() ?? '',
       likedTags: _stringList(json['likedTags']),
@@ -53,6 +55,7 @@ class ProfileReviewModel extends ProfileReviewEntity {
       'placeName': placeName.trim(),
       'placeCity': placeCity.trim(),
       'placeCountry': placeCountry.trim(),
+      'photoReference': photoReference?.trim(),
       'rating': rating,
       'text': text.trim(),
       'likedTags': likedTags
@@ -75,6 +78,12 @@ class ProfileReviewModel extends ProfileReviewEntity {
         .map((item) => item.trim())
         .where((item) => item.isNotEmpty)
         .toList();
+  }
+
+  static String? _nullableString(dynamic value) {
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   static DateTime _parseDate(dynamic value) {

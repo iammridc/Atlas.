@@ -1,5 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/features/profile/domain/entities/profile_gamification_entity.dart';
+import 'package:atlas/features/profile/presentation/widgets/profile_page_header.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -21,14 +22,23 @@ class AchievementsPage extends StatelessWidget {
       backgroundColor: isDark
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
-      appBar: AppBar(title: const Text('Achievements')),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        itemCount: badges.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          return _AchievementCard(badge: badges[index]);
-        },
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const ProfilePageHeader(title: 'Achievements'),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+                itemCount: badges.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  return _AchievementCard(badge: badges[index]);
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

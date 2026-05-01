@@ -33,7 +33,7 @@ class TransientErrorPlaceholder extends StatelessWidget {
               style: TextStyle(
                 color: isDark ? Colors.white : AppColors.appPrimaryBlack,
                 fontSize: 20,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),

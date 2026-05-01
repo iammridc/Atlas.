@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/theme/app_theme.dart';
 
 class AuthButton extends StatelessWidget {
   final String label;
@@ -71,7 +72,12 @@ class AuthButton extends StatelessWidget {
           )
         : Text(
             label,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontFamily: AppTheme.fontFamily,
+              fontFamilyFallback: AppTheme.fontFamilyFallback,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           );
   }
 }

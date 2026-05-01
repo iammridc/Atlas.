@@ -54,14 +54,14 @@ class ProfileSectionButton extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: 13,
                         color: isDark ? Colors.white54 : Colors.black54,
                       ),
                     ),

@@ -434,7 +434,7 @@ class TravelPlannerRemoteDatasourceImpl
     final airportOrigin = _airportLabel(origin);
     final airportDestination = _airportLabel(destination);
     final flightMinutes = max(55, (airDistanceKm / 760 * 60).round());
-    final totalDuration = Duration(minutes: flightMinutes + 105);
+    final flightDuration = Duration(minutes: flightMinutes);
 
     return [
       TravelRouteEntity(
@@ -442,7 +442,7 @@ class TravelPlannerRemoteDatasourceImpl
         transportType: TravelTransportType.flight,
         title: '$airportOrigin to $airportDestination',
         summary: 'Direct flight',
-        duration: totalDuration,
+        duration: flightDuration,
         distanceMeters: airDistanceKm * 1000,
         priceLabel: _flightPrice(
           airDistanceKm,
@@ -460,40 +460,10 @@ class TravelPlannerRemoteDatasourceImpl
             toName: airportDestination,
             operatorName: 'Atlas Air',
             lineName: 'AT${100 + airDistanceKm % 800}',
-            duration: Duration(minutes: flightMinutes),
+            duration: flightDuration,
             distanceMeters: airDistanceKm * 1000,
             instructions:
                 'Check current schedules and fare rules before booking.',
-          ),
-        ],
-      ),
-      TravelRouteEntity(
-        id: 'flight-transfer-${origin.id}-${destination.id}',
-        transportType: TravelTransportType.flight,
-        title: '$airportOrigin to $airportDestination',
-        summary: '1 transfer flight',
-        duration: totalDuration + const Duration(minutes: 95),
-        distanceMeters: (airDistanceKm * 1.12).round() * 1000,
-        priceLabel: _flightPrice(
-          airDistanceKm,
-          direct: false,
-          currency: currency,
-        ),
-        transferCount: 1,
-        isMocked: true,
-        bookingUrl: _googleFlightsUrl(origin, destination),
-        legs: [
-          TravelRouteLegEntity(
-            type: TravelLegType.flight,
-            title: 'Flight with transfer',
-            fromName: airportOrigin,
-            toName: airportDestination,
-            operatorName: 'SkyLink Connect',
-            lineName: 'AT${300 + airDistanceKm % 500}',
-            duration: Duration(minutes: flightMinutes + 95),
-            distanceMeters: (airDistanceKm * 1.12).round() * 1000,
-            instructions:
-                'Connection time is included in the total journey estimate.',
           ),
         ],
       ),
@@ -829,7 +799,7 @@ class TravelPlannerRemoteDatasourceImpl
           .map((leg) => leg.lineName!)
           .take(3)
           .toList();
-      if (publicLegs.isNotEmpty) return publicLegs.join(' > ');
+      if (publicLegs.isNotEmpty) return publicLegs.join(' to ');
     }
 
     return switch (type) {
@@ -852,7 +822,7 @@ class TravelPlannerRemoteDatasourceImpl
           .map((leg) => leg.lineName ?? leg.operatorName ?? leg.title)
           .where((label) => label.trim().isNotEmpty)
           .take(4)
-          .join(' > ');
+          .join(' to ');
       return labels.isEmpty ? 'Public transport' : labels;
     }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_cubit.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_state.dart';
 import 'package:atlas/features/splash/presentation/widgets/splash_slider.dart';
@@ -70,6 +71,8 @@ class SplashView extends StatelessWidget {
                         'Some places\nchange you\nforever.',
                         style: TextStyle(
                           color: AppColors.appPrimaryWhite,
+                          fontFamily: AppTheme.fontFamily,
+                          fontFamilyFallback: AppTheme.fontFamilyFallback,
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
                           height: 1,
@@ -96,6 +99,8 @@ class SplashView extends StatelessWidget {
                         'Discover, plan and explore with Atlas.',
                         style: TextStyle(
                           color: Colors.grey,
+                          fontFamily: AppTheme.fontFamily,
+                          fontFamilyFallback: AppTheme.fontFamilyFallback,
                           fontSize: 16,
                           fontWeight: FontWeight.w300,
                           height: 1,

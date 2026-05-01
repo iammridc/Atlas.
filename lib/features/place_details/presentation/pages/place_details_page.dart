@@ -11,6 +11,7 @@ import 'package:atlas/features/place_details/presentation/pages/place_reviews_pa
 import 'package:atlas/features/place_details/presentation/widgets/place_photo_gallery.dart';
 import 'package:atlas/features/place_details/presentation/widgets/place_reviews_preview_block.dart';
 import 'package:atlas/features/profile/presentation/pages/review_editor_page.dart';
+import 'package:atlas/features/travel_planner/presentation/widgets/travel_planner_formatters.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -129,69 +130,76 @@ class _PlaceDetailsViewState extends State<_PlaceDetailsView> {
           _openUserReviewAfterFirstLoadIfNeeded(loadedState);
           _openReviewsAfterFirstLoadIfNeeded();
 
-          return RefreshIndicator(
-            onRefresh: reloadPlace,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: _HeroSection(
-                    photoNames: place.photoNames,
-                    topInset: topInset,
-                    onBackPressed: () => context.router.maybePop(),
-                    isFavorite: loadedState.isFavorite,
-                    isSavingFavorite: loadedState.isSavingFavorite,
-                    onFavoritePressed: () async {
-                      final result = await context
-                          .read<PlaceDetailsCubit>()
-                          .toggleFavoritePlace();
-                      if (!context.mounted ||
-                          result.status != PlaceFavoriteActionStatus.failed) {
-                        return;
-                      }
-
-                      AppSnackbar.show(
-                        context,
-                        message: result.message,
-                        type: SnackbarType.error,
-                      );
-                    },
+          return Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: reloadPlace,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
                   ),
-                ),
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _DetailsSheet(
-                    place: place,
-                    previewReviews: previewReviews,
-                    totalReviewCount: loadedState.totalReviewCount,
-                    onReviewsTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<PlaceDetailsCubit>(),
-                          child: PlaceReviewsPage(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _HeroSection(
+                        photoNames: place.photoNames,
+                        topInset: topInset,
+                        onBackPressed: () => context.router.maybePop(),
+                        isFavorite: loadedState.isFavorite,
+                        isSavingFavorite: loadedState.isSavingFavorite,
+                        onFavoritePressed: () async {
+                          final result = await context
+                              .read<PlaceDetailsCubit>()
+                              .toggleFavoritePlace();
+                          if (!context.mounted ||
+                              result.status !=
+                                  PlaceFavoriteActionStatus.failed) {
+                            return;
+                          }
+
+                          AppSnackbar.show(
+                            context,
+                            message: result.message,
+                            type: SnackbarType.error,
+                          );
+                        },
+                      ),
+                    ),
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _DetailsSheet(
+                        place: place,
+                        previewReviews: previewReviews,
+                        totalReviewCount: loadedState.totalReviewCount,
+                        onReviewsTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider.value(
+                              value: context.read<PlaceDetailsCubit>(),
+                              child: PlaceReviewsPage(),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    onStartJourneyTap: () => context.router.push(
-                      TravelPlannerRoute(
-                        placeId: place.id,
-                        placeName: place.name,
-                        address: place.formattedAddress,
-                        city: place.city,
-                        country: place.country,
-                        latitude: place.latitude,
-                        longitude: place.longitude,
-                        photoReference: place.photoNames.isEmpty
-                            ? null
-                            : place.photoNames.first,
-                      ),
+                  ],
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Padding(
+                  padding: plannerBottomButtonPadding(context),
+                  child: SizedBox(
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: () => _openTravelPlanner(context, place),
+                      style: plannerPrimaryButtonStyle(isDark),
+                      child: const Text('Start a Journey!'),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
@@ -209,6 +217,23 @@ class _PlaceDetailsViewState extends State<_PlaceDetailsView> {
       return [googleReviews.first];
     }
     return const [];
+  }
+
+  void _openTravelPlanner(BuildContext context, PlaceDetailsEntity place) {
+    context.router.push(
+      TravelPlannerRoute(
+        placeId: place.id,
+        placeName: place.name,
+        address: place.formattedAddress,
+        city: place.city,
+        country: place.country,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        photoReference: place.photoNames.isEmpty
+            ? null
+            : place.photoNames.first,
+      ),
+    );
   }
 
   void _openReviewsAfterFirstLoadIfNeeded() {
@@ -365,14 +390,12 @@ class _DetailsSheet extends StatelessWidget {
   final List<PlaceReviewEntity> previewReviews;
   final int totalReviewCount;
   final VoidCallback onReviewsTap;
-  final VoidCallback onStartJourneyTap;
 
   const _DetailsSheet({
     required this.place,
     required this.previewReviews,
     required this.totalReviewCount,
     required this.onReviewsTap,
-    required this.onStartJourneyTap,
   });
 
   @override
@@ -385,7 +408,7 @@ class _DetailsSheet extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(24, 12, 24, 22),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
       decoration: BoxDecoration(
         color: sheetColor,
         boxShadow: [
@@ -410,16 +433,6 @@ class _DetailsSheet extends StatelessWidget {
             rating: place.rating,
             totalReviewCount: totalReviewCount,
             onTap: onReviewsTap,
-          ),
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: onStartJourneyTap,
-              style: _placeButtonStyle(isDark),
-              child: const Text('Start a Journey!'),
-            ),
           ),
         ],
       ),
@@ -449,7 +462,7 @@ class _DetailsSheet extends StatelessWidget {
       ...place.categories.take(3).map(_PlaceTagData.neutral),
     ];
 
-    if ((place.rating ?? 0) >= 4.5) {
+    if ((place.rating ?? 0) >= 4.5 && place.userRatingCount >= 500) {
       tags.add(
         const _PlaceTagData.highlighted(
           'Must See',
@@ -484,19 +497,19 @@ class _TitleBlock extends StatelessWidget {
         Text(
           place.name,
           style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            height: 1,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            height: 1.08,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           place.formattedAddress,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 15,
             color: secondaryColor,
             fontWeight: FontWeight.w400,
-            height: 1.1,
+            height: 1.2,
           ),
         ),
       ],
@@ -572,7 +585,7 @@ class _TagChip extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: foregroundColor,
             ),
           ),
@@ -646,26 +659,6 @@ class _PlaceTagData {
 
   const _PlaceTagData.highlighted(String label, {IconData? icon})
     : this._(label, true, icon);
-}
-
-ButtonStyle _placeButtonStyle(bool isDark) {
-  return ElevatedButton.styleFrom(
-    backgroundColor: isDark
-        ? AppColors.appPrimaryWhite
-        : AppColors.appPrimaryBlack,
-    foregroundColor: isDark
-        ? AppColors.appPrimaryBlack
-        : AppColors.appPrimaryWhite,
-    disabledBackgroundColor: isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.08),
-    disabledForegroundColor: isDark ? Colors.white38 : Colors.black38,
-    elevation: 0,
-    minimumSize: const Size.fromHeight(54),
-    side: BorderSide(color: isDark ? Colors.white24 : Colors.black26),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-    textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-  );
 }
 
 class _ErrorView extends StatelessWidget {

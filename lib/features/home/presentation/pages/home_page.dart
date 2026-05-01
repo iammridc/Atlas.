@@ -342,7 +342,7 @@ class _SettingsViewState extends State<_SettingsView> {
                     'Settings',
                     style: TextStyle(
                       fontSize: 32,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
@@ -630,7 +630,7 @@ class _SettingsViewState extends State<_SettingsView> {
                     title,
                     style: const TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -744,7 +744,7 @@ class _SettingsSection extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.bold,
               color: isDark ? Colors.white54 : Colors.black54,
             ),
           ),
@@ -773,25 +773,47 @@ class _SettingsSwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : Colors.black;
+    final subtitleColor = isDark ? Colors.white60 : Colors.black54;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onChanged(!value),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
+        padding: const EdgeInsets.fromLTRB(0, 10, 8, 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon),
-            const SizedBox(width: 16),
+            _SettingsTileIcon(icon: icon, color: titleColor),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: titleColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      height: 1.15,
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(subtitle),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: subtitleColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      height: 1.3,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -898,12 +920,21 @@ class _SettingsPlainTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveTitleColor =
+        titleColor ?? (isDark ? Colors.white : Colors.black);
+    final subtitleColor = isDark ? Colors.white60 : Colors.black54;
+
     final content = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(0, 10, 8, 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: iconColor),
-          const SizedBox(width: 16),
+          _SettingsTileIcon(
+            icon: icon,
+            color: iconColor ?? effectiveTitleColor,
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -911,12 +942,22 @@ class _SettingsPlainTile extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: titleColor,
+                    color: effectiveTitleColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    height: 1.15,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(subtitle),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: subtitleColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    height: 1.3,
+                  ),
+                ),
               ],
             ),
           ),
@@ -931,6 +972,30 @@ class _SettingsPlainTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: content,
+    );
+  }
+}
+
+class _SettingsTileIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _SettingsTileIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.05),
+      ),
+      child: Icon(icon, size: 24, color: color),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:atlas/core/theme/app_theme.dart';
 
 class SlideToUnlock extends StatefulWidget {
   final VoidCallback onSlideComplete;
@@ -48,6 +49,8 @@ class _SlideToUnlockState extends State<SlideToUnlock> {
                       'Slide to continue',
                       style: TextStyle(
                         color: Colors.grey,
+                        fontFamily: AppTheme.fontFamily,
+                        fontFamilyFallback: AppTheme.fontFamilyFallback,
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
                       ),

@@ -110,7 +110,7 @@ class HomeBottomNavBar extends StatelessWidget {
                               fontSize: 10,
                               fontWeight: isSelected
                                   ? FontWeight.w600
-                                  : FontWeight.w500,
+                                  : FontWeight.w400,
                               color: itemColor,
                               height: 1,
                             ),

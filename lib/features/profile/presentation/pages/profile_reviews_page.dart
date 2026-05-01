@@ -354,7 +354,7 @@ class _ReviewedPlaceCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         height: 1.05,
                       ).copyWith(color: titleColor),
                     ),
@@ -445,7 +445,7 @@ class _RatingPill extends StatelessWidget {
             style: TextStyle(
               color: foregroundColor,
               fontSize: 14,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],

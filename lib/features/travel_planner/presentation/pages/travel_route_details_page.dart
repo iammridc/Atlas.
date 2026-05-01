@@ -51,97 +51,114 @@ class TravelRouteDetailsPage extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Route details'),
             backgroundColor: backgroundColor,
+            surfaceTintColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
           ),
-          bottomNavigationBar: SafeArea(
-            minimum: const EdgeInsets.fromLTRB(24, 10, 24, 18),
-            child: SizedBox(
-              height: 54,
-              child: ElevatedButton(
-                onPressed:
-                    state.actionStatus == TravelPlannerActionStatus.saving
-                    ? null
-                    : () =>
-                          context.read<TravelPlannerCubit>().saveSelectedTrip(),
-                child: state.actionStatus == TravelPlannerActionStatus.saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Add to Planned Trips'),
-              ),
-            ),
-          ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+          body: Stack(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              ListView(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 88),
                 children: [
-                  Icon(
-                    iconForTransport(route.transportType),
-                    size: 34,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          route.title,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            height: 1.04,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 8,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        iconForTransport(route.transportType),
+                        size: 34,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _InfoPill(label: route.durationLabel),
-                            if (route.priceLabel != null)
-                              _InfoPill(label: route.priceLabel!),
-                            _InfoPill(
-                              label: route.transferCount == 0
-                                  ? 'Direct'
-                                  : '${route.transferCount} transfers',
+                            Text(
+                              route.title,
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                height: 1.04,
+                              ),
                             ),
-                            if (route.isEstimated)
-                              const _InfoPill(label: 'Estimated'),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 8,
+                              children: [
+                                _InfoPill(label: routeDurationLabel(route)),
+                                if (route.priceLabel != null)
+                                  _InfoPill(label: route.priceLabel!),
+                                _InfoPill(label: routeTransferLabel(route)),
+                                if (route.isEstimated)
+                                  const _InfoPill(label: 'Estimated'),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    'Itinerary',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  ...route.legs.map((leg) => _RouteLegTile(leg: leg)),
+                  if (state.selectedPointsOfInterest.isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    _SelectedStopsBlock(
+                      title: 'Added places',
+                      stops: state.selectedPointsOfInterest,
+                    ),
+                  ],
+                  if (state.selectedHotels.isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    _SelectedStopsBlock(
+                      title: 'Added hotels',
+                      stops: state.selectedHotels,
+                    ),
+                  ],
                 ],
               ),
-              const SizedBox(height: 22),
-              Text(
-                'Itinerary',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Padding(
+                  padding: plannerBottomButtonPadding(context),
+                  child: SizedBox(
+                    height: 54,
+                    child: ElevatedButton(
+                      style: plannerPrimaryButtonStyle(isDark),
+                      onPressed:
+                          state.actionStatus == TravelPlannerActionStatus.saving
+                          ? null
+                          : () => context
+                                .read<TravelPlannerCubit>()
+                                .saveSelectedTrip(),
+                      child:
+                          state.actionStatus == TravelPlannerActionStatus.saving
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: isDark
+                                    ? AppColors.appPrimaryBlack
+                                    : AppColors.appPrimaryWhite,
+                              ),
+                            )
+                          : const Text('Add to Planned Trips'),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              ...route.legs.map((leg) => _RouteLegTile(leg: leg)),
-              if (state.selectedPointsOfInterest.isNotEmpty) ...[
-                const SizedBox(height: 18),
-                _SelectedStopsBlock(
-                  title: 'Added places',
-                  stops: state.selectedPointsOfInterest,
-                ),
-              ],
-              if (state.selectedHotels.isNotEmpty) ...[
-                const SizedBox(height: 18),
-                _SelectedStopsBlock(
-                  title: 'Added hotels',
-                  stops: state.selectedHotels,
-                ),
-              ],
             ],
           ),
         );
@@ -168,7 +185,7 @@ class _InfoPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -203,10 +220,10 @@ class _RouteLegTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  leg.title,
+                  legTitleLabel(leg),
                   style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -239,7 +256,7 @@ class _RouteLegTile extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             formatDuration(leg.duration),
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -273,7 +290,7 @@ class _LegInstructions extends StatelessWidget {
           style: TextStyle(
             color: color,
             fontSize: 13,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 4),
@@ -304,7 +321,7 @@ class _SelectedStopsBlock extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         ...stops.map(

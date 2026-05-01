@@ -60,7 +60,7 @@ class PlaceReviewCard extends StatelessWidget {
                       review.authorName,
                       style: TextStyle(
                         fontSize: compact ? 16 : 17,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (showSubtitle && subtitleParts.isNotEmpty)
@@ -90,7 +90,7 @@ class PlaceReviewCard extends StatelessWidget {
                       review.rating.toStringAsFixed(
                         review.rating % 1 == 0 ? 0 : 1,
                       ),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),

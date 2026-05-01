@@ -157,15 +157,15 @@ class _SearchTabViewState extends State<SearchTabView> {
                               cursorColor: sectionTitleColor,
                               style: TextStyle(
                                 color: sectionTitleColor,
-                                fontSize: 17,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                               decoration: InputDecoration.collapsed(
                                 hintText: 'Search places, cities, landmarks...',
                                 hintStyle: TextStyle(
                                   color: secondaryTextColor,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                               onSubmitted: (value) {
@@ -344,7 +344,7 @@ class _ActiveSearchFilterBar extends StatelessWidget {
             style: TextStyle(
               color: titleColor,
               fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -393,10 +393,11 @@ class _RecentRequestsView extends StatelessWidget {
                 'Recent Requests',
                 style: TextStyle(
                   color: titleColor,
-                  fontSize: 29,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.7,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             TextButton(
@@ -407,7 +408,7 @@ class _RecentRequestsView extends StatelessWidget {
               ),
               child: const Text(
                 'Clear All',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -467,10 +468,11 @@ class _SearchResultsView extends StatelessWidget {
                 : 'Found ${state.results.length} ${state.results.length == 1 ? 'Result' : 'Results'}',
             style: TextStyle(
               color: titleColor,
-              fontSize: 29,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.7,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
           if (state.isLoading)
@@ -539,8 +541,8 @@ class _RecentQueryTile extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: titleColor,
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
@@ -597,7 +599,7 @@ class _EmptyStateCard extends StatelessWidget {
             style: TextStyle(
               color: titleColor,
               fontSize: 18,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),

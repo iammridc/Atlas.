@@ -25,36 +25,45 @@ class ProfilePageHeader extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 6),
-      child: Row(
-        children: [
-          ProfileHeaderIconButton(
-            icon: CupertinoIcons.chevron_left,
-            tooltip: 'Back',
-            onTap: () => Navigator.of(context).maybePop(),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: titleColor,
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                height: 1,
+      child: SizedBox(
+        height: 44,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ProfileHeaderIconButton(
+                icon: CupertinoIcons.chevron_left,
+                tooltip: 'Back',
+                onTap: () => Navigator.of(context).maybePop(),
               ),
             ),
-          ),
-          if (actionIcon != null && onActionTap != null) ...[
-            const SizedBox(width: 12),
-            ProfileHeaderIconButton(
-              icon: actionIcon!,
-              tooltip: actionTooltip ?? title,
-              onTap: onActionTap!,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 64),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: titleColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  height: 1.08,
+                ),
+              ),
             ),
+            if (actionIcon != null && onActionTap != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: ProfileHeaderIconButton(
+                  icon: actionIcon!,
+                  tooltip: actionTooltip ?? title,
+                  onTap: onActionTap!,
+                ),
+              ),
           ],
-        ],
+        ),
       ),
     );
   }

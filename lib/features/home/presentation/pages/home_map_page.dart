@@ -180,7 +180,7 @@ class _HomeMapViewState extends State<_HomeMapView> {
                         SizedBox(width: 10),
                         Text(
                           'Loading place info...',
-                          style: TextStyle(fontWeight: FontWeight.w800),
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -377,7 +377,7 @@ class _MapModeButton extends StatelessWidget {
             style: TextStyle(
               color: foregroundColor,
               fontSize: 15,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -410,7 +410,7 @@ class _MapLocationPill extends StatelessWidget {
         style: TextStyle(
           color: isDark ? AppColors.appPrimaryWhite : AppColors.appPrimaryBlack,
           fontSize: 15,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -468,8 +468,8 @@ class _PlacePreview extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                       height: 1.05,
                     ),
                   ),
@@ -620,7 +620,7 @@ class _LocationGate extends StatelessWidget {
               const Text(
                 'Finding your current location...',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),

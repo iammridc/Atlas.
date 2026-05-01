@@ -44,7 +44,7 @@ class PlannedTripDetailsPage extends StatelessWidget {
             ),
             child: const Text(
               'Not interesting anymore',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -87,7 +87,7 @@ class _RouteSnapshotView extends StatelessWidget {
         const SizedBox(height: 22),
         const Text(
           'Fixed route',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         ...route.legs.map((leg) => _RouteLegTile(leg: leg)),
@@ -180,7 +180,7 @@ class _FixedLocationInput extends StatelessWidget {
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w500),
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
       ),
     );
   }
@@ -212,7 +212,7 @@ class _SavedRouteHeader extends StatelessWidget {
                 route.title,
                 style: const TextStyle(
                   fontSize: 28,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.bold,
                   height: 1.04,
                 ),
               ),
@@ -221,14 +221,10 @@ class _SavedRouteHeader extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 8,
                 children: [
-                  _InfoPill(label: route.durationLabel),
+                  _InfoPill(label: routeDurationLabel(route)),
                   if (route.priceLabel != null)
                     _InfoPill(label: route.priceLabel!),
-                  _InfoPill(
-                    label: route.transferCount == 0
-                        ? 'Direct'
-                        : '${route.transferCount} transfers',
-                  ),
+                  _InfoPill(label: routeTransferLabel(route)),
                   if (route.isEstimated) const _InfoPill(label: 'Estimated'),
                 ],
               ),
@@ -258,7 +254,7 @@ class _InfoPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -293,10 +289,10 @@ class _RouteLegTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  leg.title,
+                  legTitleLabel(leg),
                   style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -329,7 +325,7 @@ class _RouteLegTile extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             formatDuration(leg.duration),
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -381,7 +377,7 @@ class _SavedStopsSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
         SizedBox(
@@ -471,9 +467,9 @@ class _SavedStopCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 17,
+                        fontSize: 16,
                         height: 1,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -486,7 +482,7 @@ class _SavedStopCard extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.82),
                         fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -531,7 +527,7 @@ class _TextOnlyTripView extends StatelessWidget {
           trip.title,
           style: const TextStyle(
             fontSize: 28,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.bold,
             height: 1.04,
           ),
         ),
@@ -541,14 +537,14 @@ class _TextOnlyTripView extends StatelessWidget {
           style: TextStyle(
             color: secondary,
             fontSize: 16,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
         if (trip.note.trim().isNotEmpty) ...[
           const SizedBox(height: 22),
           const Text(
             'Saved notes',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           Text(

@@ -195,8 +195,8 @@ class _ProfileViewState extends State<_ProfileView> {
                         ),
                       ),
                       style: const TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -206,6 +206,14 @@ class _ProfileViewState extends State<_ProfileView> {
                       isDark: isDark,
                     ),
                     const SizedBox(height: 18),
+                    ProfileSectionButton(
+                      title: 'Preferences',
+                      subtitle:
+                          '${profile.preferences.length} categories selected',
+                      icon: Icons.tune_rounded,
+                      onTap: () => _openPreferences(profile),
+                    ),
+                    const SizedBox(height: 10),
                     if (state.gamification != null) ...[
                       ProfileSectionButton(
                         title: 'Achievements',
@@ -215,14 +223,6 @@ class _ProfileViewState extends State<_ProfileView> {
                       ),
                       const SizedBox(height: 10),
                     ],
-                    ProfileSectionButton(
-                      title: 'Preferences',
-                      subtitle:
-                          '${profile.preferences.length} categories selected',
-                      icon: Icons.tune_rounded,
-                      onTap: () => _openPreferences(profile),
-                    ),
-                    const SizedBox(height: 10),
                     ProfileSectionButton(
                       title: 'Favourite Places',
                       subtitle:
@@ -460,8 +460,8 @@ class _ProfileStatsLine extends StatelessWidget {
       textAlign: TextAlign.center,
       style: TextStyle(
         color: isDark ? Colors.white60 : Colors.black54,
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

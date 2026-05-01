@@ -106,8 +106,8 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
                             softWrap: false,
                             style: TextStyle(
                               color: titleColor,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -171,7 +171,7 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
                       : 'Apply Filters',
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -205,7 +205,7 @@ class _FilterSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: color),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color),
     );
   }
 }
@@ -243,8 +243,8 @@ class _FilterOptionTile extends StatelessWidget {
                 title,
                 style: TextStyle(
                   color: titleColor,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

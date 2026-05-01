@@ -35,7 +35,7 @@ class TravelPlannerRepositoryImpl implements TravelPlannerRepository {
         TravelRoutePlanEntity(
           origin: origin,
           destination: destination,
-          routes: _limitRoutesPerTransport(combinedRoutes),
+          routes: _orderRoutes(_limitRoutesPerTransport(combinedRoutes)),
           pointsOfInterest: pointsOfInterest,
           hotels: hotels,
         ),
@@ -114,5 +114,30 @@ class TravelPlannerRepositoryImpl implements TravelPlannerRepository {
     }
 
     return limitedRoutes;
+  }
+
+  List<TravelRouteEntity> _orderRoutes(List<TravelRouteEntity> routes) {
+    final orderedRoutes = [...routes];
+
+    orderedRoutes.sort((a, b) {
+      final typeComparison = _transportOrder(
+        a.transportType,
+      ).compareTo(_transportOrder(b.transportType));
+      if (typeComparison != 0) return typeComparison;
+
+      return a.duration.compareTo(b.duration);
+    });
+
+    return orderedRoutes;
+  }
+
+  int _transportOrder(TravelTransportType type) {
+    return switch (type) {
+      TravelTransportType.car => 0,
+      TravelTransportType.train => 1,
+      TravelTransportType.bus => 2,
+      TravelTransportType.flight => 3,
+      TravelTransportType.best => 4,
+    };
   }
 }

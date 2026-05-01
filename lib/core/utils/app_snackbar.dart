@@ -137,7 +137,7 @@ class _SnackbarWidgetState extends State<_SnackbarWidget>
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),

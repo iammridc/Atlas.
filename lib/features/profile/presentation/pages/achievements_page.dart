@@ -76,7 +76,7 @@ class _AchievementCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -93,7 +93,7 @@ class _AchievementCard extends StatelessWidget {
                         '$progress/${badge.target}',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.bold,
                           color: _secondaryColor(context),
                         ),
                       ),
@@ -106,7 +106,7 @@ class _AchievementCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: _secondaryColor(context),
                   ),

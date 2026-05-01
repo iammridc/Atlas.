@@ -192,19 +192,21 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
     TravelLocationEntity destination,
   ) {
     final price = route.priceLabel == null ? '' : ' · ${route.priceLabel}';
-    return '${origin.name} to ${destination.name} · ${route.durationLabel}$price';
+    return '${origin.name} to ${destination.name} · ${_routeDurationLabel(route)}$price';
   }
 
   String _buildTripNote(TravelRouteEntity route) {
     final buffer = StringBuffer()
       ..writeln(route.isEstimated ? 'Estimated route' : 'Route details')
       ..writeln('Transport: ${route.transportType.name}')
-      ..writeln('Transfers: ${route.transferCount}')
+      ..writeln(
+        'Transfers: ${route.transportType == TravelTransportType.flight ? 0 : route.transferCount}',
+      )
       ..writeln();
 
     for (final leg in route.legs) {
       buffer.writeln(
-        '- ${leg.title}: ${leg.fromName} to ${leg.toName} (${_formatDuration(leg.duration)})',
+        '- ${_legTitleLabel(leg)}: ${leg.fromName} to ${leg.toName} (${_formatDuration(leg.duration)})',
       );
     }
 
@@ -234,6 +236,24 @@ class TravelPlannerCubit extends Cubit<TravelPlannerState> {
       return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
     }
     return '${duration.inMinutes}m';
+  }
+
+  String _routeDurationLabel(TravelRouteEntity route) {
+    if (route.transportType != TravelTransportType.flight) {
+      return route.durationLabel;
+    }
+
+    for (final leg in route.legs) {
+      if (leg.type == TravelLegType.flight) {
+        return _formatDuration(leg.duration);
+      }
+    }
+
+    return _formatDuration(route.duration);
+  }
+
+  String _legTitleLabel(TravelRouteLegEntity leg) {
+    return leg.type == TravelLegType.flight ? 'Direct flight' : leg.title;
   }
 
   Future<TravelLocationEntity?> _resolveCurrentLocation() async {

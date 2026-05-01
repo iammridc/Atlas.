@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:atlas/core/theme/app_theme.dart';
 
 class AuthTextField extends StatefulWidget {
   final String hint;
@@ -64,12 +65,16 @@ class _AuthTextFieldState extends State<AuthTextField> {
           },
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
+            fontFamily: AppTheme.fontFamily,
+            fontFamilyFallback: AppTheme.fontFamilyFallback,
             fontSize: 16,
           ),
           decoration: InputDecoration(
             hintText: widget.hint,
             hintStyle: TextStyle(
               color: isDark ? Colors.white38 : Colors.black38,
+              fontFamily: AppTheme.fontFamily,
+              fontFamilyFallback: AppTheme.fontFamilyFallback,
               fontSize: 16,
             ),
             suffixIcon: widget.isPassword
@@ -124,6 +129,8 @@ class _AuthTextFieldState extends State<AuthTextField> {
               _errorText!,
               style: const TextStyle(
                 color: Color(0xFFC1292E),
+                fontFamily: AppTheme.fontFamily,
+                fontFamilyFallback: AppTheme.fontFamilyFallback,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),

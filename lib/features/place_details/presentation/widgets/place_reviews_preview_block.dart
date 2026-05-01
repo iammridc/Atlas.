@@ -40,7 +40,7 @@ class PlaceReviewsPreviewBlock extends StatelessWidget {
                 '$totalReviewCount Reviews',
                 style: const TextStyle(
                   fontSize: 24,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
@@ -52,7 +52,7 @@ class PlaceReviewsPreviewBlock extends StatelessWidget {
                       rating!.toStringAsFixed(1),
                       style: const TextStyle(
                         fontSize: 24,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(width: 6),

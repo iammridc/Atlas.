@@ -381,7 +381,7 @@ class _ReviewHero extends StatelessWidget {
                             ),
                             style: const TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.bold,
                             ),
                           )
                         : Column(
@@ -393,7 +393,7 @@ class _ReviewHero extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -487,7 +487,7 @@ class _RatingBlock extends StatelessWidget {
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontSize: 24,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.bold,
             height: 1.1,
           ),
         ),
@@ -509,7 +509,7 @@ class _RatingBlock extends StatelessWidget {
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontSize: 16,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],

@@ -1,4 +1,5 @@
 import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -119,6 +120,8 @@ class _SigninViewState extends State<_SigninView> {
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
+                      fontFamily: AppTheme.fontFamily,
+                      fontFamilyFallback: AppTheme.fontFamilyFallback,
                       color: isDark ? Colors.white : Colors.black,
                       height: 1,
                     ),
@@ -131,6 +134,8 @@ class _SigninViewState extends State<_SigninView> {
                     style: TextStyle(
                       fontSize: 16,
                       color: isDark ? Colors.white38 : Colors.black38,
+                      fontFamily: AppTheme.fontFamily,
+                      fontFamilyFallback: AppTheme.fontFamilyFallback,
                       fontWeight: FontWeight.w300,
                       height: 1,
                     ),
@@ -200,6 +205,8 @@ class _SigninViewState extends State<_SigninView> {
                         style: TextStyle(
                           fontSize: 14,
                           color: isDark ? Colors.white38 : Colors.black54,
+                          fontFamily: AppTheme.fontFamily,
+                          fontFamilyFallback: AppTheme.fontFamilyFallback,
                           fontWeight: FontWeight.w400,
                           decoration: TextDecoration.underline,
                           decorationColor: isDark

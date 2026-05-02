@@ -36,6 +36,7 @@ class MainApp extends StatelessWidget {
         builder: (context, themeMode) {
           return MaterialApp.router(
             title: 'Atlas',
+            debugShowCheckedModeBanner: false,
             routerConfig: appRouter.config(),
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,

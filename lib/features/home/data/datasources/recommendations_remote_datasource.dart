@@ -1,6 +1,6 @@
-// recommendations_remote_datasource.dart
-
+import 'dart:async';
 import 'dart:math';
+
 import 'package:atlas/core/errors/app_exception.dart';
 import 'package:atlas/core/services/categories_services.dart';
 import 'package:atlas/features/home/data/models/recommendation_model.dart';
@@ -52,6 +52,16 @@ class RecommendationsRemoteDatasourceImpl
     'breathtaking',
     'hidden gem',
   ];
+  static const _fallbackCategoryTypes = [
+    'tourist_attraction',
+    'historical_place',
+    'museum',
+    'park',
+    'art_gallery',
+  ];
+  static const _recommendationBatchSize = 4;
+  static const _targetRecommendationCount = 40;
+  static const _minimumCategoryResultCount = 8;
 
   RecommendationsRemoteDatasourceImpl({
     required Dio dio,
@@ -67,16 +77,48 @@ class RecommendationsRemoteDatasourceImpl
   Future<List<RecommendationModel>> getRecommendations(
     List<String> categoryTypes,
   ) async {
-    final futures = categoryTypes.map(_fetchByCategory);
-    final results = await Future.wait(futures);
-
-    final seen = <String>{};
-    final combined = results
-        .expand((places) => places)
-        .where((place) => seen.add(place.id))
+    final normalizedCategoryTypes = categoryTypes
+        .map((categoryType) => categoryType.trim())
+        .where((categoryType) => categoryType.isNotEmpty)
+        .toSet()
         .toList();
 
-    combined.shuffle(Random());
+    final effectiveCategoryTypes = normalizedCategoryTypes.isEmpty
+        ? _fallbackCategoryTypes
+        : normalizedCategoryTypes;
+
+    final combinedById = <String, RecommendationModel>{};
+    AppException? firstError;
+
+    for (
+      var startIndex = 0;
+      startIndex < effectiveCategoryTypes.length;
+      startIndex += _recommendationBatchSize
+    ) {
+      final endIndex = min(
+        startIndex + _recommendationBatchSize,
+        effectiveCategoryTypes.length,
+      );
+      final batch = effectiveCategoryTypes.sublist(startIndex, endIndex);
+      final results = await Future.wait(batch.map(_fetchByCategorySafely));
+
+      for (final result in results) {
+        firstError ??= result.error;
+        for (final place in result.places) {
+          combinedById.putIfAbsent(place.id, () => place);
+        }
+      }
+
+      if (combinedById.length >= _targetRecommendationCount) {
+        break;
+      }
+    }
+
+    if (combinedById.isEmpty && firstError != null) {
+      throw firstError;
+    }
+
+    final combined = combinedById.values.toList()..shuffle(Random());
     return combined;
   }
 
@@ -202,18 +244,70 @@ class RecommendationsRemoteDatasourceImpl
   Future<List<RecommendationModel>> _fetchByCategory(
     String categoryType,
   ) async {
-    try {
-      final prefix = _queryPrefixes[Random().nextInt(_queryPrefixes.length)];
-      return _searchText(
-        textQuery: '$prefix ${categoryType.replaceAll('_', ' ')}',
-        pageSize: 10,
-      );
-    } on DioException catch (e) {
+    final categoryLabel = _labelForCategoryType(categoryType);
+    final queryVariants = _buildRecommendationQueries(categoryLabel);
+    final collectedPlaces = <String, RecommendationModel>{};
+    DioException? firstError;
+
+    for (final query in queryVariants) {
+      try {
+        final results = await _searchText(
+          textQuery: query,
+          pageSize: 20,
+          includedType: categoryType,
+          strictTypeFiltering: true,
+        );
+
+        for (final place in results) {
+          collectedPlaces.putIfAbsent(place.id, () => place);
+        }
+
+        if (collectedPlaces.length >= _minimumCategoryResultCount) {
+          break;
+        }
+      } on DioException catch (error) {
+        firstError ??= error;
+      }
+    }
+
+    if (collectedPlaces.length < _minimumCategoryResultCount) {
+      for (final query in queryVariants.take(3)) {
+        try {
+          final results = await _searchText(textQuery: query, pageSize: 20);
+
+          for (final place in results) {
+            collectedPlaces.putIfAbsent(place.id, () => place);
+          }
+
+          if (collectedPlaces.length >= _minimumCategoryResultCount) {
+            break;
+          }
+        } on DioException catch (error) {
+          firstError ??= error;
+        }
+      }
+    }
+
+    if (collectedPlaces.isEmpty && firstError != null) {
       throw ServerException(
         message:
-            e.response?.data?['error']?['message'] ??
+            firstError.response?.data?['error']?['message'] ??
             'Failed to fetch category: $categoryType',
       );
+    }
+
+    return collectedPlaces.values.toList();
+  }
+
+  Future<_CategoryRecommendationResult> _fetchByCategorySafely(
+    String categoryType,
+  ) async {
+    try {
+      return _CategoryRecommendationResult(
+        places: await _fetchByCategory(categoryType),
+      );
+    } on AppException catch (error) {
+      return _CategoryRecommendationResult(error: error);
     }
   }
 
@@ -328,29 +422,72 @@ class RecommendationsRemoteDatasourceImpl
     bool strictTypeFiltering = false,
     String? pageToken,
   }) async {
-    final response = await _dio.post(
-      _baseUrl,
-      data: {
-        'textQuery': textQuery,
-        'pageSize': pageSize,
-        'languageCode': 'en',
-        'rankPreference': 'RELEVANCE',
-        if (strictTypeFiltering) 'strictTypeFiltering': true,
-        ...?includedType == null ? null : {'includedType': includedType},
-        ...?pageToken == null ? null : {'pageToken': pageToken},
-      },
-      options: Options(
-        headers: {'X-Goog-Api-Key': _apiKey, 'X-Goog-FieldMask': _fieldMask},
-      ),
-    );
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        final response = await _dio.post(
+          _baseUrl,
+          data: {
+            'textQuery': textQuery,
+            'pageSize': pageSize,
+            'languageCode': 'en',
+            'rankPreference': 'RELEVANCE',
+            if (strictTypeFiltering) 'strictTypeFiltering': true,
+            'includedType': ?includedType,
+            'pageToken': ?pageToken,
+          },
+          options: Options(
+            headers: {
+              'X-Goog-Api-Key': _apiKey,
+              'X-Goog-FieldMask': _fieldMask,
+            },
+          ),
+        );
 
-    final places = response.data['places'] as List? ?? [];
-    return _TextSearchResponse(
-      places: places
-          .map((place) => RecommendationModel.fromJson(place))
-          .toList(),
-      nextPageToken: response.data['nextPageToken'] as String?,
-    );
+        final places = response.data['places'] as List? ?? [];
+        return _TextSearchResponse(
+          places: places
+              .map((place) => RecommendationModel.fromJson(place))
+              .toList(),
+          nextPageToken: response.data['nextPageToken'] as String?,
+        );
+      } on DioException catch (error) {
+        final canRetry = attempt < 2 && _isRetryablePlacesError(error);
+        if (!canRetry) rethrow;
+        await Future<void>.delayed(Duration(milliseconds: 250 * (attempt + 1)));
+      }
+    }
+
+    throw StateError('Unreachable Places search retry state.');
+  }
+
+  bool _isRetryablePlacesError(DioException error) {
+    final statusCode = error.response?.statusCode;
+    if (statusCode == null) return true;
+    return statusCode == 429 || statusCode >= 500;
+  }
+
+  String _labelForCategoryType(String categoryType) {
+    for (final category in CategoriesService.searchableCategories) {
+      if (category.id == categoryType) {
+        return category.label;
+      }
+    }
+
+    return categoryType.replaceAll('_', ' ');
+  }
+
+  List<String> _buildRecommendationQueries(String categoryLabel) {
+    final normalizedLabel = categoryLabel.trim();
+    if (normalizedLabel.isEmpty) return const [];
+
+    final prefixes = List<String>.from(_queryPrefixes)..shuffle(Random());
+    return <String>{
+      'best $normalizedLabel',
+      'popular $normalizedLabel',
+      'top rated $normalizedLabel',
+      normalizedLabel,
+      for (final prefix in prefixes.take(4)) '$prefix $normalizedLabel',
+    }.toList();
   }
 
   Future<List<RecommendationModel>> _searchGenericPlaces(String query) async {
@@ -741,6 +878,13 @@ class _TextSearchResponse {
   final String? nextPageToken;
 
   const _TextSearchResponse({required this.places, this.nextPageToken});
+}
+
+class _CategoryRecommendationResult {
+  final List<RecommendationModel> places;
+  final AppException? error;
+
+  const _CategoryRecommendationResult({this.places = const [], this.error});
 }
 
 class _CategorySearchIntent {

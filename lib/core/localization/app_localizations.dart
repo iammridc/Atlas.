@@ -91,6 +91,13 @@ const _strings = {
         'Avatar picker is not ready yet. Please fully stop the app and run it again.',
     'back': 'Back',
     'bars': 'Bars',
+    'biometricLogin': 'Biometric login',
+    'biometricLoginDisabled': 'Biometric login disabled.',
+    'biometricLoginEnabled': 'Biometric login enabled.',
+    'biometricLoginReason': 'Confirm your identity to enable biometric login.',
+    'biometricLoginSubtitle': 'Use Face ID or Touch ID when signing in',
+    'biometricLoginUnavailable':
+        'Biometric authentication is not available on this device.',
     'buildingRoutes': 'Building routes...',
     'cafes': 'Cafes',
     'cancel': 'Cancel',
@@ -420,6 +427,14 @@ const _strings = {
         'Выбор аватара пока не готов. Полностью остановите приложение и запустите снова.',
     'back': 'Назад',
     'bars': 'Бары',
+    'biometricLogin': 'Вход по биометрии',
+    'biometricLoginDisabled': 'Вход по биометрии отключен.',
+    'biometricLoginEnabled': 'Вход по биометрии включен.',
+    'biometricLoginReason':
+        'Подтвердите личность, чтобы включить вход по биометрии.',
+    'biometricLoginSubtitle': 'Использовать Face ID или Touch ID при входе',
+    'biometricLoginUnavailable':
+        'Биометрическая аутентификация недоступна на этом устройстве.',
     'buildingRoutes': 'Строим маршруты...',
     'cafes': 'Кафе',
     'cancel': 'Отмена',

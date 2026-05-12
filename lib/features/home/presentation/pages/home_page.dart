@@ -27,6 +27,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
@@ -250,6 +251,7 @@ class _SettingsViewState extends State<_SettingsView> {
   static const _useReviewsKey = 'settings_use_reviews_for_recommendations';
   static const _recommendationNotificationsKey =
       'settings_recommendation_notifications';
+  static const _biometricLoginKey = 'settings_biometric_login';
   static const _publicReviewsKey = 'settings_public_reviews';
   static const _distanceUnitKey = UnitConversions.distanceUnitKey;
   static const _languageKey = 'settings_language';
@@ -257,6 +259,7 @@ class _SettingsViewState extends State<_SettingsView> {
   bool _useFavorites = true;
   bool _useReviews = true;
   bool _recommendationNotifications = false;
+  bool _biometricLogin = false;
   bool _publicReviews = true;
   String _distanceUnit = 'km';
   String _language = 'English';
@@ -277,6 +280,7 @@ class _SettingsViewState extends State<_SettingsView> {
       _useReviews = prefs.getBool(_useReviewsKey) ?? true;
       _recommendationNotifications =
           prefs.getBool(_recommendationNotificationsKey) ?? false;
+      _biometricLogin = prefs.getBool(_biometricLoginKey) ?? false;
       _publicReviews = prefs.getBool(_publicReviewsKey) ?? true;
       _distanceUnit = prefs.getString(_distanceUnitKey) ?? 'km';
       _language = prefs.getString(_languageKey) ?? 'English';
@@ -439,6 +443,13 @@ class _SettingsViewState extends State<_SettingsView> {
                             (next) => _recommendationNotifications = next,
                           ),
                         ),
+                        _SettingsSwitchTile(
+                          icon: CupertinoIcons.lock_shield,
+                          title: l10n.t('biometricLogin'),
+                          subtitle: l10n.t('biometricLoginSubtitle'),
+                          value: _biometricLogin,
+                          onChanged: _setBiometricLogin,
+                        ),
                       ],
                     ),
                     _SettingsSection(
@@ -591,6 +602,75 @@ class _SettingsViewState extends State<_SettingsView> {
       message: context.l10n.t('localHistoryCleared'),
       type: SnackbarType.success,
     );
+  }
+
+  Future<void> _setBiometricLogin(bool value) async {
+    final uid = getIt<FirebaseAuth>().currentUser?.uid;
+
+    if (!value) {
+      await _setBool(
+        _biometricLoginKey,
+        false,
+        (next) => _biometricLogin = next,
+      );
+      if (uid != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('biometrics_enabled_$uid', false);
+      }
+      if (!mounted) return;
+      AppSnackbar.show(
+        context,
+        message: context.l10n.t('biometricLoginDisabled'),
+        type: SnackbarType.success,
+      );
+      return;
+    }
+
+    final auth = LocalAuthentication();
+    try {
+      final isSupported = await auth.isDeviceSupported();
+      final canCheckBiometrics = await auth.canCheckBiometrics;
+      if (!mounted) return;
+
+      if (!isSupported || !canCheckBiometrics) {
+        AppSnackbar.show(
+          context,
+          message: context.l10n.t('biometricLoginUnavailable'),
+          type: SnackbarType.error,
+        );
+        return;
+      }
+
+      final didAuthenticate = await auth.authenticate(
+        localizedReason: context.l10n.t('biometricLoginReason'),
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
+      );
+      if (!mounted || !didAuthenticate) return;
+
+      await _setBool(
+        _biometricLoginKey,
+        true,
+        (next) => _biometricLogin = next,
+      );
+      if (uid != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('biometrics_enabled_$uid', true);
+      }
+      if (!mounted) return;
+      AppSnackbar.show(
+        context,
+        message: context.l10n.t('biometricLoginEnabled'),
+        type: SnackbarType.success,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackbar.show(
+        context,
+        message: context.l10n.t('biometricLoginUnavailable'),
+        type: SnackbarType.error,
+      );
+    }
   }
 
   Future<void> _setPublicReviews(bool value) async {

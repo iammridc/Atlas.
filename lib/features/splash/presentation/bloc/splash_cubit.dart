@@ -11,6 +11,7 @@ import 'splash_state.dart';
 class SplashCubit extends Cubit<SplashState> {
   final _auth = LocalAuthentication();
   static const _lastUserKey = 'last_logged_in_uid';
+  static const _biometricLoginKey = 'settings_biometric_login';
 
   SplashCubit() : super(SplashInitial());
 
@@ -24,8 +25,10 @@ class SplashCubit extends Cubit<SplashState> {
     if (lastUid != null) {
       final canCheck = await _auth.canCheckBiometrics;
       final isSupported = await _auth.isDeviceSupported();
+      final biometricLoginEnabled = prefs.getBool(_biometricLoginKey) ?? false;
       final biometricsEnabled =
-          prefs.getBool('biometrics_enabled_$lastUid') ?? false;
+          biometricLoginEnabled &&
+          (prefs.getBool('biometrics_enabled_$lastUid') ?? false);
 
       if (canCheck && isSupported && biometricsEnabled) {
         try {

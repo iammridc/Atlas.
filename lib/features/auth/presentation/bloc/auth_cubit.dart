@@ -11,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
+  static const _biometricLoginKey = 'settings_biometric_login';
+
   final SignInUseCase _signInUseCase;
   final SignUpUseCase _signUpUseCase;
   final SignOutUseCase _signOutUseCase;
@@ -51,7 +53,11 @@ class AuthCubit extends Cubit<AuthState> {
     result.fold((error) => emit(AuthError(error)), (user) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('last_logged_in_uid', user.id);
-      await prefs.setBool('biometrics_enabled_${user.id}', true);
+      final biometricLoginEnabled = prefs.getBool(_biometricLoginKey) ?? false;
+      await prefs.setBool(
+        'biometrics_enabled_${user.id}',
+        biometricLoginEnabled,
+      );
       await getIt<ThemeCubit>().loadUserTheme(user.id);
 
       final hasPrefsResult = await _hasPreferencesUseCase(user.id);
@@ -68,7 +74,11 @@ class AuthCubit extends Cubit<AuthState> {
     result.fold((error) => emit(AuthError(error)), (user) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('last_logged_in_uid', user.id);
-      await prefs.setBool('biometrics_enabled_${user.id}', true);
+      final biometricLoginEnabled = prefs.getBool(_biometricLoginKey) ?? false;
+      await prefs.setBool(
+        'biometrics_enabled_${user.id}',
+        biometricLoginEnabled,
+      );
       emit(AuthRegistered());
     });
   }

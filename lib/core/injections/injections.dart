@@ -1,3 +1,4 @@
+import 'package:atlas/core/localization/locale_cubit.dart';
 import 'package:atlas/core/theme/cubit/theme_cubit.dart';
 import 'package:atlas/core/services/location_service.dart';
 import 'package:atlas/features/auth/data/datasources/auth_remote_datasource.dart';
@@ -75,6 +76,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<AppRouter>(() => AppRouter());
 
   getIt.registerLazySingleton<ThemeCubit>(() => ThemeCubit());
+  getIt.registerLazySingleton<LocaleCubit>(() => LocaleCubit());
 
   getIt.registerLazySingleton<AuthRemoteDatasource>(
     () => AuthRemoteDatasourceImpl(

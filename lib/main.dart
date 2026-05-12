@@ -1,8 +1,11 @@
 import 'package:atlas/core/services/categories_services.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/localization/locale_cubit.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:atlas/core/injections/injections.dart';
 import 'package:atlas/core/router/app_router.dart';
@@ -18,6 +21,7 @@ void main() async {
   await CategoriesService.seedIfNeeded();
   await configureDependencies();
   await getIt<ThemeCubit>().loadGuestTheme();
+  await getIt<LocaleCubit>().loadLocale();
 
   FlutterNativeSplash.remove();
   runApp(const MainApp());
@@ -30,27 +34,44 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final appRouter = AppRouter();
 
-    return BlocProvider.value(
-      value: getIt<ThemeCubit>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: getIt<ThemeCubit>()),
+        BlocProvider.value(value: getIt<LocaleCubit>()),
+      ],
       child: BlocBuilder<ThemeCubit, AppThemeMode>(
         builder: (context, themeMode) {
-          return MaterialApp.router(
-            title: 'Atlas',
-            debugShowCheckedModeBanner: false,
-            routerConfig: appRouter.config(),
-            theme: AppTheme.light,
-            darkTheme: AppTheme.dark,
-            themeMode: switch (themeMode) {
-              AppThemeMode.light => ThemeMode.light,
-              AppThemeMode.dark => ThemeMode.dark,
-              AppThemeMode.system => ThemeMode.system,
-            },
-            builder: (context, child) {
-              return MediaQuery(
-                data: MediaQuery.of(
-                  context,
-                ).copyWith(textScaler: TextScaler.linear(1.0)),
-                child: child!,
+          return BlocBuilder<LocaleCubit, Locale>(
+            builder: (context, locale) {
+              return MaterialApp.router(
+                title: 'Atlas',
+                debugShowCheckedModeBanner: false,
+                routerConfig: appRouter.config(),
+                locale: locale,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+                themeMode: switch (themeMode) {
+                  AppThemeMode.light => ThemeMode.light,
+                  AppThemeMode.dark => ThemeMode.dark,
+                  AppThemeMode.system => ThemeMode.system,
+                },
+                builder: (context, child) {
+                  final textScale = locale.languageCode == 'ru' ? 0.92 : 1.0;
+
+                  return MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(textScaler: TextScaler.linear(textScale)),
+                    child: child!,
+                  );
+                },
               );
             },
           );

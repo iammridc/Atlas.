@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -104,7 +106,7 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
       if (!mounted) return;
       AppSnackbar.show(
         context,
-        message: 'Failed to open photo library. Please try again.',
+        message: context.l10n.t('failedOpenPhotoLibrary'),
         type: SnackbarType.error,
       );
     }
@@ -121,7 +123,7 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
     if (widget.allowPlaceNameEditing && placeName.isEmpty) {
       AppSnackbar.show(
         context,
-        message: 'Place name is required.',
+        message: context.l10n.t('placeNameRequired'),
         type: SnackbarType.error,
       );
       return;
@@ -130,7 +132,7 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
     if (text.isEmpty) {
       AppSnackbar.show(
         context,
-        message: 'Review text is required.',
+        message: context.l10n.t('reviewTextRequired'),
         type: SnackbarType.error,
       );
       return;
@@ -183,7 +185,7 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
           children: [
             _ReviewHero(
               placeName: _placeNameController.text.trim().isEmpty
-                  ? 'New place'
+                  ? context.l10n.t('newPlace')
                   : _placeNameController.text.trim(),
               subtitle: _placeSubtitle,
               photoReference: widget.photoReference,
@@ -224,7 +226,7 @@ class _ReviewEditorPageState extends State<ReviewEditorPage> {
   String get _placeSubtitle {
     final subtitle = widget.placeSubtitle?.trim();
     if (subtitle != null && subtitle.isNotEmpty) return subtitle;
-    return 'Share details from your visit';
+    return context.l10n.t('shareVisitDetails');
   }
 }
 
@@ -241,7 +243,13 @@ class _SubmitReviewButton extends StatelessWidget {
       height: 54,
       child: FilledButton(
         onPressed: onPressed,
-        child: Text(isEditing ? 'Update review' : 'Submit review'),
+        child: FittedSingleLineText(
+          isEditing
+              ? context.l10n.t('updateReview')
+              : context.l10n.t('submitReview'),
+          alignment: Alignment.center,
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
@@ -374,8 +382,8 @@ class _ReviewHero extends StatelessWidget {
                         ? TextField(
                             controller: placeNameController,
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Place name',
+                            decoration: InputDecoration(
+                              labelText: context.l10n.t('placeName'),
                               isDense: true,
                               border: InputBorder.none,
                             ),
@@ -482,7 +490,7 @@ class _RatingBlock extends StatelessWidget {
     return Column(
       children: [
         Text(
-          'How was your visit?',
+          context.l10n.t('howWasVisit'),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
@@ -493,7 +501,7 @@ class _RatingBlock extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Your feedback helps other travelers',
+          context.l10n.t('yourFeedbackHelps'),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: isDark ? Colors.white60 : Colors.black54,
@@ -505,7 +513,7 @@ class _RatingBlock extends StatelessWidget {
         _StarRatingField(value: rating, onChanged: onChanged),
         const SizedBox(height: 10),
         Text(
-          _ratingLabel(rating),
+          _ratingLabel(context, rating),
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontSize: 16,
@@ -516,13 +524,13 @@ class _RatingBlock extends StatelessWidget {
     );
   }
 
-  String _ratingLabel(int value) {
+  String _ratingLabel(BuildContext context, int value) {
     return switch (value) {
-      1 => 'Not great',
-      2 => 'Could be better',
-      3 => 'Good',
-      4 => 'Great!',
-      _ => 'Amazing!',
+      1 => context.l10n.t('notGreat'),
+      2 => context.l10n.t('couldBeBetter'),
+      3 => context.l10n.t('good'),
+      4 => context.l10n.t('great'),
+      _ => context.l10n.t('amazing'),
     };
   }
 }
@@ -547,7 +555,7 @@ class _StarRatingField extends StatelessWidget {
         final starValue = index + 1;
         return Semantics(
           button: true,
-          label: '$starValue star${starValue == 1 ? '' : 's'}',
+          label: context.l10n.named('starRating', {'count': starValue}),
           child: InkResponse(
             onTap: () => onChanged(starValue),
             radius: 24,
@@ -622,8 +630,8 @@ class _ReviewTextField extends StatelessWidget {
               maxLines: null,
               maxLength: _ReviewEditorPageState._maxReviewLength,
               textInputAction: TextInputAction.newline,
-              decoration: const InputDecoration(
-                hintText: 'Add details about your experience...',
+              decoration: InputDecoration(
+                hintText: context.l10n.t('reviewHint'),
                 border: InputBorder.none,
                 counterText: '',
                 isCollapsed: true,
@@ -693,7 +701,7 @@ class _PhotoTile extends StatelessWidget {
           top: -8,
           right: -8,
           child: IconButton.filled(
-            tooltip: 'Remove photo',
+            tooltip: context.l10n.t('removePhoto'),
             onPressed: onRemove,
             icon: const Icon(CupertinoIcons.xmark, size: 13),
             style: IconButton.styleFrom(
@@ -724,7 +732,9 @@ class _InlineAddPhotoButton extends StatelessWidget {
         : AppColors.appPrimaryBlack;
 
     return IconButton(
-      tooltip: isDisabled ? 'Maximum photos added' : 'Add photo',
+      tooltip: isDisabled
+          ? context.l10n.t('maxPhotosAdded')
+          : context.l10n.t('addPhoto'),
       onPressed: isDisabled ? null : onTap,
       icon: const Icon(Icons.add_photo_alternate_outlined, size: 22),
       style: IconButton.styleFrom(

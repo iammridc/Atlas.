@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
@@ -77,13 +79,13 @@ class _TravelPlannerView extends StatelessWidget {
         if (state.actionStatus == TravelPlannerActionStatus.saved) {
           AppSnackbar.show(
             context,
-            message: state.actionMessage,
+            message: context.l10n.t('tripSavedToPlannedTrips'),
             type: SnackbarType.success,
           );
         } else if (state.actionStatus == TravelPlannerActionStatus.failed) {
           AppSnackbar.show(
             context,
-            message: state.actionMessage,
+            message: _localizedActionMessage(context, state.actionMessage),
             type: SnackbarType.error,
           );
         }
@@ -92,7 +94,7 @@ class _TravelPlannerView extends StatelessWidget {
         return Scaffold(
           backgroundColor: backgroundColor,
           appBar: AppBar(
-            title: const Text('Plan journey'),
+            title: Text(context.l10n.t('planJourney')),
             backgroundColor: backgroundColor,
             surfaceTintColor: Colors.transparent,
             shadowColor: Colors.transparent,
@@ -111,26 +113,26 @@ class _TravelPlannerView extends StatelessWidget {
                     physics: const AlwaysScrollableScrollPhysics(
                       parent: BouncingScrollPhysics(),
                     ),
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 88),
+                    padding: EdgeInsets.fromLTRB(24, 6, 24, 88),
                     children: [
                       _LocationFields(state: state),
                       const SizedBox(height: 18),
                       if (state.isResolvingLocation)
-                        const _InlineLoading(
-                          label: 'Finding your current location...',
+                        _InlineLoading(
+                          label: context.l10n.t('findingCurrentLocation'),
                         )
                       else if (state.origin == null)
                         _OriginMissingBlock(
                           onChoose: () => _showLocationSearch(
                             context,
-                            title: 'Choose start point',
+                            title: context.l10n.t('chooseStartPoint'),
                             onSelected: context
                                 .read<TravelPlannerCubit>()
                                 .setOrigin,
                           ),
                         )
                       else if (state.isLoadingPlan)
-                        const _InlineLoading(label: 'Building routes...')
+                        _InlineLoading(label: context.l10n.t('buildingRoutes'))
                       else if (state.errorMessage.isNotEmpty)
                         _InlineError(message: state.errorMessage)
                       else ...[
@@ -138,7 +140,7 @@ class _TravelPlannerView extends StatelessWidget {
                         if (state.pointsOfInterest.isNotEmpty) ...[
                           const SizedBox(height: 22),
                           _StopCarousel(
-                            title: 'You can also visit',
+                            title: context.l10n.t('youCanAlsoVisit'),
                             stops: state.pointsOfInterest,
                             selectedIds: state.selectedPointIds,
                             onTap: context
@@ -149,7 +151,7 @@ class _TravelPlannerView extends StatelessWidget {
                         if (state.hotels.isNotEmpty) ...[
                           const SizedBox(height: 22),
                           _StopCarousel(
-                            title: 'Hotels nearby',
+                            title: context.l10n.t('hotelsNearby'),
                             stops: state.hotels,
                             selectedIds: state.selectedHotelIds,
                             onTap: context
@@ -196,6 +198,15 @@ class _TravelPlannerView extends StatelessWidget {
   }
 }
 
+String _localizedActionMessage(BuildContext context, String message) {
+  return switch (message) {
+    'Choose a route before saving.' => context.l10n.t(
+      'chooseRouteBeforeSaving',
+    ),
+    _ => message,
+  };
+}
+
 class _LocationFields extends StatelessWidget {
   final TravelPlannerState state;
 
@@ -234,10 +245,12 @@ class _LocationFields extends StatelessWidget {
           child: Column(
             children: [
               _LocationInput(
-                label: state.origin?.displayAddress ?? 'Choose start point',
+                label:
+                    state.origin?.displayAddress ??
+                    context.l10n.t('chooseStartPoint'),
                 onTap: () => _showLocationSearch(
                   context,
-                  title: 'Choose start point',
+                  title: context.l10n.t('chooseStartPoint'),
                   onSelected: context.read<TravelPlannerCubit>().setOrigin,
                 ),
               ),
@@ -246,7 +259,7 @@ class _LocationFields extends StatelessWidget {
                 label: state.destination.displayAddress,
                 onTap: () => _showLocationSearch(
                   context,
-                  title: 'Choose destination',
+                  title: context.l10n.t('chooseDestination'),
                   onSelected: context.read<TravelPlannerCubit>().setDestination,
                 ),
               ),
@@ -302,7 +315,10 @@ class _LocationInput extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+          style: TextStyle(
+            fontSize: isRussianLocale(context) ? 18 : 20,
+            fontWeight: FontWeight.w400,
+          ),
         ),
       ),
     );
@@ -348,7 +364,12 @@ class _PlannerBottomAction extends StatelessWidget {
                         : AppColors.appPrimaryWhite,
                   ),
                 )
-              : const Text('Start a Journey!'),
+              : FittedSingleLineText(
+                  context.l10n.t('startJourney'),
+                  alignment: Alignment.center,
+                  textAlign: TextAlign.center,
+                  style: plannerPrimaryButtonTextStyle(context),
+                ),
         ),
       ),
     );
@@ -368,10 +389,12 @@ class _RoutesSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          routes.isEmpty ? 'No routes found' : 'Found ${routes.length} Ways',
-          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+          routes.isEmpty
+              ? context.l10n.t('noRoutesFound')
+              : foundWaysLabel(context, routes.length),
+          style: plannerSectionTitleStyle(context),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 4),
         if (routes.isEmpty)
           const _RoutesEmptyPlaceholder()
         else
@@ -379,12 +402,15 @@ class _RoutesSection extends StatelessWidget {
             (route) => _RouteCard(
               route: route,
               selected: route.id == state.selectedRouteId,
-              onTap: () {
-                context.read<TravelPlannerCubit>().selectRoute(route.id);
+              onTap: () =>
+                  context.read<TravelPlannerCubit>().selectRoute(route.id),
+              onLongPress: () {
+                final cubit = context.read<TravelPlannerCubit>();
+                cubit.selectRoute(route.id);
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => BlocProvider.value(
-                      value: context.read<TravelPlannerCubit>(),
+                      value: cubit,
                       child: TravelRouteDetailsPage(routeId: route.id),
                     ),
                   ),
@@ -425,14 +451,14 @@ class _RoutesEmptyPlaceholder extends StatelessWidget {
             color: isDark ? Colors.white70 : Colors.black54,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'No routes are available for these locations right now.',
+          Text(
+            context.l10n.t('noRoutesAvailable'),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           Text(
-            'Try another start point, destination, or check API coverage later.',
+            context.l10n.t('tryAnotherRoute'),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -451,11 +477,13 @@ class _RouteCard extends StatelessWidget {
   final TravelRouteEntity route;
   final bool selected;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   const _RouteCard({
     required this.route,
     required this.selected,
     required this.onTap,
+    required this.onLongPress,
   });
 
   @override
@@ -463,10 +491,11 @@ class _RouteCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isDark
               ? Colors.white.withValues(alpha: 0.12)
@@ -490,22 +519,18 @@ class _RouteCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    route.title,
+                    routeTitleLabel(context, route),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      height: 1.1,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: plannerRouteTitleStyle(context),
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 5),
                   Text(
-                    routeSummaryLabel(route),
+                    routeSummaryLabel(context, route),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: isRussianLocale(context) ? 13 : 14,
                       color: isDark ? Colors.white70 : Colors.black54,
                       fontWeight: FontWeight.w600,
                     ),
@@ -514,8 +539,9 @@ class _RouteCard extends StatelessWidget {
                     const SizedBox(height: 7),
                     Text(
                       [
-                        if (route.priceLabel != null) route.priceLabel!,
-                        if (route.isEstimated) 'estimated',
+                        if (route.priceLabel != null)
+                          routePriceLabel(context, route.priceLabel!),
+                        if (route.isEstimated) context.l10n.t('estimated'),
                       ].join(' · '),
                       style: TextStyle(
                         fontSize: 13,
@@ -529,8 +555,11 @@ class _RouteCard extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Text(
-              routeDurationLabel(route),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              routeDurationLabel(context, route),
+              style: TextStyle(
+                fontSize: isRussianLocale(context) ? 16 : 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -559,11 +588,8 @@ class _StopCarousel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
+        Text(title, style: plannerSectionTitleStyle(context)),
+        const SizedBox(height: 4),
         SizedBox(
           height: 154,
           child: ListView.separated(
@@ -732,7 +758,7 @@ class _InlineError extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 28),
       child: TransientErrorPlaceholder(
         icon: CupertinoIcons.map,
-        title: 'Couldn’t build routes',
+        title: context.l10n.t('couldNotBuildRoutes'),
         message: message,
         iconSize: 48,
       ),
@@ -751,10 +777,10 @@ class _OriginMissingBlock extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 28),
       child: Column(
         children: [
-          const Text(
-            'Atlas needs a start point to build Google routes.',
+          Text(
+            context.l10n.t('atlasNeedsOrigin'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: plannerBodyTextStyle(context),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -765,7 +791,12 @@ class _OriginMissingBlock extends StatelessWidget {
               style: plannerPrimaryButtonStyle(
                 Theme.of(context).brightness == Brightness.dark,
               ),
-              child: const Text('Choose origin'),
+              child: FittedSingleLineText(
+                context.l10n.t('chooseOrigin'),
+                alignment: Alignment.center,
+                textAlign: TextAlign.center,
+                style: plannerPrimaryButtonTextStyle(context),
+              ),
             ),
           ),
         ],
@@ -837,9 +868,9 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
               controller: _controller,
               autofocus: true,
               textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
-                hintText: 'Search city, airport, station, address...',
-                prefixIcon: Icon(CupertinoIcons.search),
+              decoration: InputDecoration(
+                hintText: context.l10n.t('searchLocationHint'),
+                prefixIcon: const Icon(CupertinoIcons.search),
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {

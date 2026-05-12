@@ -1,4 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -34,17 +36,16 @@ class ProfilePageHeader extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: ProfileHeaderIconButton(
                 icon: CupertinoIcons.chevron_left,
-                tooltip: 'Back',
+                tooltip: context.l10n.t('back'),
                 onTap: () => Navigator.of(context).maybePop(),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 64),
-              child: Text(
+              child: FittedSingleLineText(
                 title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
+                alignment: Alignment.center,
                 style: TextStyle(
                   color: titleColor,
                   fontSize: 24,

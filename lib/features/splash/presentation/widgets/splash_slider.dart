@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/theme/app_theme.dart';
 
 class SlideToUnlock extends StatefulWidget {
@@ -45,9 +46,9 @@ class _SlideToUnlockState extends State<SlideToUnlock> {
                   child: AnimatedOpacity(
                     opacity: 1.0 - progress,
                     duration: const Duration(milliseconds: 100),
-                    child: const Text(
-                      'Slide to continue',
-                      style: TextStyle(
+                    child: Text(
+                      context.l10n.t('slideToContinue'),
+                      style: const TextStyle(
                         color: Colors.grey,
                         fontFamily: AppTheme.fontFamily,
                         fontFamilyFallback: AppTheme.fontFamilyFallback,

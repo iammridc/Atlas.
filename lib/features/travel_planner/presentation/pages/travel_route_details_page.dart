@@ -1,6 +1,8 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:atlas/features/travel_planner/presentation/bloc/travel_planner_cubit.dart';
 import 'package:atlas/features/travel_planner/presentation/bloc/travel_planner_state.dart';
@@ -24,14 +26,14 @@ class TravelRouteDetailsPage extends StatelessWidget {
         if (state.actionStatus == TravelPlannerActionStatus.saved) {
           AppSnackbar.show(
             context,
-            message: state.actionMessage,
+            message: context.l10n.t('tripSavedToPlannedTrips'),
             type: SnackbarType.success,
           );
         }
         if (state.actionStatus == TravelPlannerActionStatus.failed) {
           AppSnackbar.show(
             context,
-            message: state.actionMessage,
+            message: _localizedActionMessage(context, state.actionMessage),
             type: SnackbarType.error,
           );
         }
@@ -49,7 +51,7 @@ class TravelRouteDetailsPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: backgroundColor,
           appBar: AppBar(
-            title: const Text('Route details'),
+            title: Text(context.l10n.t('routeDetails')),
             backgroundColor: backgroundColor,
             surfaceTintColor: Colors.transparent,
             shadowColor: Colors.transparent,
@@ -75,25 +77,12 @@ class TravelRouteDetailsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              route.title,
-                              style: const TextStyle(
-                                fontSize: 28,
+                              routeTitleLabel(context, route),
+                              style: TextStyle(
+                                fontSize: isRussianLocale(context) ? 25 : 28,
                                 fontWeight: FontWeight.bold,
-                                height: 1.04,
+                                height: 1.06,
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 8,
-                              children: [
-                                _InfoPill(label: routeDurationLabel(route)),
-                                if (route.priceLabel != null)
-                                  _InfoPill(label: route.priceLabel!),
-                                _InfoPill(label: routeTransferLabel(route)),
-                                if (route.isEstimated)
-                                  const _InfoPill(label: 'Estimated'),
-                              ],
                             ),
                           ],
                         ),
@@ -102,7 +91,7 @@ class TravelRouteDetailsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 22),
                   Text(
-                    'Itinerary',
+                    context.l10n.t('itinerary'),
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -113,14 +102,14 @@ class TravelRouteDetailsPage extends StatelessWidget {
                   if (state.selectedPointsOfInterest.isNotEmpty) ...[
                     const SizedBox(height: 18),
                     _SelectedStopsBlock(
-                      title: 'Added places',
+                      title: context.l10n.t('addedPlaces'),
                       stops: state.selectedPointsOfInterest,
                     ),
                   ],
                   if (state.selectedHotels.isNotEmpty) ...[
                     const SizedBox(height: 18),
                     _SelectedStopsBlock(
-                      title: 'Added hotels',
+                      title: context.l10n.t('addedHotels'),
                       stops: state.selectedHotels,
                     ),
                   ],
@@ -154,7 +143,12 @@ class TravelRouteDetailsPage extends StatelessWidget {
                                     : AppColors.appPrimaryWhite,
                               ),
                             )
-                          : const Text('Add to Planned Trips'),
+                          : FittedSingleLineText(
+                              context.l10n.t('addToPlannedTrips'),
+                              alignment: Alignment.center,
+                              textAlign: TextAlign.center,
+                              style: plannerPrimaryButtonTextStyle(context),
+                            ),
                     ),
                   ),
                 ),
@@ -167,28 +161,13 @@ class TravelRouteDetailsPage extends StatelessWidget {
   }
 }
 
-class _InfoPill extends StatelessWidget {
-  final String label;
-
-  const _InfoPill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.12)
-            : Colors.black.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
+String _localizedActionMessage(BuildContext context, String message) {
+  return switch (message) {
+    'Choose a route before saving.' => context.l10n.t(
+      'chooseRouteBeforeSaving',
+    ),
+    _ => message,
+  };
 }
 
 class _RouteLegTile extends StatelessWidget {
@@ -220,18 +199,18 @@ class _RouteLegTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  legTitleLabel(leg),
-                  style: const TextStyle(
-                    fontSize: 16,
+                  legTitleLabel(context, leg),
+                  style: TextStyle(
+                    fontSize: isRussianLocale(context) ? 15 : 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${leg.fromName} to ${leg.toName}',
+                  legFromToLabel(context, leg),
                   style: TextStyle(
                     color: secondary,
-                    fontSize: 14,
+                    fontSize: isRussianLocale(context) ? 13 : 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -255,8 +234,11 @@ class _RouteLegTile extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            formatDuration(leg.duration),
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            formatDurationLocalized(context, leg.duration),
+            style: TextStyle(
+              fontSize: isRussianLocale(context) ? 13 : 14,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -286,7 +268,7 @@ class _LegInstructions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Details',
+          context.l10n.t('details'),
           style: TextStyle(
             color: color,
             fontSize: 13,

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/place_details/presentation/pages/place_details_page.dart';
@@ -77,7 +78,9 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
     final result = await Navigator.of(context).push<ReviewEditorResult>(
       MaterialPageRoute(
         builder: (_) => ReviewEditorPage(
-          title: review == null ? 'Add review' : 'Edit review',
+          title: review == null
+              ? context.l10n.t('addReview')
+              : context.l10n.t('editReview'),
           initialPlaceName: review?.placeName ?? '',
           allowPlaceNameEditing: true,
           initialRating: review?.rating.round() ?? 4,
@@ -120,7 +123,9 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
         getIt<ProfileReviewsSyncService>().notifyChanged();
         AppSnackbar.show(
           context,
-          message: review == null ? 'Review added.' : 'Review updated.',
+          message: review == null
+              ? context.l10n.t('reviewAdded')
+              : context.l10n.t('reviewUpdated'),
           type: SnackbarType.success,
         );
       },
@@ -153,16 +158,20 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete review?'),
-          content: Text('Remove your review for "${review.placeName}"?'),
+          title: Text(context.l10n.t('deleteReviewTitle')),
+          content: Text(
+            context.l10n.named('deleteReviewMessage', {
+              'place': review.placeName,
+            }),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.t('cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: Text(context.l10n.t('delete')),
             ),
           ],
         );
@@ -185,7 +194,7 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
         if (!mounted) return;
         AppSnackbar.show(
           context,
-          message: 'Review deleted.',
+          message: context.l10n.t('reviewDeleted'),
           type: SnackbarType.success,
         );
       },
@@ -204,7 +213,7 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
         bottom: false,
         child: Column(
           children: [
-            const ProfilePageHeader(title: 'Reviews'),
+            ProfilePageHeader(title: context.l10n.t('reviews')),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadReviews,
@@ -213,10 +222,9 @@ class _ProfileReviewsPageState extends State<ProfileReviewsPage> {
                     : _errorMessage != null
                     ? ProfileCollectionErrorState(message: _errorMessage!)
                     : _reviews.isEmpty
-                    ? const ProfileCollectionEmptyState(
-                        title: 'No reviews yet',
-                        message:
-                            'Create and edit your own saved reviews here whenever you want.',
+                    ? ProfileCollectionEmptyState(
+                        title: context.l10n.t('noReviewsYet'),
+                        message: context.l10n.t('noReviewsYetMessage'),
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
@@ -348,7 +356,7 @@ class _ReviewedPlaceCard extends StatelessWidget {
                   children: [
                     Text(
                       review.placeName.isEmpty
-                          ? 'Unnamed place'
+                          ? context.l10n.t('unnamedPlace')
                           : review.placeName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -360,7 +368,7 @@ class _ReviewedPlaceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _buildLocationLabel(review),
+                      _buildLocationLabel(context, review),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -397,7 +405,7 @@ class _ReviewedPlaceCard extends StatelessWidget {
     return null;
   }
 
-  String _buildLocationLabel(ProfileReviewEntity review) {
+  String _buildLocationLabel(BuildContext context, ProfileReviewEntity review) {
     final parts = [
       review.placeCity,
       review.placeCountry,
@@ -405,8 +413,8 @@ class _ReviewedPlaceCard extends StatelessWidget {
 
     if (parts.isNotEmpty) return parts.join(', ');
     return review.placeId.trim().isEmpty
-        ? 'Tap to edit this review'
-        : 'Open reviews for this place';
+        ? context.l10n.t('tapToEditReview')
+        : context.l10n.t('openReviewsForPlace');
   }
 }
 

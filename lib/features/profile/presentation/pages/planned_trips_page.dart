@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart';
@@ -86,16 +87,18 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete trip?'),
-          content: Text('Remove "${trip.title}" from your planned trips?'),
+          title: Text(context.l10n.t('deleteTripTitle')),
+          content: Text(
+            context.l10n.named('deleteTripMessage', {'title': trip.title}),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.t('cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: Text(context.l10n.t('delete')),
             ),
           ],
         );
@@ -122,7 +125,7 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
         });
         AppSnackbar.show(
           context,
-          message: 'Trip deleted.',
+          message: context.l10n.t('tripDeleted'),
           type: SnackbarType.success,
         );
         getIt<PlannedTripsSyncService>().notifyChanged();
@@ -143,7 +146,7 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
         bottom: false,
         child: Column(
           children: [
-            const ProfilePageHeader(title: 'Planned Trips'),
+            ProfilePageHeader(title: context.l10n.t('plannedTrips')),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadTrips,
@@ -152,10 +155,9 @@ class _PlannedTripsPageState extends State<PlannedTripsPage> {
                     : _errorMessage != null
                     ? ProfileCollectionErrorState(message: _errorMessage!)
                     : _trips.isEmpty
-                    ? const ProfileCollectionEmptyState(
-                        title: 'No trips planned yet',
-                        message:
-                            'Save a route from the planner so it is ready when you need it.',
+                    ? ProfileCollectionEmptyState(
+                        title: context.l10n.t('noTripsPlanned'),
+                        message: context.l10n.t('noTripsPlannedMessage'),
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
@@ -230,7 +232,9 @@ class _PlannedTripCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      trip.title.isEmpty ? 'Saved route' : trip.title,
+                      trip.title.isEmpty
+                          ? context.l10n.t('savedRouteFallback')
+                          : trip.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

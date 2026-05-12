@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
@@ -79,7 +80,7 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
         bottom: false,
         child: Column(
           children: [
-            const ProfilePageHeader(title: 'Favourite Places'),
+            ProfilePageHeader(title: context.l10n.t('favouritePlaces')),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadPlaces,
@@ -88,10 +89,9 @@ class _FavoritePlacesPageState extends State<FavoritePlacesPage> {
                     : _errorMessage != null
                     ? ProfileCollectionErrorState(message: _errorMessage!)
                     : _places.isEmpty
-                    ? const ProfileCollectionEmptyState(
-                        title: 'No favourite places yet',
-                        message:
-                            'Save places you love from the place page, then revisit them here.',
+                    ? ProfileCollectionEmptyState(
+                        title: context.l10n.t('noFavouritePlaces'),
+                        message: context.l10n.t('noFavouritePlacesMessage'),
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
@@ -172,7 +172,9 @@ class _FavoritePlaceCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      place.name.isEmpty ? 'Unnamed place' : place.name,
+                      place.name.isEmpty
+                          ? context.l10n.t('unnamedPlace')
+                          : place.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -184,7 +186,7 @@ class _FavoritePlaceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _buildLocationLabel(place),
+                      _buildLocationLabel(context, place),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -203,7 +205,7 @@ class _FavoritePlaceCard extends StatelessWidget {
     );
   }
 
-  String _buildLocationLabel(FavoritePlaceEntity place) {
+  String _buildLocationLabel(BuildContext context, FavoritePlaceEntity place) {
     final parts = [
       place.city,
       place.country,
@@ -214,7 +216,7 @@ class _FavoritePlaceCard extends StatelessWidget {
     }
 
     final fallback = place.location.trim();
-    return fallback.isEmpty ? 'Explore this destination' : fallback;
+    return fallback.isEmpty ? context.l10n.t('exploreDestination') : fallback;
   }
 }
 
@@ -455,7 +457,7 @@ class ProfileCollectionErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return ScrollableTransientErrorPlaceholder(
       icon: Icons.cloud_off_outlined,
-      title: 'Couldn’t load this list',
+      title: context.l10n.t('couldNotLoadList'),
       message: message,
     );
   }

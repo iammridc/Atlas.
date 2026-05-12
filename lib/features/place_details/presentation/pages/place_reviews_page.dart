@@ -1,4 +1,5 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
 import 'package:atlas/features/place_details/presentation/bloc/place_details_cubit.dart';
@@ -21,7 +22,9 @@ class PlaceReviewsPage extends StatelessWidget {
     final result = await Navigator.of(context).push<ReviewEditorResult>(
       MaterialPageRoute(
         builder: (_) => ReviewEditorPage(
-          title: existingReview == null ? 'Add review' : 'Edit review',
+          title: existingReview == null
+              ? context.l10n.t('addReview')
+              : context.l10n.t('editReview'),
           initialPlaceName: state.place.name,
           allowPlaceNameEditing: false,
           initialRating: existingReview?.rating.round() ?? 4,
@@ -57,7 +60,9 @@ class PlaceReviewsPage extends StatelessWidget {
 
     AppSnackbar.show(
       context,
-      message: existingReview == null ? 'Review added.' : 'Review updated.',
+      message: existingReview == null
+          ? context.l10n.t('reviewAdded')
+          : context.l10n.t('reviewUpdated'),
       type: SnackbarType.success,
     );
   }
@@ -71,6 +76,7 @@ class PlaceReviewsPage extends StatelessWidget {
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
       body: SafeArea(
+        bottom: false,
         child: BlocBuilder<PlaceDetailsCubit, PlaceDetailsState>(
           builder: (context, state) {
             if (state is! PlaceDetailsLoaded) {
@@ -80,7 +86,7 @@ class PlaceReviewsPage extends StatelessWidget {
             final reviews = state.allReviews;
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
               children: [
                 _Header(
                   onActionTap: () => _showReviewSheet(context, state),
@@ -89,7 +95,7 @@ class PlaceReviewsPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 _Section(
                   reviews: reviews,
-                  emptyMessage: 'No reviews are available for this place yet.',
+                  emptyMessage: context.l10n.t('noReviewsAvailable'),
                 ),
               ],
             );
@@ -129,7 +135,7 @@ class _Header extends StatelessWidget {
             ),
           ),
           Text(
-            'Reviews',
+            context.l10n.t('reviews'),
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w600,

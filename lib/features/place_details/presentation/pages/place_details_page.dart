@@ -1,7 +1,9 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/place_details/domain/entities/place_details_entity.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
@@ -194,7 +196,12 @@ class _PlaceDetailsViewState extends State<_PlaceDetailsView> {
                     child: ElevatedButton(
                       onPressed: () => _openTravelPlanner(context, place),
                       style: plannerPrimaryButtonStyle(isDark),
-                      child: const Text('Start a Journey!'),
+                      child: FittedSingleLineText(
+                        context.l10n.t('startJourney'),
+                        alignment: Alignment.center,
+                        textAlign: TextAlign.center,
+                        style: plannerPrimaryButtonTextStyle(context),
+                      ),
                     ),
                   ),
                 ),
@@ -273,7 +280,9 @@ class _PlaceDetailsViewState extends State<_PlaceDetailsView> {
     final result = await Navigator.of(context).push<ReviewEditorResult>(
       MaterialPageRoute(
         builder: (_) => ReviewEditorPage(
-          title: existingReview == null ? 'Add review' : 'Edit review',
+          title: existingReview == null
+              ? context.l10n.t('addReview')
+              : context.l10n.t('editReview'),
           initialPlaceName: state.place.name,
           allowPlaceNameEditing: false,
           initialRating: existingReview?.rating.round() ?? 4,
@@ -309,7 +318,9 @@ class _PlaceDetailsViewState extends State<_PlaceDetailsView> {
 
     AppSnackbar.show(
       context,
-      message: existingReview == null ? 'Review added.' : 'Review updated.',
+      message: existingReview == null
+          ? context.l10n.t('reviewAdded')
+          : context.l10n.t('reviewUpdated'),
       type: SnackbarType.success,
     );
   }
@@ -404,7 +415,7 @@ class _DetailsSheet extends StatelessWidget {
     final sheetColor = isDark
         ? AppColors.backgroundDark
         : AppColors.backgroundLight;
-    final description = _buildDescription(place);
+    final description = _buildDescription(context, place);
 
     return Container(
       width: double.infinity,
@@ -424,7 +435,7 @@ class _DetailsSheet extends StatelessWidget {
         children: [
           _TitleBlock(place: place),
           const SizedBox(height: 12),
-          _TagWrap(tags: _buildTags(place), isDark: isDark),
+          _TagWrap(tags: _buildTags(context, place), isDark: isDark),
           const SizedBox(height: 12),
           _ExpandableDescription(text: description),
           const SizedBox(height: 10),
@@ -439,7 +450,7 @@ class _DetailsSheet extends StatelessWidget {
     );
   }
 
-  String _buildDescription(PlaceDetailsEntity place) {
+  String _buildDescription(BuildContext context, PlaceDetailsEntity place) {
     final rawDescription = place.description?.trim();
     if (rawDescription != null && rawDescription.isNotEmpty) {
       return rawDescription;
@@ -451,30 +462,38 @@ class _DetailsSheet extends StatelessWidget {
     ].join(', ');
 
     if (location.isEmpty) {
-      return '${place.name} is waiting to be explored. Detailed editorial description is not available for this place yet.';
+      return context.l10n.named('placeDescriptionNoLocation', {
+        'place': place.name,
+      });
     }
 
-    return '${place.name} is located in $location. Detailed editorial description is not available for this place yet, but you can still explore photos and reviews before planning your visit.';
+    return context.l10n.named('placeDescriptionWithLocation', {
+      'place': place.name,
+      'location': location,
+    });
   }
 
-  List<_PlaceTagData> _buildTags(PlaceDetailsEntity place) {
+  List<_PlaceTagData> _buildTags(
+    BuildContext context,
+    PlaceDetailsEntity place,
+  ) {
     final tags = <_PlaceTagData>[
       ...place.categories.take(3).map(_PlaceTagData.neutral),
     ];
 
     if ((place.rating ?? 0) >= 4.5 && place.userRatingCount >= 500) {
       tags.add(
-        const _PlaceTagData.highlighted(
-          'Must See',
+        _PlaceTagData.highlighted(
+          context.l10n.t('mustSee'),
           icon: CupertinoIcons.star_fill,
         ),
       );
     } else if (place.userRatingCount >= 500) {
-      tags.add(const _PlaceTagData.highlighted('Popular'));
+      tags.add(_PlaceTagData.highlighted(context.l10n.t('popular')));
     }
 
     if (tags.isEmpty) {
-      tags.add(const _PlaceTagData.neutral('Recommended'));
+      tags.add(_PlaceTagData.neutral(context.l10n.t('recommended')));
     }
 
     return tags.take(4).toList();
@@ -634,7 +653,9 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
           GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
             child: Text(
-              _expanded ? 'Show Less' : 'Read More',
+              _expanded
+                  ? context.l10n.t('showLess')
+                  : context.l10n.t('readMore'),
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -709,7 +730,7 @@ class _ErrorView extends StatelessWidget {
                 ),
                 TransientErrorPlaceholder(
                   icon: Icons.wrong_location_outlined,
-                  title: 'Place unavailable',
+                  title: context.l10n.t('placeUnavailable'),
                   message: message,
                 ),
               ],

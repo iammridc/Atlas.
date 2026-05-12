@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/preferences/presentation/pages/preferences_page.dart';
@@ -17,6 +18,7 @@ import 'package:atlas/features/profile/presentation/bloc/profile_state.dart';
 import 'package:atlas/features/profile/presentation/pages/favorite_places_page.dart';
 import 'package:atlas/features/profile/presentation/pages/planned_trips_page.dart';
 import 'package:atlas/features/profile/presentation/pages/profile_reviews_page.dart';
+import 'package:atlas/features/profile/presentation/utils/gamification_localization.dart';
 import 'package:atlas/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:atlas/features/profile/presentation/widgets/profile_section_button.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,10 +34,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<ProfileCubit>()..loadProfile(),
-      child: _ProfileView(onPreferencesUpdated: onPreferencesUpdated),
-    );
+    return _ProfileView(onPreferencesUpdated: onPreferencesUpdated);
   }
 }
 
@@ -129,7 +128,8 @@ class _ProfileViewState extends State<_ProfileView> {
                   onRefresh: () => context.read<ProfileCubit>().loadProfile(),
                   child: _ProfileErrorState(
                     message:
-                        state.errorMessage ?? 'Failed to load your profile.',
+                        state.errorMessage ??
+                        context.l10n.t('failedLoadProfile'),
                   ),
                 );
               }
@@ -183,7 +183,7 @@ class _ProfileViewState extends State<_ProfileView> {
                       onSubmitted: (_) => _usernameFocusNode.unfocus(),
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: 'Username',
+                        hintText: context.l10n.t('username'),
                         filled: false,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -207,16 +207,17 @@ class _ProfileViewState extends State<_ProfileView> {
                     ),
                     const SizedBox(height: 18),
                     ProfileSectionButton(
-                      title: 'Preferences',
-                      subtitle:
-                          '${profile.preferences.length} categories selected',
+                      title: context.l10n.t('preferences'),
+                      subtitle: context.l10n.named('categoriesSelected', {
+                        'count': profile.preferences.length,
+                      }),
                       icon: Icons.tune_rounded,
                       onTap: () => _openPreferences(profile),
                     ),
                     const SizedBox(height: 10),
                     if (state.gamification != null) ...[
                       ProfileSectionButton(
-                        title: 'Achievements',
+                        title: context.l10n.t('achievements'),
                         subtitle: _achievementsSubtitle(state.gamification!),
                         icon: CupertinoIcons.rosette,
                         onTap: () => _openAchievements(state.gamification!),
@@ -224,27 +225,30 @@ class _ProfileViewState extends State<_ProfileView> {
                       const SizedBox(height: 10),
                     ],
                     ProfileSectionButton(
-                      title: 'Favourite Places',
-                      subtitle:
-                          '${profile.favoritePlacesCount} saved place${profile.favoritePlacesCount == 1 ? '' : 's'}',
+                      title: context.l10n.t('favouritePlaces'),
+                      subtitle: context.l10n.named('savedPlacesCount', {
+                        'count': profile.favoritePlacesCount,
+                      }),
                       icon: Icons.favorite_border_rounded,
                       onTap: () =>
                           _openManagementPage(() => FavoritePlacesPage()),
                     ),
                     const SizedBox(height: 10),
                     ProfileSectionButton(
-                      title: 'Reviews',
-                      subtitle:
-                          '${profile.reviewsCount} review${profile.reviewsCount == 1 ? '' : 's'}',
+                      title: context.l10n.t('reviews'),
+                      subtitle: context.l10n.named('reviewsCount', {
+                        'count': profile.reviewsCount,
+                      }),
                       icon: Icons.rate_review_outlined,
                       onTap: () =>
                           _openManagementPage(() => ProfileReviewsPage()),
                     ),
                     const SizedBox(height: 10),
                     ProfileSectionButton(
-                      title: 'Planned Trips',
-                      subtitle:
-                          '${profile.plannedTripsCount} trip${profile.plannedTripsCount == 1 ? '' : 's'} planned',
+                      title: context.l10n.t('plannedTrips'),
+                      subtitle: context.l10n.named('tripsPlannedCount', {
+                        'count': profile.plannedTripsCount,
+                      }),
                       icon: Icons.map_outlined,
                       onTap: () =>
                           _openManagementPage(() => PlannedTripsPage()),
@@ -276,7 +280,7 @@ class _ProfileViewState extends State<_ProfileView> {
     if (trimmed.isEmpty) {
       AppSnackbar.show(
         context,
-        message: 'Username cannot be empty.',
+        message: context.l10n.t('usernameCannotBeEmpty'),
         type: SnackbarType.error,
       );
       return;
@@ -303,7 +307,7 @@ class _ProfileViewState extends State<_ProfileView> {
 
     AppSnackbar.show(
       context,
-      message: error ?? 'Profile updated.',
+      message: error ?? context.l10n.t('profileUpdated'),
       type: error == null ? SnackbarType.success : SnackbarType.error,
     );
   }
@@ -320,12 +324,12 @@ class _ProfileViewState extends State<_ProfileView> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose from gallery'),
+                title: Text(context.l10n.t('chooseFromGallery')),
                 onTap: () => Navigator.of(context).pop(false),
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded),
-                title: const Text('Remove avatar'),
+                title: Text(context.l10n.t('removeAvatar')),
                 onTap: () => Navigator.of(context).pop(true),
               ),
             ],
@@ -353,8 +357,8 @@ class _ProfileViewState extends State<_ProfileView> {
       if (!mounted) return;
 
       final message = error.code == 'channel-error'
-          ? 'Avatar picker is not ready yet. Please fully stop the app and run it again.'
-          : 'Failed to open photo library. Please try again.';
+          ? context.l10n.t('avatarPickerNotReady')
+          : context.l10n.t('failedOpenPhotoLibrary');
 
       AppSnackbar.show(context, message: message, type: SnackbarType.error);
       return;
@@ -363,7 +367,7 @@ class _ProfileViewState extends State<_ProfileView> {
 
       AppSnackbar.show(
         context,
-        message: 'Failed to open photo library. Please try again.',
+        message: context.l10n.t('failedOpenPhotoLibrary'),
         type: SnackbarType.error,
       );
       return;
@@ -397,7 +401,7 @@ class _ProfileViewState extends State<_ProfileView> {
       widget.onPreferencesUpdated?.call(result);
       AppSnackbar.show(
         context,
-        message: 'Preferences updated.',
+        message: context.l10n.t('preferencesUpdated'),
         type: SnackbarType.success,
       );
       await context.read<ProfileCubit>().loadProfile(showLoader: false);
@@ -434,7 +438,10 @@ class _ProfileViewState extends State<_ProfileView> {
         .where((badge) => badge.isUnlocked)
         .length;
     final total = gamification.badges.length;
-    return '$unlocked/$total unlocked';
+    return context.l10n.named('achievementsUnlocked', {
+      'unlocked': unlocked,
+      'total': total,
+    });
   }
 }
 
@@ -452,11 +459,11 @@ class _ProfileStatsLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final level = levelName?.trim().isNotEmpty == true
-        ? levelName!.trim()
-        : 'New Explorer';
+        ? localizedGamificationLabel(context, levelName!.trim())
+        : context.l10n.t('newExplorer');
 
     return Text(
-      '${profile.reviewsCount} review${profile.reviewsCount == 1 ? '' : 's'} · $level',
+      '${context.l10n.named('reviewsCount', {'count': profile.reviewsCount})} · $level',
       textAlign: TextAlign.center,
       style: TextStyle(
         color: isDark ? Colors.white60 : Colors.black54,
@@ -483,7 +490,9 @@ class _ProfileAvatarEditButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Tooltip(
-      message: isEditing ? 'Apply profile changes' : 'Edit profile',
+      message: isEditing
+          ? context.l10n.t('applyProfileChanges')
+          : context.l10n.t('editProfile'),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: isSaving ? null : onPressed,
@@ -532,7 +541,7 @@ class _ProfileErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return ScrollableTransientErrorPlaceholder(
       icon: Icons.person_off_outlined,
-      title: 'Profile unavailable',
+      title: context.l10n.t('profileUnavailable'),
       message: message,
     );
   }

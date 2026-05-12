@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_cubit.dart';
 import 'package:atlas/features/splash/presentation/bloc/splash_state.dart';
@@ -67,9 +68,9 @@ class SplashView extends StatelessWidget {
                           : const Offset(-0.1, 0),
                       duration: const Duration(milliseconds: 1200),
                       curve: Curves.easeOut,
-                      child: const Text(
-                        'Some places\nchange you\nforever.',
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.t('splashHeadline'),
+                        style: const TextStyle(
                           color: AppColors.appPrimaryWhite,
                           fontFamily: AppTheme.fontFamily,
                           fontFamilyFallback: AppTheme.fontFamilyFallback,
@@ -95,9 +96,9 @@ class SplashView extends StatelessWidget {
                           : const Offset(-0.1, 0),
                       duration: const Duration(milliseconds: 1200),
                       curve: Curves.easeOut,
-                      child: const Text(
-                        'Discover, plan and explore with Atlas.',
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.t('splashSubtitle'),
+                        style: const TextStyle(
                           color: Colors.grey,
                           fontFamily: AppTheme.fontFamily,
                           fontFamilyFallback: AppTheme.fontFamilyFallback,

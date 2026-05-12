@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/features/home/presentation/bloc/home_map_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/home_map_state.dart';
@@ -83,7 +84,7 @@ class _CurrentPlaceText extends StatelessWidget {
         ? place.label
         : state.isLoading
         ? '...'
-        : 'your selected area';
+        : context.l10n.t('yourSelectedArea');
     final titleStyle = TextStyle(
       fontSize: 28,
       height: 1,
@@ -95,7 +96,7 @@ class _CurrentPlaceText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "You're currently in",
+          context.l10n.t('youAreCurrentlyIn'),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: titleStyle,

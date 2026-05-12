@@ -1,4 +1,6 @@
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendation_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/recommendations_state.dart';
@@ -30,10 +32,10 @@ class RecommendationsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, 4),
-          child: Text(
-            'Picked for you',
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 4),
+          child: FittedSingleLineText(
+            context.l10n.t('pickedForYou'),
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
         ),
@@ -47,10 +49,10 @@ class RecommendationsSection extends StatelessWidget {
                       strokeWidth: 2,
                     ),
                   )
-                : const TransientErrorPlaceholder(
+                : TransientErrorPlaceholder(
                     icon: CupertinoIcons.square_grid_2x2,
-                    title: 'Recommendations unavailable',
-                    message: 'Pull down from the top to refresh.',
+                    title: context.l10n.t('recommendationsUnavailable'),
+                    message: context.l10n.t('pullToRefresh'),
                   ),
           )
         else if (recommendations.isEmpty)
@@ -74,7 +76,7 @@ class RecommendationsSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'No recommendations yet.',
+                  context.l10n.t('noRecommendations'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,

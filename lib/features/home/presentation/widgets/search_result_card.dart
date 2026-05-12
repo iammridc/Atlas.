@@ -1,3 +1,4 @@
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
 import 'package:atlas/features/home/domain/entity/recommendation_entity.dart';
@@ -13,7 +14,7 @@ class SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locationLabel = _buildLocationLabel(place);
+    final locationLabel = _buildLocationLabel(context, place);
 
     return GestureDetector(
       onTap: () {
@@ -71,7 +72,9 @@ class SearchResultCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      place.name.isEmpty ? 'Unnamed place' : place.name,
+                      place.name.isEmpty
+                          ? context.l10n.t('unnamedPlace')
+                          : place.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -102,14 +105,14 @@ class SearchResultCard extends StatelessWidget {
     );
   }
 
-  String _buildLocationLabel(RecommendationEntity place) {
+  String _buildLocationLabel(BuildContext context, RecommendationEntity place) {
     final parts = [
       place.city,
       place.country,
     ].map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
 
     if (parts.isEmpty) {
-      return 'Explore this destination';
+      return context.l10n.t('exploreDestination');
     }
 
     return parts.join(', ');

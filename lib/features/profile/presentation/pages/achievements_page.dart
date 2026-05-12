@@ -1,5 +1,7 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/features/profile/domain/entities/profile_gamification_entity.dart';
+import 'package:atlas/features/profile/presentation/utils/gamification_localization.dart';
 import 'package:atlas/features/profile/presentation/widgets/profile_page_header.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +28,7 @@ class AchievementsPage extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            const ProfilePageHeader(title: 'Achievements'),
+            ProfilePageHeader(title: context.l10n.t('achievements')),
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
@@ -52,6 +54,7 @@ class _AchievementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = badge.progress.clamp(0, badge.target);
+    final isRussian = Localizations.localeOf(context).languageCode == 'ru';
 
     return _SurfaceBlock(
       child: Row(
@@ -71,12 +74,13 @@ class _AchievementCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        badge.title,
-                        maxLines: 1,
+                        localizedGamificationLabel(context, badge.title),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: isRussian ? 17 : 18,
                           fontWeight: FontWeight.bold,
+                          height: 1.12,
                         ),
                       ),
                     ),
@@ -102,7 +106,7 @@ class _AchievementCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  badge.description,
+                  localizedBadgeDescription(context, badge.description),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

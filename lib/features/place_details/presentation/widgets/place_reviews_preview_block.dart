@@ -1,4 +1,5 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/features/place_details/domain/entities/place_review_entity.dart';
 import 'package:atlas/features/place_details/presentation/widgets/place_review_card.dart';
 import 'package:flutter/cupertino.dart';
@@ -37,7 +38,7 @@ class PlaceReviewsPreviewBlock extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '$totalReviewCount Reviews',
+                context.l10n.named('reviewsCount', {'count': totalReviewCount}),
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -77,7 +78,7 @@ class PlaceReviewsPreviewBlock extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28),
               ),
               child: Text(
-                'No reviews yet. This place will show Google reviews first and Atlas user reviews as they are added.',
+                context.l10n.t('noReviewsPreview'),
                 style: TextStyle(height: 1.45, color: secondaryColor),
               ),
             )

@@ -1,36 +1,17 @@
-import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/home/presentation/bloc/hot_places_cubit.dart';
 import 'package:atlas/features/home/presentation/bloc/hot_places_state.dart';
 import 'package:atlas/features/home/presentation/widgets/recommendation_card.dart';
-import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
+import 'package:atlas/features/profile/presentation/bloc/profile_cubit.dart';
+import 'package:atlas/features/profile/presentation/bloc/profile_state.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class HotPlacesSection extends StatefulWidget {
+class HotPlacesSection extends StatelessWidget {
   const HotPlacesSection({super.key});
-
-  @override
-  State<HotPlacesSection> createState() => _HotPlacesSectionState();
-}
-
-class _HotPlacesSectionState extends State<HotPlacesSection> {
-  late final Future<String?> _usernameFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _usernameFuture = _loadUsername();
-  }
-
-  Future<String?> _loadUsername() async {
-    final result = await getIt<ProfileRepository>().getProfileSummary();
-    return result.fold((_) => null, (profile) {
-      final username = profile.username.trim();
-      return username.isEmpty ? null : username;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,18 +27,19 @@ class _HotPlacesSectionState extends State<HotPlacesSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FutureBuilder<String?>(
-              future: _usernameFuture,
-              builder: (context, snapshot) {
-                final username = snapshot.data?.trim();
+            BlocBuilder<ProfileCubit, ProfileState>(
+              buildWhen: (previous, current) =>
+                  previous.profile?.username != current.profile?.username,
+              builder: (context, profileState) {
+                final username = profileState.profile?.username.trim();
                 if (username == null || username.isEmpty) {
                   return const SizedBox(height: 16);
                 }
 
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 2),
-                  child: Text(
-                    'Welcome, $username!',
+                  child: FittedSingleLineText(
+                    context.l10n.named('welcomeUser', {'username': username}),
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -67,10 +49,10 @@ class _HotPlacesSectionState extends State<HotPlacesSection> {
                 );
               },
             ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(24, 0, 24, 4),
-              child: Text(
-                'Trending today in Atlas',
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+              child: FittedSingleLineText(
+                context.l10n.t('trendingToday'),
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ),
@@ -89,10 +71,10 @@ class _HotPlacesSectionState extends State<HotPlacesSection> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const TransientErrorPlaceholder(
+                    : TransientErrorPlaceholder(
                         icon: CupertinoIcons.flame,
-                        title: 'Hot places unavailable',
-                        message: 'Pull down from the top to refresh.',
+                        title: context.l10n.t('hotPlacesUnavailable'),
+                        message: context.l10n.t('pullToRefresh'),
                       ),
               )
             else if (places.isEmpty)
@@ -116,7 +98,7 @@ class _HotPlacesSectionState extends State<HotPlacesSection> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'No community favourites yet.',
+                      context.l10n.t('noCommunityFavourites'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/theme/app_theme.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 
 class AuthButton extends StatelessWidget {
   final String label;
@@ -70,7 +71,7 @@ class AuthButton extends StatelessWidget {
                   : AppColors.appPrimaryWhite,
             ),
           )
-        : Text(
+        : FittedSingleLineText(
             label,
             style: const TextStyle(
               fontFamily: AppTheme.fontFamily,
@@ -78,6 +79,8 @@ class AuthButton extends StatelessWidget {
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
+            alignment: Alignment.center,
+            textAlign: TextAlign.center,
           );
   }
 }

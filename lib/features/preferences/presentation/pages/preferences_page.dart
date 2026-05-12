@@ -1,8 +1,10 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/features/preferences/domain/entities/category_entity.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_cubit.dart';
 import 'package:atlas/features/preferences/presentation/bloc/preferences_state.dart';
@@ -96,7 +98,7 @@ class _InterestsView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Make It Yours.',
+                      context.l10n.t('makeItYours'),
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -113,13 +115,10 @@ class _InterestsView extends StatelessWidget {
                           height: 1,
                         ),
                         children: [
-                          const TextSpan(
-                            text:
-                                'Choose precisely to personalise your experience, ',
-                          ),
+                          TextSpan(text: context.l10n.t('preferencesIntro')),
                           if (showSkipAction)
                             TextSpan(
-                              text: 'or set it up later.',
+                              text: context.l10n.t('setupLater'),
                               style: TextStyle(
                                 color: isDark ? Colors.white54 : Colors.black45,
                                 decoration: TextDecoration.underline,
@@ -158,7 +157,7 @@ class _InterestsView extends StatelessWidget {
                             ),
                         child: ScrollableTransientErrorPlaceholder(
                           icon: Icons.tune_rounded,
-                          title: 'Preferences unavailable',
+                          title: context.l10n.t('preferencesUnavailable'),
                           message: state.message,
                         ),
                       );
@@ -225,16 +224,22 @@ class _InterestsView extends StatelessWidget {
                             color: isDark ? Colors.black : Colors.white,
                           ),
                         )
-                      : Text(
+                      : FittedSingleLineText(
                           selectedCount == 0
                               ? (allowEmptySelection
-                                    ? 'Save without preferences'
-                                    : 'Choose your preferences to continue')
-                              : 'Save $selectedCount preference${selectedCount == 1 ? '' : 's'}',
+                                    ? context.l10n.t('noPreferencesSaved')
+                                    : context.l10n.t(
+                                        'choosePreferencesToContinue',
+                                      ))
+                              : context.l10n.named('savePreferencesCount', {
+                                  'count': selectedCount,
+                                }),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
+                          alignment: Alignment.center,
+                          textAlign: TextAlign.center,
                         ),
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:auto_route/auto_route.dart';
@@ -59,6 +60,9 @@ class _SignupViewState extends State<_SignupView> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final l10n = context.l10n;
+    final isRussian = Localizations.localeOf(context).languageCode == 'ru';
+    final authRedirectFontSize = isRussian ? 16.0 : 14.0;
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
@@ -67,7 +71,7 @@ class _SignupViewState extends State<_SignupView> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             AppSnackbar.show(
               context,
-              message: 'Account has been successfully created!',
+              message: context.l10n.t('accountCreated'),
               type: SnackbarType.success,
             );
           });
@@ -128,7 +132,7 @@ class _SignupViewState extends State<_SignupView> {
                           const Spacer(),
 
                           Text(
-                            'New\nHorizons.',
+                            l10n.t('newHorizons'),
                             style: TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,
@@ -142,7 +146,7 @@ class _SignupViewState extends State<_SignupView> {
                           const SizedBox(height: 8),
 
                           Text(
-                            'Thousands of places. One account.',
+                            l10n.t('authSubtitleSignUp'),
                             style: TextStyle(
                               fontSize: 16,
                               color: isDark ? Colors.white38 : Colors.black38,
@@ -156,16 +160,16 @@ class _SignupViewState extends State<_SignupView> {
                           const SizedBox(height: 12),
 
                           AuthTextField(
-                            hint: 'Email',
+                            hint: l10n.t('email'),
                             controller: _emailController,
                             focusNode: _emailFocusNode,
                             keyboardType: TextInputType.emailAddress,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
+                                return l10n.t('email');
                               }
                               if (!value.contains('@')) {
-                                return 'Please enter a valid email';
+                                return l10n.t('email');
                               }
                               return null;
                             },
@@ -174,15 +178,15 @@ class _SignupViewState extends State<_SignupView> {
                           const SizedBox(height: 16),
 
                           AuthTextField(
-                            hint: 'Password',
+                            hint: l10n.t('password'),
                             controller: _passwordController,
                             isPassword: true,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter a password';
+                                return l10n.t('password');
                               }
                               if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
+                                return l10n.t('passwordTooShort');
                               }
                               return null;
                             },
@@ -191,13 +195,13 @@ class _SignupViewState extends State<_SignupView> {
                           const SizedBox(height: 16),
 
                           AuthTextField(
-                            hint: 'Confirm Password',
+                            hint: l10n.t('confirmPassword'),
                             controller: _confirmPasswordController,
                             isPassword: true,
                             matchController: _passwordController,
                             validator: (value) {
                               if (value != _passwordController.text) {
-                                return 'Passwords do not match';
+                                return l10n.t('passwordsDoNotMatch');
                               }
                               return null;
                             },
@@ -208,7 +212,7 @@ class _SignupViewState extends State<_SignupView> {
                           BlocBuilder<AuthCubit, AuthState>(
                             builder: (context, state) {
                               return AuthButton(
-                                label: 'Create Account',
+                                label: l10n.t('createAccount'),
                                 isLoading: state is AuthLoading,
                                 onPressed: () {
                                   if (_formKey.currentState!.validate()) {
@@ -228,9 +232,9 @@ class _SignupViewState extends State<_SignupView> {
                             child: GestureDetector(
                               onTap: () => context.router.back(),
                               child: Text(
-                                'Already have an account? Sign in',
+                                l10n.t('alreadyHaveAccount'),
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: authRedirectFontSize,
                                   color: isDark
                                       ? Colors.white38
                                       : Colors.black54,

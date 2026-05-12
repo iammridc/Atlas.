@@ -1,4 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/core/widgets/transient_error_placeholder.dart';
 import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:atlas/features/home/presentation/bloc/search_places_cubit.dart';
@@ -11,8 +13,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SearchTabView extends StatefulWidget {
   final VoidCallback onBackToHome;
+  final bool isActive;
+  final int activationToken;
 
-  const SearchTabView({super.key, required this.onBackToHome});
+  const SearchTabView({
+    super.key,
+    required this.onBackToHome,
+    required this.isActive,
+    required this.activationToken,
+  });
 
   @override
   State<SearchTabView> createState() => _SearchTabViewState();
@@ -29,6 +38,19 @@ class _SearchTabViewState extends State<SearchTabView> {
     _controller = TextEditingController(text: searchCubit.state.query);
     _focusNode = FocusNode()..addListener(_handleFocusChanged);
     _controller.addListener(_handleQueryChanged);
+    if (widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _focusSearchField());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SearchTabView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive &&
+        (!oldWidget.isActive ||
+            oldWidget.activationToken != widget.activationToken)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _focusSearchField());
+    }
   }
 
   @override
@@ -48,6 +70,11 @@ class _SearchTabViewState extends State<SearchTabView> {
 
   void _handleQueryChanged() {
     context.read<SearchPlacesCubit>().onQueryChanged(_controller.text);
+  }
+
+  void _focusSearchField() {
+    if (!mounted) return;
+    _focusNode.requestFocus();
   }
 
   void _applyQuery(String query, {bool saveToRecent = true}) {
@@ -161,7 +188,7 @@ class _SearchTabViewState extends State<SearchTabView> {
                                 fontWeight: FontWeight.w600,
                               ),
                               decoration: InputDecoration.collapsed(
-                                hintText: 'Search places, cities, landmarks...',
+                                hintText: context.l10n.t('searchHint'),
                                 hintStyle: TextStyle(
                                   color: secondaryTextColor,
                                   fontSize: 16,
@@ -204,7 +231,7 @@ class _SearchTabViewState extends State<SearchTabView> {
               if (state.filters.hasActiveFilters) ...[
                 const SizedBox(height: 12),
                 _ActiveSearchFilterBar(
-                  label: state.filters.summaryLabel,
+                  label: _localizedFilterSummary(context, state.filters),
                   isDark: isDark,
                   onClear: () =>
                       context.read<SearchPlacesCubit>().clearFilters(),
@@ -256,6 +283,23 @@ class _SearchTabViewState extends State<SearchTabView> {
       ),
     );
   }
+}
+
+String _localizedFilterSummary(
+  BuildContext context,
+  SearchPlacesFilterEntity filters,
+) {
+  if (filters.categoryLabels.isEmpty) return '';
+  if (filters.categoryLabels.length == 1) {
+    return localizedSearchFilterCategoryLabel(
+      context,
+      filters.categoryIds.first,
+      filters.categoryLabels.first,
+    );
+  }
+  return context.l10n.named('placeTypesCount', {
+    'count': filters.categoryLabels.length,
+  });
 }
 
 class _TopIconButton extends StatelessWidget {
@@ -337,10 +381,8 @@ class _ActiveSearchFilterBar extends StatelessWidget {
         Icon(CupertinoIcons.slider_horizontal_3, size: 18, color: titleColor),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(
+          child: FittedSingleLineText(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: titleColor,
               fontSize: 16,
@@ -351,7 +393,7 @@ class _ActiveSearchFilterBar extends StatelessWidget {
         IconButton(
           onPressed: onClear,
           icon: Icon(CupertinoIcons.xmark, size: 18, color: secondaryColor),
-          tooltip: 'Clear filter',
+          tooltip: context.l10n.t('clearFilter'),
         ),
       ],
     );
@@ -389,15 +431,13 @@ class _RecentRequestsView extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                'Recent Requests',
+              child: FittedSingleLineText(
+                context.l10n.t('recentRequests'),
                 style: TextStyle(
                   color: titleColor,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             TextButton(
@@ -406,8 +446,8 @@ class _RecentRequestsView extends StatelessWidget {
                 foregroundColor: AppColors.errorColor,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
-              child: const Text(
-                'Clear All',
+              child: Text(
+                context.l10n.t('clearAll'),
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -462,17 +502,20 @@ class _SearchResultsView extends StatelessWidget {
           parent: BouncingScrollPhysics(),
         ),
         children: [
-          Text(
+          FittedSingleLineText(
             state.isLoading
-                ? 'Searching...'
-                : 'Found ${state.results.length} ${state.results.length == 1 ? 'Result' : 'Results'}',
+                ? context.l10n.t('searching')
+                : context.l10n.named('foundResults', {
+                    'count': state.results.length,
+                    'label': state.results.length == 1
+                        ? context.l10n.t('result')
+                        : context.l10n.t('results'),
+                  }),
             style: TextStyle(
               color: titleColor,
               fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
           if (state.isLoading)
@@ -488,15 +531,14 @@ class _SearchResultsView extends StatelessWidget {
           else if (state.hasError)
             TransientErrorPlaceholder(
               icon: Icons.wifi_off_rounded,
-              title: 'Couldn’t load search results',
+              title: context.l10n.t('couldNotLoadSearchResults'),
               message: state.errorMessage,
             )
           else if (state.hasSearched && state.results.isEmpty)
             _EmptyStateCard(
               icon: CupertinoIcons.search,
-              title: 'No matches found',
-              subtitle:
-                  'Try a place name, city, or landmark with a little more detail.',
+              title: context.l10n.t('noMatchesFound'),
+              subtitle: context.l10n.t('tryMoreDetails'),
               surfaceColor: surfaceColor,
               borderColor: borderColor,
               titleColor: titleColor,
@@ -535,10 +577,8 @@ class _RecentQueryTile extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       leading: Icon(CupertinoIcons.time, size: 24, color: titleColor),
-      title: Text(
+      title: FittedSingleLineText(
         query,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: titleColor,
           fontSize: 16,
@@ -546,7 +586,7 @@ class _RecentQueryTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        'Recent request',
+        context.l10n.t('recentRequest'),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(color: secondaryTextColor),
@@ -554,7 +594,7 @@ class _RecentQueryTile extends StatelessWidget {
       trailing: IconButton(
         onPressed: onRemove,
         icon: Icon(CupertinoIcons.xmark, size: 20, color: secondaryTextColor),
-        tooltip: 'Remove',
+        tooltip: context.l10n.t('remove'),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );

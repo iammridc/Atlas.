@@ -1,4 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/features/home/domain/entity/search_places_filter_entity.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,50 +20,20 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
   static const _categories = [
     _SearchFilterCategory(
       id: 'tourist_attraction',
-      label: 'Tourist Attractions',
       icon: CupertinoIcons.sparkles,
     ),
-    _SearchFilterCategory(
-      id: 'museum',
-      label: 'Museums',
-      icon: CupertinoIcons.building_2_fill,
-    ),
-    _SearchFilterCategory(
-      id: 'park',
-      label: 'Parks',
-      icon: CupertinoIcons.tree,
-    ),
+    _SearchFilterCategory(id: 'museum', icon: CupertinoIcons.building_2_fill),
+    _SearchFilterCategory(id: 'park', icon: CupertinoIcons.tree),
     _SearchFilterCategory(
       id: 'art_gallery',
-      label: 'Art Galleries',
       icon: CupertinoIcons.photo_on_rectangle,
     ),
-    _SearchFilterCategory(
-      id: 'restaurant',
-      label: 'Restaurants',
-      icon: Icons.restaurant_outlined,
-    ),
-    _SearchFilterCategory(
-      id: 'cafe',
-      label: 'Cafes',
-      icon: Icons.local_cafe_outlined,
-    ),
-    _SearchFilterCategory(
-      id: 'shopping_mall',
-      label: 'Shopping',
-      icon: CupertinoIcons.bag,
-    ),
-    _SearchFilterCategory(
-      id: 'hotel',
-      label: 'Hotels',
-      icon: Icons.hotel_outlined,
-    ),
-    _SearchFilterCategory(
-      id: 'bar',
-      label: 'Bars',
-      icon: Icons.local_bar_outlined,
-    ),
-    _SearchFilterCategory(id: 'zoo', label: 'Zoos', icon: Icons.pets_outlined),
+    _SearchFilterCategory(id: 'restaurant', icon: Icons.restaurant_outlined),
+    _SearchFilterCategory(id: 'cafe', icon: Icons.local_cafe_outlined),
+    _SearchFilterCategory(id: 'shopping_mall', icon: CupertinoIcons.bag),
+    _SearchFilterCategory(id: 'hotel', icon: Icons.hotel_outlined),
+    _SearchFilterCategory(id: 'bar', icon: Icons.local_bar_outlined),
+    _SearchFilterCategory(id: 'zoo', icon: Icons.pets_outlined),
   ];
 
   @override
@@ -101,7 +73,7 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Search Filters',
+                            context.l10n.t('searchFilters'),
                             maxLines: 1,
                             softWrap: false,
                             style: TextStyle(
@@ -121,13 +93,13 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
                     padding: const EdgeInsets.fromLTRB(24, 26, 24, 78),
                     children: [
                       _FilterSectionTitle(
-                        title: 'Place Type',
+                        title: context.l10n.t('placeType'),
                         color: secondaryColor,
                       ),
                       const SizedBox(height: 8),
                       _FilterOptionTile(
                         icon: CupertinoIcons.circle_grid_hex,
-                        title: 'All Places',
+                        title: context.l10n.t('allPlaces'),
                         isSelected: !_filters.hasCategories,
                         titleColor: titleColor,
                         secondaryColor: secondaryColor,
@@ -138,14 +110,20 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
                       ..._categories.map(
                         (category) => _FilterOptionTile(
                           icon: category.icon,
-                          title: category.label,
+                          title: localizedSearchFilterCategoryLabel(
+                            context,
+                            category.id,
+                          ),
                           isSelected: _filters.containsCategory(category.id),
                           titleColor: titleColor,
                           secondaryColor: secondaryColor,
                           onTap: () => setState(() {
                             _filters = _filters.toggleCategory(
                               id: category.id,
-                              label: category.label,
+                              label: localizedSearchFilterCategoryLabel(
+                                context,
+                                category.id,
+                              ),
                             );
                           }),
                         ),
@@ -167,8 +145,10 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
                 onPressed: () => Navigator.of(context).pop(_filters),
                 child: Text(
                   _filters.hasActiveFilters
-                      ? 'Apply ${_filters.activeCount} filter${_filters.activeCount == 1 ? '' : 's'}'
-                      : 'Apply Filters',
+                      ? context.l10n.named('applyFiltersCount', {
+                          'count': _filters.activeCount,
+                        })
+                      : context.l10n.t('applyFilters'),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -185,14 +165,30 @@ class _SearchFiltersPageState extends State<SearchFiltersPage> {
 
 class _SearchFilterCategory {
   final String id;
-  final String label;
   final IconData icon;
 
-  const _SearchFilterCategory({
-    required this.id,
-    required this.label,
-    required this.icon,
-  });
+  const _SearchFilterCategory({required this.id, required this.icon});
+}
+
+String localizedSearchFilterCategoryLabel(
+  BuildContext context,
+  String id, [
+  String? fallback,
+]) {
+  final key = switch (id) {
+    'tourist_attraction' => 'touristAttractions',
+    'museum' => 'museums',
+    'park' => 'parks',
+    'art_gallery' => 'artGalleries',
+    'restaurant' => 'restaurant',
+    'cafe' => 'cafes',
+    'shopping_mall' => 'shopping',
+    'hotel' => 'hotels',
+    'bar' => 'bars',
+    'zoo' => 'zoos',
+    _ => null,
+  };
+  return key == null ? (fallback ?? id) : context.l10n.t(key);
 }
 
 class _FilterSectionTitle extends StatelessWidget {
@@ -239,7 +235,7 @@ class _FilterOptionTile extends StatelessWidget {
             Icon(icon, color: titleColor, size: 24),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
+              child: FittedSingleLineText(
                 title,
                 style: TextStyle(
                   color: titleColor,

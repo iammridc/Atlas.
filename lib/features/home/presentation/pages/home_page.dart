@@ -1,5 +1,7 @@
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/localization/locale_cubit.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/theme/cubit/theme_cubit.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
@@ -17,6 +19,7 @@ import 'package:atlas/features/home/presentation/widgets/map_section.dart';
 import 'package:atlas/features/home/presentation/widgets/recommendation_section.dart';
 import 'package:atlas/features/home/presentation/widgets/search_tab_view.dart';
 import 'package:atlas/features/profile/domain/repositories/profile_repository.dart';
+import 'package:atlas/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:atlas/features/profile/presentation/pages/profile_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -41,8 +44,10 @@ class _HomePageState extends State<HomePage> {
   late final HotPlacesCubit _hotPlacesCubit;
   late final SearchPlacesCubit _searchPlacesCubit;
   late final HomeMapCubit _homeMapCubit;
+  late final ProfileCubit _profileCubit;
   late List<String> _categoryTypes;
   int _selectedIndex = 0;
+  int _searchActivationToken = 0;
 
   @override
   void initState() {
@@ -53,6 +58,7 @@ class _HomePageState extends State<HomePage> {
       ..loadRecommendations(_categoryTypes);
     _searchPlacesCubit = getIt<SearchPlacesCubit>()..initialize();
     _homeMapCubit = getIt<HomeMapCubit>();
+    _profileCubit = getIt<ProfileCubit>()..loadProfile();
   }
 
   @override
@@ -61,6 +67,7 @@ class _HomePageState extends State<HomePage> {
     _recommendationsCubit.close();
     _searchPlacesCubit.close();
     _homeMapCubit.close();
+    _profileCubit.close();
     super.dispose();
   }
 
@@ -81,6 +88,7 @@ class _HomePageState extends State<HomePage> {
         BlocProvider.value(value: _hotPlacesCubit),
         BlocProvider.value(value: _searchPlacesCubit),
         BlocProvider.value(value: _homeMapCubit),
+        BlocProvider.value(value: _profileCubit),
       ],
       child: Scaffold(
         extendBody: true,
@@ -96,6 +104,8 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const _RecommendationsView(),
                   SearchTabView(
+                    isActive: _selectedIndex == 1,
+                    activationToken: _searchActivationToken,
                     onBackToHome: () => setState(() => _selectedIndex = 0),
                   ),
                   ProfilePage(
@@ -129,24 +139,28 @@ class _HomePageState extends State<HomePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: HomeBottomNavBar(
                         selectedIndex: _selectedIndex,
-                        onSelected: (index) =>
-                            setState(() => _selectedIndex = index),
-                        items: const [
+                        onSelected: (index) => setState(() {
+                          _selectedIndex = index;
+                          if (index == 1) {
+                            _searchActivationToken++;
+                          }
+                        }),
+                        items: [
                           HomeBottomNavBarItem(
                             icon: CupertinoIcons.house_fill,
-                            label: 'Home',
+                            label: context.l10n.t('home'),
                           ),
                           HomeBottomNavBarItem(
                             icon: CupertinoIcons.search,
-                            label: 'Search',
+                            label: context.l10n.t('search'),
                           ),
                           HomeBottomNavBarItem(
                             icon: CupertinoIcons.person_fill,
-                            label: 'Profile',
+                            label: context.l10n.t('profile'),
                           ),
                           HomeBottomNavBarItem(
                             icon: CupertinoIcons.gear_alt_fill,
-                            label: 'Settings',
+                            label: context.l10n.t('settings'),
                           ),
                         ],
                       ),
@@ -304,6 +318,8 @@ class _SettingsViewState extends State<_SettingsView> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = getIt<FirebaseAuth>().currentUser;
+    final l10n = context.l10n;
+    final locale = context.watch<LocaleCubit>().state;
 
     return SafeArea(
       bottom: false,
@@ -339,7 +355,7 @@ class _SettingsViewState extends State<_SettingsView> {
                 ),
                 children: [
                   Text(
-                    'Settings',
+                    l10n.t('settings'),
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -348,7 +364,7 @@ class _SettingsViewState extends State<_SettingsView> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tune Atlas around how you travel.',
+                    l10n.t('settingsSubtitle'),
                     style: TextStyle(
                       fontSize: 16,
                       color: isDark ? Colors.white54 : Colors.black54,
@@ -359,22 +375,22 @@ class _SettingsViewState extends State<_SettingsView> {
                     const Center(child: CircularProgressIndicator())
                   else ...[
                     _SettingsSection(
-                      title: 'Appearance',
+                      title: l10n.t('appearance'),
                       children: [
                         BlocBuilder<ThemeCubit, AppThemeMode>(
                           bloc: getIt<ThemeCubit>(),
                           builder: (context, themeMode) {
                             return _SettingsValueTile(
                               icon: CupertinoIcons.moon_stars,
-                              title: 'Theme',
+                              title: l10n.t('theme'),
                               value: _themeModeLabel(themeMode),
                               onTap: () => _chooseValue<AppThemeMode>(
-                                title: 'Theme',
+                                title: l10n.t('theme'),
                                 values: AppThemeMode.values,
-                                labels: const {
-                                  AppThemeMode.light: 'Light',
-                                  AppThemeMode.dark: 'Dark',
-                                  AppThemeMode.system: 'System',
+                                labels: {
+                                  AppThemeMode.light: l10n.t('light'),
+                                  AppThemeMode.dark: l10n.t('dark'),
+                                  AppThemeMode.system: l10n.t('system'),
                                 },
                                 current: themeMode,
                                 onSelected: (value) => getIt<ThemeCubit>()
@@ -386,12 +402,12 @@ class _SettingsViewState extends State<_SettingsView> {
                       ],
                     ),
                     _SettingsSection(
-                      title: 'Personalization',
+                      title: l10n.t('personalization'),
                       children: [
                         _SettingsSwitchTile(
                           icon: CupertinoIcons.heart,
-                          title: 'Use favorites',
-                          subtitle: 'Improve recommendations from saved places',
+                          title: l10n.t('useFavorites'),
+                          subtitle: l10n.t('useFavoritesSubtitle'),
                           value: _useFavorites,
                           onChanged: (value) => _setBool(
                             _useFavoritesKey,
@@ -401,8 +417,8 @@ class _SettingsViewState extends State<_SettingsView> {
                         ),
                         _SettingsSwitchTile(
                           icon: CupertinoIcons.star,
-                          title: 'Use reviews',
-                          subtitle: 'Improve recommendations from your ratings',
+                          title: l10n.t('useReviews'),
+                          subtitle: l10n.t('useReviewsSubtitle'),
                           value: _useReviews,
                           onChanged: (value) => _setBool(
                             _useReviewsKey,
@@ -412,8 +428,10 @@ class _SettingsViewState extends State<_SettingsView> {
                         ),
                         _SettingsSwitchTile(
                           icon: CupertinoIcons.bell,
-                          title: 'Recommendation notifications',
-                          subtitle: 'Get prompts when Atlas finds new ideas',
+                          title: l10n.t('recommendationNotifications'),
+                          subtitle: l10n.t(
+                            'recommendationNotificationsSubtitle',
+                          ),
                           value: _recommendationNotifications,
                           onChanged: (value) => _setBool(
                             _recommendationNotificationsKey,
@@ -424,36 +442,39 @@ class _SettingsViewState extends State<_SettingsView> {
                       ],
                     ),
                     _SettingsSection(
-                      title: 'Privacy & Data',
+                      title: l10n.t('privacyData'),
                       children: [
                         _SettingsSwitchTile(
                           icon: CupertinoIcons.eye,
-                          title: 'Public reviews',
+                          title: l10n.t('publicReviews'),
                           subtitle: _publicReviews
-                              ? 'Your name and avatar can appear on reviews'
-                              : 'Reviews stay private to your profile',
+                              ? l10n.t('reviewsPublicSubtitle')
+                              : l10n.t('reviewsPrivateSubtitle'),
                           value: _publicReviews,
                           onChanged: _setPublicReviews,
                         ),
                         _SettingsActionTile(
                           icon: CupertinoIcons.trash,
-                          title: 'Clear local cache/history',
-                          subtitle: 'Remove recent searches on this device',
+                          title: l10n.t('clearLocalCache'),
+                          subtitle: l10n.t('clearLocalCacheSubtitle'),
                           onTap: _clearLocalHistory,
                         ),
                       ],
                     ),
                     _SettingsSection(
-                      title: 'Region',
+                      title: l10n.t('region'),
                       children: [
                         _SettingsValueTile(
                           icon: CupertinoIcons.location,
-                          title: 'Distance Unit',
+                          title: l10n.t('distanceUnit'),
                           value: _distanceUnitLabel(_distanceUnit),
                           onTap: () => _chooseValue(
-                            title: 'Distance Unit',
+                            title: l10n.t('distanceUnit'),
                             values: const ['km', 'mi'],
-                            labels: const {'km': 'Kilometers', 'mi': 'Miles'},
+                            labels: {
+                              'km': l10n.t('kilometers'),
+                              'mi': l10n.t('miles'),
+                            },
                             current: _distanceUnit,
                             onSelected: (value) => _setString(
                               _distanceUnitKey,
@@ -464,25 +485,29 @@ class _SettingsViewState extends State<_SettingsView> {
                         ),
                         _SettingsValueTile(
                           icon: CupertinoIcons.globe,
-                          title: 'Language',
-                          value: _language,
+                          title: l10n.t('language'),
+                          value: LocaleCubit.labelForLocale(locale),
                           onTap: () => _chooseValue(
-                            title: 'Language',
-                            values: const ['English', 'Русский'],
-                            current: _language,
-                            onSelected: (value) => _setString(
-                              _languageKey,
-                              value,
-                              (next) => _language = next,
-                            ),
+                            title: l10n.t('language'),
+                            values: const [
+                              LocaleCubit.englishLabel,
+                              LocaleCubit.russianLabel,
+                            ],
+                            current: LocaleCubit.labelForLocale(locale),
+                            onSelected: (value) async {
+                              setState(() => _language = value);
+                              await getIt<LocaleCubit>().setLanguageLabel(
+                                value,
+                              );
+                            },
                           ),
                         ),
                         _SettingsValueTile(
                           icon: CupertinoIcons.money_dollar_circle,
-                          title: 'Currency',
+                          title: l10n.t('currency'),
                           value: _currency,
                           onTap: () => _chooseValue(
-                            title: 'Currency',
+                            title: l10n.t('currency'),
                             values: const ['RUB', 'BYN', 'EUR', 'USD'],
                             current: _currency,
                             onSelected: (value) => _setString(
@@ -495,50 +520,48 @@ class _SettingsViewState extends State<_SettingsView> {
                       ],
                     ),
                     _SettingsSection(
-                      title: 'Support',
+                      title: l10n.t('support'),
                       children: [
-                        const _SettingsInfoTile(
+                        _SettingsInfoTile(
                           icon: CupertinoIcons.info,
-                          title: 'App version',
+                          title: l10n.t('appVersion'),
                           value: '0.1.0',
                         ),
                         _SettingsActionTile(
                           icon: CupertinoIcons.doc_text,
-                          title: 'Terms / Privacy policy',
-                          subtitle: 'Read Atlas terms and privacy notes',
+                          title: l10n.t('termsPrivacy'),
+                          subtitle: l10n.t('termsPrivacySubtitle'),
                           onTap: () => _showInfoDialog(
-                            title: 'Terms / Privacy policy',
-                            message:
-                                'Atlas stores profile, preference, favorite, review, and trip data to provide recommendations and sync your travel activity. Add your final legal text or external policy links here before release.',
+                            title: l10n.t('termsPrivacy'),
+                            message: l10n.t('termsPrivacyMessage'),
                           ),
                         ),
                         _SettingsActionTile(
                           icon: CupertinoIcons.mail,
-                          title: 'Contact support / feedback',
-                          subtitle: 'Send feedback to the Atlas team',
+                          title: l10n.t('contactSupport'),
+                          subtitle: l10n.t('contactSupportSubtitle'),
                           onTap: () => _showInfoDialog(
-                            title: 'Contact support / feedback',
-                            message:
-                                'Email support@atlas.app with your feedback, bug reports, or feature ideas.',
+                            title: l10n.t('contactSupport'),
+                            message: l10n.t('contactSupportMessage'),
                           ),
                         ),
                       ],
                     ),
                     _SettingsSection(
-                      title: 'Account',
+                      title: l10n.t('account'),
                       children: [
                         _SettingsActionTile(
                           icon: CupertinoIcons.square_arrow_right,
-                          title: 'Log out',
-                          subtitle: user?.email ?? 'Return to sign in',
+                          title: l10n.t('logOut'),
+                          subtitle: user?.email ?? l10n.t('returnToSignIn'),
                           onTap: isLoading
                               ? null
                               : () => getIt<AuthCubit>().signOut(),
                         ),
                         _SettingsActionTile(
                           icon: CupertinoIcons.delete_simple,
-                          title: 'Delete account',
-                          subtitle: 'Permanently remove your Atlas account',
+                          title: l10n.t('deleteAccount'),
+                          subtitle: l10n.t('deleteAccountSubtitle'),
                           isDestructive: true,
                           onTap: isLoading ? null : _confirmDeleteAccount,
                         ),
@@ -565,7 +588,7 @@ class _SettingsViewState extends State<_SettingsView> {
     if (!mounted) return;
     AppSnackbar.show(
       context,
-      message: 'Local search history cleared.',
+      message: context.l10n.t('localHistoryCleared'),
       type: SnackbarType.success,
     );
   }
@@ -587,7 +610,9 @@ class _SettingsViewState extends State<_SettingsView> {
       },
       (_) => AppSnackbar.show(
         context,
-        message: value ? 'Reviews are public.' : 'Reviews are private.',
+        message: value
+            ? context.l10n.t('reviewsArePublic')
+            : context.l10n.t('reviewsArePrivate'),
         type: SnackbarType.success,
       ),
     );
@@ -595,16 +620,16 @@ class _SettingsViewState extends State<_SettingsView> {
 
   String _distanceUnitLabel(String value) {
     return switch (value) {
-      'mi' => 'Miles',
-      _ => 'Kilometers',
+      'mi' => context.l10n.t('miles'),
+      _ => context.l10n.t('kilometers'),
     };
   }
 
   String _themeModeLabel(AppThemeMode value) {
     return switch (value) {
-      AppThemeMode.light => 'Light',
-      AppThemeMode.dark => 'Dark',
-      AppThemeMode.system => 'System',
+      AppThemeMode.light => context.l10n.t('light'),
+      AppThemeMode.dark => context.l10n.t('dark'),
+      AppThemeMode.system => context.l10n.t('system'),
     };
   }
 
@@ -682,7 +707,7 @@ class _SettingsViewState extends State<_SettingsView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(context.l10n.t('ok')),
           ),
         ],
       ),
@@ -707,18 +732,16 @@ class _DeleteAccountDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Delete account?'),
-      content: const Text(
-        'This removes your profile, favorites, reviews, and trips.',
-      ),
+      title: Text(context.l10n.t('deleteAccountTitle')),
+      content: Text(context.l10n.t('deleteAccountMessage')),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.t('cancel')),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Delete'),
+          child: Text(context.l10n.t('delete')),
         ),
       ],
     );
@@ -797,19 +820,19 @@ class _SettingsSwitchTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: titleColor,
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      height: 1.15,
+                      height: 1.18,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: subtitleColor,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                       height: 1.3,
                     ),
@@ -941,19 +964,23 @@ class _SettingsPlainTile extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: effectiveTitleColor,
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    height: 1.15,
+                    height: 1.18,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: subtitleColor,
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                     height: 1.3,
                   ),

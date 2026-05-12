@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:atlas/core/consts/app_colors.dart';
 import 'package:atlas/core/injections/injections.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
@@ -139,7 +140,7 @@ class _HomeMapViewState extends State<_HomeMapView> {
                   isDark: isDark,
                   icon: CupertinoIcons.chevron_left,
                   onPressed: () => context.router.maybePop(),
-                  tooltip: 'Back',
+                  tooltip: context.l10n.t('back'),
                 ),
               ),
               Positioned(
@@ -148,7 +149,8 @@ class _HomeMapViewState extends State<_HomeMapView> {
                 right: 78,
                 child: _MapLocationPill(
                   isDark: isDark,
-                  label: state.cameraPlace?.label ?? 'Map location',
+                  label:
+                      state.cameraPlace?.label ?? context.l10n.t('mapLocation'),
                 ),
               ),
               Positioned(
@@ -169,17 +171,17 @@ class _HomeMapViewState extends State<_HomeMapView> {
                   bottom: previewBottomOffset,
                   child: _MapSurface(
                     isDark: isDark,
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
+                        const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Text(
-                          'Loading place info...',
+                          context.l10n.t('loadingPlaceInfo'),
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -313,21 +315,21 @@ class _MapControlColumn extends StatelessWidget {
           isDark: isDark,
           icon: CupertinoIcons.location,
           onPressed: onLocate,
-          tooltip: 'Current position',
+          tooltip: context.l10n.t('currentPosition'),
         ),
         const SizedBox(height: 10),
         _MapButton(
           isDark: isDark,
           icon: CupertinoIcons.plus,
           onPressed: onZoomIn,
-          tooltip: 'Closer',
+          tooltip: context.l10n.t('closer'),
         ),
         const SizedBox(height: 10),
         _MapButton(
           isDark: isDark,
           icon: CupertinoIcons.minus,
           onPressed: onZoomOut,
-          tooltip: 'Farther',
+          tooltip: context.l10n.t('farther'),
         ),
         const SizedBox(height: 10),
         _MapModeButton(
@@ -358,7 +360,7 @@ class _MapModeButton extends StatelessWidget {
         : AppColors.appPrimaryBlack;
 
     return Tooltip(
-      message: 'Switch to $label',
+      message: context.l10n.named('switchToMapMode', {'label': label}),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,
@@ -430,7 +432,7 @@ class _PlacePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locationLabel = _locationLabel(place);
+    final locationLabel = _locationLabel(context, place);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -496,13 +498,13 @@ class _PlacePreview extends StatelessWidget {
     );
   }
 
-  String _locationLabel(RecommendationEntity place) {
+  String _locationLabel(BuildContext context, RecommendationEntity place) {
     final parts = [
       place.city,
       place.country,
     ].where((part) => part.trim().isNotEmpty).toList();
 
-    return parts.isEmpty ? 'Nearby place' : parts.join(', ');
+    return parts.isEmpty ? context.l10n.t('nearbyPlace') : parts.join(', ');
   }
 }
 
@@ -603,8 +605,8 @@ class _LocationGate extends StatelessWidget {
     if (!isLoading) {
       return ScrollableTransientErrorPlaceholder(
         icon: CupertinoIcons.location_slash,
-        title: 'Location unavailable',
-        message: message ?? 'Pull down from the top to try again.',
+        title: context.l10n.t('locationUnavailable'),
+        message: _localizedLocationMessage(context, message),
       );
     }
 
@@ -617,8 +619,8 @@ class _LocationGate extends StatelessWidget {
             children: [
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
-              const Text(
-                'Finding your current location...',
+              Text(
+                context.l10n.t('findingCurrentLocation'),
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
@@ -628,4 +630,12 @@ class _LocationGate extends StatelessWidget {
       ),
     );
   }
+}
+
+String _localizedLocationMessage(BuildContext context, String? message) {
+  return switch (message) {
+    'No place information found here.' => context.l10n.t('noPlaceInfoHere'),
+    null => context.l10n.t('pullToTryAgain'),
+    _ => message,
+  };
 }

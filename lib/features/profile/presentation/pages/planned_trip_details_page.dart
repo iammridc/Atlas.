@@ -1,6 +1,8 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/router/app_router.dart';
 import 'package:atlas/core/utils/google_places_photo.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:atlas/features/profile/domain/entities/planned_trip_entity.dart';
 import 'package:atlas/features/profile/presentation/widgets/profile_page_header.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_location_entity.dart';
@@ -42,9 +44,11 @@ class PlannedTripDetailsPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(26),
               ),
             ),
-            child: const Text(
-              'Not interesting anymore',
+            child: FittedSingleLineText(
+              context.l10n.t('notInterestingAnymore'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              alignment: Alignment.center,
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -53,7 +57,7 @@ class PlannedTripDetailsPage extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            const ProfilePageHeader(title: 'Saved Route'),
+            ProfilePageHeader(title: context.l10n.t('savedRoute')),
             Expanded(
               child: trip.hasRouteSnapshot
                   ? _RouteSnapshotView(trip: trip)
@@ -85,8 +89,8 @@ class _RouteSnapshotView extends StatelessWidget {
         const SizedBox(height: 22),
         _SavedRouteHeader(route: route),
         const SizedBox(height: 22),
-        const Text(
-          'Fixed route',
+        Text(
+          context.l10n.t('fixedRoute'),
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
@@ -94,14 +98,14 @@ class _RouteSnapshotView extends StatelessWidget {
         if (trip.selectedPointsOfInterest.isNotEmpty) ...[
           const SizedBox(height: 18),
           _SavedStopsSection(
-            title: 'Chosen places',
+            title: context.l10n.t('chosenPlaces'),
             stops: trip.selectedPointsOfInterest,
           ),
         ],
         if (trip.selectedHotels.isNotEmpty) ...[
           const SizedBox(height: 18),
           _SavedStopsSection(
-            title: 'Chosen hotels',
+            title: context.l10n.t('chosenHotels'),
             stops: trip.selectedHotels,
           ),
         ],
@@ -209,11 +213,11 @@ class _SavedRouteHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                route.title,
-                style: const TextStyle(
-                  fontSize: 28,
+                routeTitleLabel(context, route),
+                style: TextStyle(
+                  fontSize: isRussianLocale(context) ? 25 : 28,
                   fontWeight: FontWeight.bold,
-                  height: 1.04,
+                  height: 1.06,
                 ),
               ),
               const SizedBox(height: 10),
@@ -221,11 +225,14 @@ class _SavedRouteHeader extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 8,
                 children: [
-                  _InfoPill(label: routeDurationLabel(route)),
+                  _InfoPill(label: routeDurationLabel(context, route)),
                   if (route.priceLabel != null)
-                    _InfoPill(label: route.priceLabel!),
-                  _InfoPill(label: routeTransferLabel(route)),
-                  if (route.isEstimated) const _InfoPill(label: 'Estimated'),
+                    _InfoPill(
+                      label: routePriceLabel(context, route.priceLabel!),
+                    ),
+                  _InfoPill(label: routeTransferLabel(context, route)),
+                  if (route.isEstimated)
+                    _InfoPill(label: context.l10n.t('estimated')),
                 ],
               ),
             ],
@@ -289,18 +296,18 @@ class _RouteLegTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  legTitleLabel(leg),
-                  style: const TextStyle(
-                    fontSize: 16,
+                  legTitleLabel(context, leg),
+                  style: TextStyle(
+                    fontSize: isRussianLocale(context) ? 15 : 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${leg.fromName} to ${leg.toName}',
+                  legFromToLabel(context, leg),
                   style: TextStyle(
                     color: secondary,
-                    fontSize: 14,
+                    fontSize: isRussianLocale(context) ? 13 : 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -324,8 +331,11 @@ class _RouteLegTile extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            formatDuration(leg.duration),
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            formatDurationLocalized(context, leg.duration),
+            style: TextStyle(
+              fontSize: isRussianLocale(context) ? 13 : 14,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -542,8 +552,8 @@ class _TextOnlyTripView extends StatelessWidget {
         ),
         if (trip.note.trim().isNotEmpty) ...[
           const SizedBox(height: 22),
-          const Text(
-            'Saved notes',
+          Text(
+            context.l10n.t('savedNotes'),
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),

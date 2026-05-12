@@ -1,3 +1,4 @@
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:flutter/material.dart';
 
 class ProfileSectionButton extends StatelessWidget {
@@ -50,7 +51,7 @@ class ProfileSectionButton extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    FittedSingleLineText(
                       title,
                       style: const TextStyle(
                         fontSize: 18,
@@ -58,7 +59,7 @@ class ProfileSectionButton extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(
+                    FittedSingleLineText(
                       subtitle,
                       style: TextStyle(
                         fontSize: 13,

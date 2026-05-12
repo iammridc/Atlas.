@@ -1,4 +1,6 @@
 import 'package:atlas/core/consts/app_colors.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
+import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/features/travel_planner/domain/entities/travel_route_entity.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -41,9 +43,55 @@ String formatDuration(Duration duration) {
   return '${minutes}m';
 }
 
-String routeDurationLabel(TravelRouteEntity route) {
+String formatDurationLocalized(BuildContext context, Duration duration) {
+  final days = duration.inDays;
+  final hours = duration.inHours.remainder(24);
+  final minutes = duration.inMinutes.remainder(60);
+
+  if (days > 0) {
+    final dayLabel = context.l10n.t(days == 1 ? 'dayWord' : 'daysWord');
+    final hoursPart = hours > 0 ? ' ${_hoursLabel(context, hours)}' : '';
+    final minutesPart = minutes > 0
+        ? ' ${_minutesLabel(context, minutes)}'
+        : '';
+    return '$days $dayLabel$hoursPart$minutesPart';
+  }
+  if (hours > 0) {
+    final minutesPart = minutes > 0
+        ? ' ${_minutesLabel(context, minutes)}'
+        : '';
+    return '${_hoursLabel(context, hours)}$minutesPart';
+  }
+  return _minutesLabel(context, minutes);
+}
+
+String _hoursLabel(BuildContext context, int hours) {
+  final key = isRussianLocale(context)
+      ? _russianHourLocalizationKey(hours)
+      : hours == 1
+      ? 'hourWord'
+      : 'hoursWord';
+  return '$hours ${context.l10n.t(key)}';
+}
+
+String _russianHourLocalizationKey(int hours) {
+  final mod100 = hours % 100;
+  if (mod100 >= 11 && mod100 <= 14) return 'hoursManyWord';
+
+  return switch (hours % 10) {
+    1 => 'hourWord',
+    2 || 3 || 4 => 'hoursFewWord',
+    _ => 'hoursManyWord',
+  };
+}
+
+String _minutesLabel(BuildContext context, int minutes) {
+  return '$minutes ${context.l10n.t('minutesWord')}';
+}
+
+String routeDurationLabel(BuildContext context, TravelRouteEntity route) {
   if (route.transportType != TravelTransportType.flight) {
-    return route.durationLabel;
+    return formatDurationLocalized(context, route.duration);
   }
 
   TravelRouteLegEntity? flightLeg;
@@ -54,33 +102,135 @@ String routeDurationLabel(TravelRouteEntity route) {
     }
   }
 
-  return formatDuration(flightLeg?.duration ?? route.duration);
+  return formatDurationLocalized(
+    context,
+    flightLeg?.duration ?? route.duration,
+  );
 }
 
-String routeTransferLabel(TravelRouteEntity route) {
+String routeTransferLabel(BuildContext context, TravelRouteEntity route) {
   if (route.transportType == TravelTransportType.flight) {
-    return 'Direct';
+    return context.l10n.t('directRoute');
   }
 
   return route.transferCount == 0
-      ? 'Direct'
-      : '${route.transferCount} transfers';
+      ? context.l10n.t('directRoute')
+      : context.l10n.named(
+          route.transferCount == 1 ? 'transferRoute' : 'transfersRoute',
+          {'count': route.transferCount},
+        );
 }
 
-String routeSummaryLabel(TravelRouteEntity route) {
+String routeSummaryLabel(BuildContext context, TravelRouteEntity route) {
   if (route.transportType == TravelTransportType.flight) {
-    return 'Direct flight';
+    return context.l10n.t('directFlight');
   }
 
-  return route.summary;
+  return switch (route.summary) {
+    'Driving route' => context.l10n.t('routeCar'),
+    'Bus route' => context.l10n.t('routeBus'),
+    'Train route' => context.l10n.t('routeTrain'),
+    'Flight route' => context.l10n.t('routeFlight'),
+    'Recommended route' => context.l10n.t('routeBest'),
+    'Public transport' => context.l10n.t('publicTransport'),
+    _ => route.summary.replaceAll(' to ', ' → '),
+  };
 }
 
-String legTitleLabel(TravelRouteLegEntity leg) {
-  if (leg.type == TravelLegType.flight) {
-    return 'Direct flight';
+String routeTitleLabel(BuildContext context, TravelRouteEntity route) {
+  final title = route.title;
+
+  if (title.startsWith('Drive to ')) {
+    return context.l10n.named('driveTo', {'place': title.substring(9)});
+  }
+  if (title.startsWith('Bus to ')) {
+    return context.l10n.named('busTo', {'place': title.substring(7)});
+  }
+  if (title.startsWith('Train to ')) {
+    return context.l10n.named('trainTo', {'place': title.substring(9)});
+  }
+  if (title.startsWith('Fly to ')) {
+    return context.l10n.named('flyTo', {'place': title.substring(7)});
   }
 
-  return leg.title;
+  return title.replaceAll(' to ', ' → ');
+}
+
+String legTitleLabel(BuildContext context, TravelRouteLegEntity leg) {
+  if (leg.type == TravelLegType.flight) {
+    return context.l10n.t('directFlight');
+  }
+
+  return switch (leg.type) {
+    TravelLegType.car => context.l10n.t('drive'),
+    TravelLegType.walking => context.l10n.t('walk'),
+    TravelLegType.bicycle => context.l10n.t('bike'),
+    TravelLegType.flight => context.l10n.t('flight'),
+    TravelLegType.bus => context.l10n.t('bus'),
+    TravelLegType.train => context.l10n.t('train'),
+    TravelLegType.subway => context.l10n.t('subway'),
+    TravelLegType.tram => context.l10n.t('tram'),
+    TravelLegType.transfer => context.l10n.t('transfer'),
+  };
+}
+
+String legFromToLabel(BuildContext context, TravelRouteLegEntity leg) {
+  return context.l10n.named('fromTo', {'from': leg.fromName, 'to': leg.toName});
+}
+
+String routePriceLabel(BuildContext context, String priceLabel) {
+  const prefix = 'from ';
+  if (!priceLabel.startsWith(prefix)) return priceLabel;
+  return context.l10n.named('fromPrice', {
+    'price': priceLabel.substring(prefix.length),
+  });
+}
+
+String foundWaysLabel(BuildContext context, int count) {
+  if (!isRussianLocale(context)) {
+    return context.l10n.named(count == 1 ? 'foundOneWay' : 'foundWays', {
+      'count': count,
+    });
+  }
+
+  final mod100 = count % 100;
+  final key = mod100 >= 11 && mod100 <= 14
+      ? 'foundWays'
+      : switch (count % 10) {
+          1 => 'foundOneWay',
+          2 || 3 || 4 => 'foundFewWays',
+          _ => 'foundWays',
+        };
+
+  return context.l10n.named(key, {'count': count});
+}
+
+bool isRussianLocale(BuildContext context) {
+  return Localizations.localeOf(context).languageCode == 'ru';
+}
+
+TextStyle plannerSectionTitleStyle(BuildContext context) {
+  return const TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.bold,
+    height: 1.08,
+  );
+}
+
+TextStyle plannerRouteTitleStyle(BuildContext context) {
+  return TextStyle(
+    fontSize: isRussianLocale(context) ? 16 : 18,
+    height: 1.14,
+    fontWeight: FontWeight.bold,
+  );
+}
+
+TextStyle plannerBodyTextStyle(BuildContext context) {
+  return TextStyle(
+    fontSize: isRussianLocale(context) ? 14 : 16,
+    fontWeight: FontWeight.w600,
+    height: 1.25,
+  );
 }
 
 ButtonStyle plannerPrimaryButtonStyle(bool isDark) {
@@ -104,6 +254,16 @@ ButtonStyle plannerPrimaryButtonStyle(bool isDark) {
       fontWeight: FontWeight.w600,
       height: 1.2,
     ),
+  );
+}
+
+TextStyle plannerPrimaryButtonTextStyle(BuildContext _) {
+  return const TextStyle(
+    fontFamily: AppTheme.fontFamily,
+    fontFamilyFallback: AppTheme.fontFamilyFallback,
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
   );
 }
 

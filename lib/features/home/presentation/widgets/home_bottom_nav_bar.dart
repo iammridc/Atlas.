@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -102,10 +103,10 @@ class HomeBottomNavBar extends StatelessWidget {
                         children: [
                           Icon(item.icon, size: 20, color: itemColor),
                           const SizedBox(height: 2),
-                          Text(
+                          FittedSingleLineText(
                             item.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            alignment: Alignment.center,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: isSelected

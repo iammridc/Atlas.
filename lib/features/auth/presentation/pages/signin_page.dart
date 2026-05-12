@@ -1,6 +1,8 @@
 import 'package:atlas/core/router/app_router.dart';
+import 'package:atlas/core/localization/app_localizations.dart';
 import 'package:atlas/core/theme/app_theme.dart';
 import 'package:atlas/core/utils/app_snackbar.dart';
+import 'package:atlas/core/widgets/fitted_single_line_text.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -57,6 +59,17 @@ class _SigninViewState extends State<_SigninView> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final l10n = context.l10n;
+    final isRussian = Localizations.localeOf(context).languageCode == 'ru';
+    final authRedirectFontSize = isRussian ? 16.0 : 14.0;
+    final welcomeBackStyle = TextStyle(
+      fontSize: 48,
+      fontWeight: FontWeight.bold,
+      fontFamily: AppTheme.fontFamily,
+      fontFamilyFallback: AppTheme.fontFamilyFallback,
+      color: isDark ? Colors.white : Colors.black,
+      height: 1,
+    );
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
@@ -115,22 +128,24 @@ class _SigninViewState extends State<_SigninView> {
 
                   const Spacer(),
 
-                  Text(
-                    'Welcome Back.',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: AppTheme.fontFamily,
-                      fontFamilyFallback: AppTheme.fontFamilyFallback,
-                      color: isDark ? Colors.white : Colors.black,
-                      height: 1,
+                  if (isRussian)
+                    FittedSingleLineText(
+                      l10n.t('welcomeBack'),
+                      alignment: Alignment.centerLeft,
+                      textAlign: TextAlign.start,
+                      style: welcomeBackStyle,
+                    )
+                  else
+                    Text(
+                      l10n.t('welcomeBack'),
+                      maxLines: 2,
+                      style: welcomeBackStyle,
                     ),
-                  ),
 
                   const SizedBox(height: 8),
 
                   Text(
-                    'Your next destination is one step away.',
+                    l10n.t('authSubtitleSignIn'),
                     style: TextStyle(
                       fontSize: 16,
                       color: isDark ? Colors.white38 : Colors.black38,
@@ -144,16 +159,16 @@ class _SigninViewState extends State<_SigninView> {
                   const SizedBox(height: 12),
 
                   AuthTextField(
-                    hint: 'Email',
+                    hint: l10n.t('email'),
                     controller: _emailController,
                     focusNode: _emailFocusNode,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
+                        return l10n.t('email');
                       }
                       if (!value.contains('@')) {
-                        return 'Please enter a valid email';
+                        return l10n.t('email');
                       }
                       return null;
                     },
@@ -162,15 +177,15 @@ class _SigninViewState extends State<_SigninView> {
                   const SizedBox(height: 16),
 
                   AuthTextField(
-                    hint: 'Password',
+                    hint: l10n.t('password'),
                     controller: _passwordController,
                     isPassword: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
+                        return l10n.t('password');
                       }
                       if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
+                        return l10n.t('passwordTooShort');
                       }
                       return null;
                     },
@@ -181,7 +196,7 @@ class _SigninViewState extends State<_SigninView> {
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
                       return AuthButton(
-                        label: 'Sign In',
+                        label: l10n.t('signIn'),
                         isLoading: state is AuthLoading,
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
@@ -201,9 +216,9 @@ class _SigninViewState extends State<_SigninView> {
                     child: GestureDetector(
                       onTap: () => context.router.push(const SignupRoute()),
                       child: Text(
-                        "Don't have an account? Sign up",
+                        l10n.t('dontHaveAccount'),
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: authRedirectFontSize,
                           color: isDark ? Colors.white38 : Colors.black54,
                           fontFamily: AppTheme.fontFamily,
                           fontFamilyFallback: AppTheme.fontFamilyFallback,
